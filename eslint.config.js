@@ -9,7 +9,7 @@ module.exports = defineConfig([
   eslintPluginPrettierRecommended,
   {
     plugins: {
-      "react-native": eslintPluginReactNative,
+      "react-native": [eslintPluginReactNative, 'nativewind/babel']
     },
     rules: {
       "react-native/no-unused-styles": "error",
