@@ -10,9 +10,14 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@expo-google-fonts/istok-web": "^0.4.0",
+    "@fortawesome/fontawesome-svg-core": "^7.0.1",
+    "@react-native-vector-icons/fontawesome6": "^12.2.0",
     "expo": "~53.0.22",
+    "expo-font": "~13.3.2",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
+    "react-icons": "^5.5.0",
     "react-native": "0.79.6"
   },
   "devDependencies": {
