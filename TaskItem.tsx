@@ -1,8 +1,9 @@
 import { View, Text } from "react-native";
 
 
-export default function TaskItem() {
+export default function TaskItem({ title }: {title: string}) {
+  console.log(title)
   return (
-      <Text style={{color:"white"}}>Computer Networks and Systems Project</Text>
+      <Text style={{color:"white"}}>{title}</Text>
   );
 }
