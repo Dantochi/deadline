@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Modal, TextInput, View, StyleSheet, Pressable } from "react-native";
 import { green } from "react-native-reanimated/lib/typescript/Colors";
 import { AddTaskProps } from "./addTask";
+import FontAwesome6 from "@react-native-vector-icons/fontawesome6";
 
 export default function InputForm({
   modalVisible,
   setModalVisible,
 }: AddTaskProps) {
-  const [text, setText] = useState("");
+  const [task, setTask] = useState("");
+  const [description, setDescription] = useState("");
   return (
     <Modal animationType="slide" transparent={true}>
       <Pressable
@@ -18,12 +20,22 @@ export default function InputForm({
       >
         <Pressable style={styles.container} onPress={() => {}}>
           <TextInput
-            placeholder="Enter your task here"
-            placeholderTextColor={"#Sa7D7A7A"}
-            onChangeText={(newText) => setText(newText)}
-            defaultValue={text}
+            placeholder="What would you like to do?"
+            placeholderTextColor={"#7D7A7A"}
+            onChangeText={(newText) => setTask(newText)}
+            defaultValue={task}
             style={{ color: "#ffffff" }}
           ></TextInput>
+          <TextInput
+            placeholder="Description"
+            placeholderTextColor={"#7D7A7A"}
+            onChangeText={(newDescription) => setDescription(newDescription)}
+            defaultValue={description}
+            style={{ color: "#ffffff", marginTop: 10, fontSize: 13 }}
+          ></TextInput>
+
+          <Pressable style={{ marginTop: 20 }} onPress={() => {}}></Pressable>
+          <FontAwesome6 name="calendar" size={24} color="silver" />
         </Pressable>
       </Pressable>
     </Modal>
@@ -32,7 +44,7 @@ export default function InputForm({
 
 const styles = StyleSheet.create({
   container: {
-    height: 400,
+    height: 200,
     backgroundColor: "#403f3e",
     borderTopLeftRadius: 10,
     borderTopEndRadius: 10,
