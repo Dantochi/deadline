@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 export interface AddTaskProps {
   modalVisible: boolean;
   setModalVisible: (value: boolean) => void;
+  handlePress?: () => void;
 }
 
 export default function AddTask({

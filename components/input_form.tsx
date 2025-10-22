@@ -3,10 +3,12 @@ import { Modal, TextInput, View, StyleSheet, Pressable } from "react-native";
 import { green } from "react-native-reanimated/lib/typescript/Colors";
 import { AddTaskProps } from "./addTask";
 import FontAwesome6 from "@react-native-vector-icons/fontawesome6";
+import DateTime from "./DateTime";
 
 export default function InputForm({
   modalVisible,
   setModalVisible,
+  handlePress
 }: AddTaskProps) {
   const [task, setTask] = useState("");
   const [description, setDescription] = useState("");
@@ -29,13 +31,15 @@ export default function InputForm({
           <TextInput
             placeholder="Description"
             placeholderTextColor={"#7D7A7A"}
+            multiline={true}
             onChangeText={(newDescription) => setDescription(newDescription)}
             defaultValue={description}
-            style={{ color: "#ffffff", marginTop: 10, fontSize: 13 }}
+            style={{ color: "#ffffff", marginTop: 10, fontSize: 13,}}
           ></TextInput>
 
-          <Pressable style={{ marginTop: 20 }} onPress={() => {}}></Pressable>
-          <FontAwesome6 name="calendar" size={24} color="silver" />
+          <Pressable style={{ marginTop: 20 }} onPress={() => {handlePress?.()}}>
+            <FontAwesome6 name="calendar" size={24} color="silver" />
+          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>

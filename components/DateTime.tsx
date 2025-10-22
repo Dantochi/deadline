@@ -1,12 +1,18 @@
 import { Calendar } from "react-native-calendars";
 import { Modal, View, StyleSheet } from "react-native";
-
-export default function DateTime() {
+import { SharedValue } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+export default function DateTime({
+  translateY,
+}: {
+  translateY: SharedValue<number>;
+}) {
   return (
-    <View
+    <Animated.View
       style={{
-        height: 400,
-        justifyContent: "center",
+        height: 405,
+        transform: [{ translateY }],
+        justifyContent: "flex-start",
         borderBottomRightRadius: 10,
         borderBottomLeftRadius: 10,
         backgroundColor: "#999999",
@@ -29,10 +35,13 @@ export default function DateTime() {
           }}
         />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {},
 });
+
+// TODO: I want it such that when the calendar icon is clicked,
+// The calendar slides down
