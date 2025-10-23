@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Modal, TextInput, View, StyleSheet, Pressable } from "react-native";
-import { green } from "react-native-reanimated/lib/typescript/Colors";
 import { AddTaskProps } from "./addTask";
 import FontAwesome6 from "@react-native-vector-icons/fontawesome6";
-import DateTime from "./DateTime";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 export default function InputForm({
   modalVisible,
   setModalVisible,
-  handlePress
+  handlePress,
 }: AddTaskProps) {
   const [task, setTask] = useState("");
   const [description, setDescription] = useState("");
@@ -34,12 +33,30 @@ export default function InputForm({
             multiline={true}
             onChangeText={(newDescription) => setDescription(newDescription)}
             defaultValue={description}
-            style={{ color: "#ffffff", marginTop: 10, fontSize: 13,}}
+            style={{ color: "#ffffff", marginTop: 10, fontSize: 13 }}
           ></TextInput>
 
-          <Pressable style={{ marginTop: 20 }} onPress={() => {handlePress?.()}}>
-            <FontAwesome6 name="calendar" size={24} color="silver" />
-          </Pressable>
+          <View
+            style={{
+              flexDirection: "row",
+              height: 30,
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 10,
+            }}
+          >
+            <Pressable
+              style={{ width: 24 }}
+              onPress={() => {
+                handlePress?.();
+              }}
+            >
+              <FontAwesome6 name="calendar" size={24} color="silver" />
+            </Pressable>
+            <Pressable style={styles.taskButton} onPress={() => {}}>
+              <AntDesign name="send" size={24} color="silver" />
+            </Pressable>
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -58,6 +75,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
+  },
+  taskButton: {
+    width: 30,
+    // backgroundColor: "blue",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
