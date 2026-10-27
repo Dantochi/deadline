@@ -1,0 +1,183 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
+import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
+import { activeTasks, useStore, type Task } from '../../lib/store';
+import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
+import { BTN, F, R, S, usePalette, type Status } from '../../theme';
+
+const GROUP: Record<'red' | 'amber' | 'green', string> = { red: 'Act now', amber: 'Pay attention', green: 'On track' };
+
+export default function Tasks() {
+  const { state } = useStore();
+  const p = usePalette();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const act = activeTasks(state);
+  const over = act.filter(t => info(t).left < 0), live = act.filter(t => info(t).left >= 0);
+  const paused = state.tasks.filter(t => t.pausedAt && !t.done), done = state.tasks.filter(t => t.done);
+  const red = live.filter(t => info(t).st === 'red').length;
+  const need = (n: number) => `${n} ${n === 1 ? 'needs' : 'need'} you now`;
+  const sub = !act.length ? (paused.length ? 'Everything is paused.' : 'Nothing on the clock yet.')
+    : over.length ? `${over.length} past the deadline · ${need(red)}.` : red ? `${need(red)}. ${live.length - red} more running.` : `${live.length} running. All on time.`;
+
+  const group = (label: string, st: Status, list: Task[]) => list.length ? (
+    <Section key={label} label={label} st={st} count={list.length}>
+      {list.map(t => <Row key={t.id} t={t} open={openId === t.id} onToggle={() => { haptic.tick(); setOpenId(openId === t.id ? null : t.id); }} />)}
+    </Section>
+  ) : null;
+
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s6, paddingBottom: 140 }}>
+        <Txt variant="h1">Tasks</Txt>
+        <Txt dim style={{ marginTop: S.s2 }}>{sub}</Txt>
+        {group('Past deadline', 'red', over)}
+        {(['red', 'amber', 'green'] as const).map(st => group(GROUP[st], st, live.filter(t => info(t).st === st)))}
+        {!act.length && !paused.length ? (
+          <View style={{ paddingVertical: S.s8, alignItems: 'center', gap: S.s2 }}>
+            <Txt variant="h2">No deadlines yet</Txt>
+            <Txt dim style={{ textAlign: 'center' }}>Give a goal an end date and it gets its own boxes.</Txt>
+          </View>
+        ) : null}
+        {group('Paused', 'paused', paused)}
+        {group('Done', 'done', done)}
+      </ScrollView>
+      <Pressable accessibilityRole="button" accessibilityLabel="New task" onPress={() => { haptic.tick(); router.push('/new-task'); }}
+        style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 24, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        <PlusIcon color={p.bg} />
+        <Txt style={{ fontFamily: F.uiBold, fontSize: 18, lineHeight: 24 }} color={p.bg}>New task</Txt>
+      </Pressable>
+    </SafeAreaView>
+  );
+}
+
+function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => void }) {
+  const { state, update, updateTask } = useStore();
+  const toast = useToast();
+  const p = usePalette();
+  const [armDelete, setArmDelete] = useState(false);
+  const [notes, setNotes] = useState(t.notes ?? '');
+  const { left, st } = info(t);
+  const over = !t.done && !t.pausedAt && left < 0, paused = !!t.pausedAt && !t.done;
+  const ls = !t.done && !paused && !over ? lastSlot(t) : null;
+  const ask = ls != null && !(t.checks ?? []).includes(ls);
+  const [rescheduling, setRescheduling] = useState(false);
+  const label = t.done ? (t.letGo ? 'Let go' : 'Done') : paused ? 'Paused' : leftShort(left);
+  const sb = boxesAt(t, Date.now());
+
+  const complete = () => {
+    updateTask(t.id, x => ({ ...x, done: true, doneAt: Date.now() }));
+    haptic.ok();
+    const d = Math.round((t.deadline - Date.now()) / DAY);
+    toast(d > 0 ? `Done, ${d >= 14 ? `${Math.round(d / 7)} weeks` : `${d} day${d === 1 ? '' : 's'}`} early.` : 'Done.', 3200);
+  };
+  const extend = (days: number) => {
+    const nd = endOfDay(Date.now() + days * DAY);
+    // A new deadline is a fresh start: the clock restarts from today.
+    updateTask(t.id, x => ({ ...x, deadline: nd, start: Date.now() }));
+    haptic.ok(); toast(`New deadline ${fdate(nd)}. A fresh start.`);
+  };
+  const checkIn = (yes: boolean) => {
+    if (ls == null) return;
+    if (yes) {
+      const back = t.missedAt != null && t.missedAt < ls;
+      updateTask(t.id, x => ({ ...x, checks: [...(x.checks ?? []), ls], sessions: [...(x.sessions ?? []), ls], missedAt: null }));
+      haptic.ok();
+      // Coming back after a miss is the moment worth rewarding.
+      toast(back ? 'Welcome back. Returning after a miss is what builds the habit.' : 'Session logged. That is how it gets done.', back ? 3800 : 2600);
+    } else {
+      updateTask(t.id, x => ({ ...x, checks: [...(x.checks ?? []), ls], missedAt: ls }));
+      setRescheduling(true);
+    }
+  };
+  const reserveAt = (ms: number) => { updateTask(t.id, x => ({ ...x, oneOff: ms })); setRescheduling(false); haptic.ok(); toast(`${slotLabel(ms)} is reserved for this.`); };
+  const at = (dayOff: number, h: number, m: number) => { const d = new Date(); d.setDate(d.getDate() + dayOff); d.setHours(h, m, 0, 0); return +d; };
+  const [uh, um] = (t.slot?.time ?? '07:00').split(':').map(Number);
+
+  return (
+    <View style={{ borderBottomWidth: 1, borderBottomColor: p.line }}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${t.title}, ${label}`} onPress={onToggle}
+        style={{ minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: S.s4, paddingVertical: S.s3 }}>
+        <View style={{ width: 12, alignItems: 'center' }}><StatusDot st={st} shapes={state.shapes} /></View>
+        <Txt style={[{ flex: 1 }, t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
+        <Txt variant="meta" dim>{label}</Txt>
+      </Pressable>
+
+      {open ? (
+        <View style={{ paddingLeft: 28, paddingBottom: S.s5, gap: S.s4 }}>
+          {over ? (
+            <View style={{ backgroundColor: p.raise, borderRadius: R.lg, padding: S.s4, gap: S.s3 }}>
+              <Txt style={{ fontFamily: F.uiSemi }}>The deadline passed {leftShort(left).replace(' over', '')} ago.</Txt>
+              <Txt variant="meta" dim>That happens. Choose what is true now.</Txt>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+                <Chip label="+3 days" onPress={() => extend(3)} /><Chip label="+1 week" onPress={() => extend(7)} /><Chip label="+2 weeks" onPress={() => extend(14)} />
+              </View>
+            </View>
+          ) : null}
+
+          {!t.done && !paused && !over ? (
+            <>
+              <BoxStrip n={sb.n} gone={sb.gone} st={st} />
+              <Txt variant="meta" dim style={{ marginTop: -S.s2 }}>{sb.n - sb.gone} of {sb.n} {sb.unit}s left · due {fdate(t.deadline)}</Txt>
+            </>
+          ) : null}
+
+          {ask && !rescheduling ? (
+            <View style={{ backgroundColor: p.raise, borderRadius: R.md, padding: S.s3, paddingLeft: S.s4, gap: S.s3 }}>
+              <Txt variant="meta">Did your {pad(new Date(ls!).getHours())}:{pad(new Date(ls!).getMinutes())} session happen?</Txt>
+              <View style={{ flexDirection: 'row', gap: S.s2 }}><Chip label="Yes" onPress={() => checkIn(true)} /><Chip label="Not today" onPress={() => checkIn(false)} /></View>
+            </View>
+          ) : null}
+          {rescheduling ? (
+            <View style={{ backgroundColor: p.raise, borderRadius: R.md, padding: S.s4, gap: S.s3 }}>
+              <Txt variant="meta">No problem. Missing one session does not undo the others. Find another time:</Txt>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+                {new Date().getHours() < 18 ? <Chip label="This evening" onPress={() => reserveAt(at(0, 19, 0))} /> : null}
+                <Chip label="Tomorrow, usual time" onPress={() => reserveAt(at(1, uh, um))} />
+                <Chip label="Tomorrow evening" onPress={() => reserveAt(at(1, 19, 0))} />
+              </View>
+            </View>
+          ) : null}
+
+          {paused ? <Txt variant="meta" dim>Paused since {fdate(t.pausedAt!)}. The clock is stopped. When you resume, the deadline moves by the time you were away.</Txt> : null}
+          {whenLine(t) && !t.done && !paused ? <Txt variant="meta"><Txt variant="meta" dim>Reserved · </Txt>{whenLine(t)}</Txt> : null}
+          {t.ifthen && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Backup · </Txt>{t.ifthen}</Txt> : null}
+          {t.cue && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Cue · </Txt>{t.cue}</Txt> : null}
+
+          {!t.done ? (
+            <TextInput value={notes} onChangeText={setNotes} onBlur={() => updateTask(t.id, x => ({ ...x, notes }))} multiline
+              placeholder="Notes: progress, links, what is in the way" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
+              style={{ minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.ui, fontSize: 16 }} />
+          ) : null}
+
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {t.done ? (
+              <>
+                <Btn style={{ flex: 1 }} label="Restore" icon={<UndoIcon color={p.dim} />} onPress={() => updateTask(t.id, x => ({ ...x, done: false, letGo: false, doneAt: undefined }))} />
+                <Btn style={{ flex: 1 }} label={armDelete ? 'Tap again' : 'Delete'} onPress={() => {
+                  if (!armDelete) { setArmDelete(true); haptic.warn(); return; }
+                  update(s => ({ ...s, tasks: s.tasks.filter(x => x.id !== t.id) })); toast('Deleted');
+                }} />
+              </>
+            ) : paused ? (
+              <Btn style={{ flex: 1 }} label="Resume" icon={<PlayIcon color={p.dim} />} onPress={() => {
+                const away = Date.now() - (t.pausedAt ?? Date.now());
+                updateTask(t.id, x => ({ ...x, pausedAt: null, deadline: x.deadline + away, start: x.start + away }));
+                toast(`Welcome back. Deadline moved to ${fdate(t.deadline + away)}.`);
+              }} />
+            ) : (
+              <>
+                <Btn style={{ flex: 1 }} label="Done" icon={<CheckIcon color={p.dim} />} onPress={complete} />
+                <Btn style={{ flex: 1 }} label="Pause" icon={<PauseIcon color={p.dim} />} onPress={() => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); }} />
+                {over ? <Btn style={{ flex: 1 }} label="Let go" onPress={() => { updateTask(t.id, x => ({ ...x, done: true, letGo: true, doneAt: Date.now() })); toast('Let go. That time is yours again.'); }} /> : null}
+              </>
+            )}
+          </View>
+          {t.done && t.doneAt ? <Txt variant="small" dim>Finished {fshort(t.doneAt)}</Txt> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}

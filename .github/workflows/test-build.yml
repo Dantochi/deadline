@@ -1,0 +1,55 @@
+# Build a test version on EAS and send it to Firebase App Distribution testers.
+# Run it from GitHub: Actions → "Test build" → Run workflow.
+#
+# Repository secrets needed (Settings → Secrets and variables → Actions):
+#   EXPO_TOKEN                Expo access token (expo.dev → Account settings → Access tokens)
+#   FIREBASE_SERVICE_ACCOUNT  JSON key of a service account with the "Firebase App Distribution Admin" role
+#   FIREBASE_ANDROID_APP_ID   e.g. 1:1234567890:android:abc123 (Firebase → Project settings)
+#   FIREBASE_IOS_APP_ID       only needed for iPhone builds
+name: Test build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which phones
+        type: choice
+        options: [android, ios]
+        default: android
+      notes:
+        description: Release notes for testers
+        required: false
+        default: ''
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build on EAS (waits for the build to finish)
+        run: eas build --platform ${{ inputs.platform }} --profile preview --non-interactive --wait
+
+      - name: Send to Firebase App Distribution
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          FIREBASE_IOS_APP_ID: ${{ secrets.FIREBASE_IOS_APP_ID }}
+          RELEASE_NOTES: ${{ inputs.notes }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          bash scripts/distribute.sh ${{ inputs.platform }}

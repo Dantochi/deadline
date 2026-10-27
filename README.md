@@ -1,50 +1,44 @@
-# Welcome to your Expo app 👋
+# Deadline
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A life calendar and deadline app for Android and iPhone. Your life is drawn as weeks; every task gets its own boxes
+and a status that moves from green to amber to red as time runs out. Reserved work sessions, gentle digests and
+check-ins help you actually finish.
 
-## Get started
+Built with Expo SDK 58 (React Native), Expo Router and Skia. This is the **core test build**: onboarding, the life
+grid, tasks with reserved times, check-ins, overdue recovery, pause, local reminders and settings.
+Wisdom, widgets, the countdown screen, Pro and partner updates come in later builds.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it
 
 ```bash
-npm run reset-project
+npm install
+npx expo start          # scan the QR code with a development build of the app
+npm run typecheck
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Skia and the native date picker need a development build rather than Expo Go:
+`npx eas-cli@latest build --profile development --platform android`.
 
-## Learn more
+## Test builds for other people
 
-To learn more about developing your project with Expo, look at the following resources:
+See [docs/TESTING.md](docs/TESTING.md) for Firebase App Distribution: building an installable APK on EAS and
+emailing it to testers, plus the extra steps for iPhones.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Code map
 
-## Join the community
+| Path | What it is |
+|---|---|
+| `src/app/` | Screens (Expo Router): `(tabs)/index` Life, `(tabs)/tasks` Tasks, `onboarding`, `new-task`, `settings` |
+| `src/components/` | Life grid (Skia), status dots with shapes, buttons, date and time fields, icons |
+| `src/lib/store.tsx` | App state saved on the phone (AsyncStorage) |
+| `src/lib/time.ts` | Weeks, status colours by time left, reserved session maths |
+| `src/lib/notifications.ts` | Reminders: evening-before and 15-minute nudges, check-ins, three daily digests |
+| `src/theme.ts` | Colours, spacing, radii and fonts from the design prototype |
 
-Join our community of developers creating universal apps.
+## Design notes
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Status colours are colour-blind safe and always paired with a shape (● ◆ ▲).
+- Time left is shown in days; reminders say a time is "reserved for" you; missing a session is never shamed.
+- The life grid is always weeks at one fixed box size; lived rows drop away.
+- iOS allows 64 scheduled notifications per app, so reminders are scheduled four days ahead and refreshed each time
+  the app opens or anything changes.
