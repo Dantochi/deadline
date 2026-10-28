@@ -35,7 +35,26 @@ fi
 mkdir -p dist
 file="dist/deadline-$platform.$ext"
 echo "Downloading $url"
-curl -fsSL "$url" -o "$file"
+# Download with Node rather than curl: Windows curl (schannel) can drop large downloads mid-way.
+node -e '
+const fs = require("fs"), { Readable } = require("stream"), { pipeline } = require("stream/promises");
+const [url, file] = process.argv.slice(1);
+(async () => {
+  for (let i = 1; i <= 4; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      await pipeline(Readable.fromWeb(r.body), fs.createWriteStream(file));
+      console.log("Downloaded " + (fs.statSync(file).size / 1048576).toFixed(1) + " MB");
+      return;
+    } catch (e) {
+      console.error("Download attempt " + i + " failed: " + e.message);
+      if (i === 4) process.exit(1);
+      await new Promise(res => setTimeout(res, 2000 * i));
+    }
+  }
+})();
+' "$url" "$file"
 
 # Groups and notes go in files: long quoted arguments can get lost on the way through npx on Windows.
 printf '%s' "$groups" > dist/groups.txt
