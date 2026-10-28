@@ -1,8 +1,8 @@
 // The life grid: always weeks, 52 per row, one row per year. Rows already lived are removed;
 // the box size comes from the width only, so boxes never resize when units change.
-import { Canvas, createPicture, Picture, Skia } from '@shopify/react-native-skia';
 import { useMemo, useState } from 'react';
 import { PixelRatio, Pressable, View, type LayoutChangeEvent } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { activeTasks, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
 import { statusColor, usePalette } from '../theme';
@@ -28,32 +28,34 @@ export function LifeGrid({ state, maxHeight, onSelect, selected }: {
   const g = useGridGeometry(width, state);
   const height = Math.min(g.h, maxHeight);
 
-  const picture = useMemo(() => {
-    if (!width) return null;
+  // One <Path> per colour (each made of many rectangles) keeps the native view count tiny.
+  const paths = useMemo(() => {
+    if (!width) return [];
     const dpr = PixelRatio.get(), snap = (v: number) => Math.round(v * dpr) / dpr;
     const now = Date.now(), box = g.u - GAP;
     const overlays = activeTasks(state).map(t => {
       const st = info(t).st, rank = st === 'red' ? 0 : st === 'amber' ? 1 : 2;
       return { s: Math.max(t.start, now), e: t.deadline, color: statusColor(p, st), rank };
     }).filter(o => o.e > now);
-    const paint = Skia.Paint();
-    return createPicture(canvas => {
-      for (let r = 0; r < g.rows; r++) for (let c = 0; c < 52; c++) {
-        const i = (g.lr + r) * 52 + c, s = weekStart(g.birth, i), e = weekEnd(g.birth, i);
-        let color = p.ahead;
-        if (e <= now) color = p.lived;
-        else if (i === g.wNow) color = p.ink;
-        else {
-          let best: (typeof overlays)[number] | null = null;
-          for (const o of overlays) if (o.s < e && o.e > s && (!best || o.rank < best.rank)) best = o;
-          if (best) color = best.color;
-        }
-        if (i === selected && i !== g.wNow) color = p.dim;
-        const x0 = snap(c * g.u), y0 = snap(g.yOf(r));
-        paint.setColor(Skia.Color(color));
-        canvas.drawRect(Skia.XYWHRect(x0, y0, snap(c * g.u + box) - x0, snap(g.yOf(r) + box) - y0), paint);
+    const byColor = new Map<string, string[]>();
+    for (let r = 0; r < g.rows; r++) for (let c = 0; c < 52; c++) {
+      const i = (g.lr + r) * 52 + c, s = weekStart(g.birth, i), e = weekEnd(g.birth, i);
+      let color = p.ahead;
+      if (e <= now) color = p.lived;
+      else if (i === g.wNow) color = p.ink;
+      else {
+        let best: (typeof overlays)[number] | null = null;
+        for (const o of overlays) if (o.s < e && o.e > s && (!best || o.rank < best.rank)) best = o;
+        if (best) color = best.color;
       }
-    }, { width, height: g.h });
+      if (i === selected && i !== g.wNow) color = p.dim;
+      const x0 = snap(c * g.u), y0 = snap(g.yOf(r));
+      const w = +(snap(c * g.u + box) - x0).toFixed(2), h = +(snap(g.yOf(r) + box) - y0).toFixed(2);
+      let d = byColor.get(color);
+      if (!d) byColor.set(color, d = []);
+      d.push(`M${+x0.toFixed(2)} ${+y0.toFixed(2)}h${w}v${h}h${-w}z`);
+    }
+    return [...byColor].map(([color, d]) => ({ color, d: d.join('') }));
   }, [width, g, state, p, selected]);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
@@ -69,7 +71,11 @@ export function LifeGrid({ state, maxHeight, onSelect, selected }: {
       accessible accessibilityRole="image"
       accessibilityLabel={`Life grid: ${state.life * 52 - g.wNow} of ${state.life * 52} weeks left.`}>
       <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
-        {picture ? <Canvas style={{ width, height: g.h }}><Picture picture={picture} /></Canvas> : null}
+        {width ? (
+          <Svg width={width} height={g.h}>
+            {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
+          </Svg>
+        ) : null}
       </Pressable>
     </View>
   );
