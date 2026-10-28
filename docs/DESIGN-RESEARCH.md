@@ -70,6 +70,48 @@ x-height and distinct confusable letters. Changing the font would cost the app's
 - **Radii:** 10, 14, 20, 28 (about x1.4 per step).
 - **Icons:** each icon matches its label's line height, with an 8pt gap.
 
+## Second pass (Consensus, PubMed full text)
+
+**Verified from the full text of Dobres et al. (2016), via PubMed Central** ([DOI](https://doi.org/10.1080/00140139.2015.1137637)):
+- Glance thresholds were **8.8% shorter** for the humanist face than the square grotesque.
+- Dark text on light was **38.6% faster** than light on dark.
+- Shrinking cap height from 4 to 3 mm raised thresholds **26.4%** for the humanist face but **62.1%** for the
+  square grotesque. Open shapes hold up much better at small sizes.
+- Thresholds rose from ~70 ms at age 20 to ~126 ms at 65.
+
+**Dark versus light mode, newer studies**
+- Light-on-dark raised cognitive load for older adults in bright surroundings and for younger adults in dim ones.
+  Older adults reported more positive emotion with dark-on-light (Sethi et al., 2022, *Ergonomics*).
+- Cognitive test scores were higher in light mode, and older adults did worse in dark (Gazit et al., 2025,
+  *Ergonomics*, n = 173).
+- At night, dark mode reduced visual fatigue, and fatigue fell as contrast rose (Xie et al., 2021, *IEEE Access*).
+- A 2025 review of 25 studies concludes light mode is better for readability in bright conditions and dark mode for
+  comfort in low light. It recommends letting people switch (Atsani et al., 2025).
+
+**Letter spacing**
+- Default spacing is optimal. Wider spacing gave no speed gain for typical adults (Chung, 2002; van den Boer et al.,
+  2015) and slowed fast readers (Korinth et al., 2020). Tighter-than-default spacing slowed reading (van den Boer et
+  al., 2015; Łuniewska et al., 2021).
+- Across 12 fonts, crowding predicted reading speed and comfort. Display fonts crowd more and suit titles and
+  numbers only (Pombo et al., 2025). This matches using Doto only for big numbers.
+
+**Aesthetics, consistency, premium feel**
+- Visual clarity (order, alignment, low complexity) explains why attractive interfaces also feel usable
+  (Schrepp et al., 2021, two large studies).
+- A more aesthetic version of the same smartphone app raised perceived usability and the number of correct answers
+  (Perrig et al., 2023, n = 281). A 7-week coffee-machine study found no such effect (Sauer et al., 2022), so
+  aesthetics support usability but don't replace it.
+- Looking like the category people expect raises trust (Miniukovich et al., 2023, n = 1530).
+- Large white space raised perceived luxury in a 1,193-person packaging experiment (Iseki et al., 2025). This
+  supports the generous spacing already in the app.
+- Handwritten-style fonts make products feel human, but the effect reverses for functional products
+  (Schroll et al., 2018). Deadline stays with a clean sans.
+
+**Changes from the second pass**
+- **Settings → Appearance:** Auto (follows the phone, which can switch at sunset), Light or Dark.
+- **Quotes:** the negative letter-spacing on Wisdom quotes was removed, since they're read as running text.
+  Tight spacing stays only on short headings.
+
 ## Sources
 - Dobres, Chahine, Reimer, Gould, Mehler & Coughlin (2016). Utilising psychophysical techniques to investigate the effects of age, typeface design, size and display polarity on glance legibility. *Ergonomics*. https://pmc.ncbi.nlm.nih.gov/articles/PMC5213401
 - Dobres, Chahine & Reimer (2017). Effects of ambient illumination, contrast polarity, and letter size on text legibility under glance-like reading. *Applied Ergonomics*. https://rosap.ntl.bts.gov/view/dot/43887/dot_43887_DS1.pdf
@@ -86,3 +128,18 @@ x-height and distinct confusable letters. Changing the font would cost the app's
 - Ngo, Teo & Byrne (2003). Modelling interface aesthetics. *Information Sciences* 152. https://www.academia.edu/11749849/Modelling_interface_aesthetics
 - Green (1995). All that glitters: a review of psychological research on the aesthetics of the golden section. *Perception* 24. https://www.yorku.ca/christo/papers/goldrev3.htm
 - FreeType, patents page (hinting and ClearType expiry). https://freetype.org/patents.html
+- Sethi et al. (2022). Dark mode vogue: do light-on-dark displays have measurable benefits to users? *Ergonomics*. https://consensus.app/papers/details/efcc4c9c522a5e00846850e69977db34/
+- Gazit et al. (2025). The dark side of the interface. *Ergonomics*. https://consensus.app/papers/details/d4b62d9f462854f18d56ffbe1567c2c7/
+- Xie et al. (2021). Effects of display color mode and luminance contrast on visual fatigue. *IEEE Access*. https://consensus.app/papers/details/451b568db6b158c59a5e6e40c52151f0/
+- Atsani et al. (2025). User preferences for dark and light mode: a systematic literature study. https://consensus.app/papers/details/fe652e22f63e515283d32a75a6e0c7ac/
+- Chung (2002). The effect of letter spacing on reading speed in central and peripheral vision. *IOVS*. https://consensus.app/papers/details/fe53f2c085445fffb548f256ac1663ec/
+- van den Boer et al. (2015). Default spacing is the optimal spacing for word reading. *QJEP*. https://consensus.app/papers/details/7da8d17a8e605b018099f804a9a61fbb/
+- Korinth et al. (2020). Wider letter-spacing facilitates word processing but impairs reading rates of fast readers. *Frontiers in Psychology*. https://consensus.app/papers/details/f55849cd62cd57e08a2c5fb8ca744da5/
+- Łuniewska et al. (2021). The effect of inter-letter spacing on reading performance. *Learning and Instruction*. https://consensus.app/papers/details/c26ba3aa5c055d21a769ea84d7653d07/
+- Pombo et al. (2025). Crowding predicts reading speed and comfort across fonts and participants. *Journal of Vision*. https://consensus.app/papers/details/95a7f3d1020a5a8b917edcf24bfa78c3/
+- Schrepp et al. (2021). What causes the dependency between perceived aesthetics and perceived usability? https://consensus.app/papers/details/c8f44eedf7d65deb9aa1253d3fa04357/
+- Perrig et al. (2023). Smartphone app aesthetics influence users' experience and performance. *Frontiers in Psychology*. https://consensus.app/papers/details/8583e894bde65744becfc14a8fc3b815/
+- Sauer et al. (2022). Visual aesthetics and user experience: a multiple-session experiment. *IJHCS*. https://consensus.app/papers/details/28cfd6e718925a14b04d518b109843de/
+- Miniukovich et al. (2023). The effect of prototypicality on webpage aesthetics, usability, and trustworthiness. *IJHCS*. https://consensus.app/papers/details/7e0162757fb0521f944f9c6e199415f5/
+- Iseki et al. (2025). Perception of luxury and product quality in package design. *Journal of Sensory Studies*. https://consensus.app/papers/details/b1bffcd860905712945e0bd20fcd9d1d/
+- Schroll et al. (2018). Humanizing products with handwritten typefaces. *Journal of Consumer Research*. https://consensus.app/papers/details/70dc8d3054e45a59ae64794d78bb7bc1/

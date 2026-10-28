@@ -6,7 +6,7 @@ import {
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { AppState, View, useColorScheme } from 'react-native';
+import { AppState, Appearance, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '../components/ui';
 import { reschedule } from '../lib/notifications';
@@ -32,7 +32,12 @@ function ReminderSync() {
 }
 
 function Shell() {
-  const { ready } = useStore();
+  const { ready, state } = useStore();
+  // Light text on dark costs legibility in bright light, especially for older eyes, while dark helps at night,
+  // so the default follows the phone (which can switch at sunset) and people can override it.
+  useEffect(() => {
+    Appearance.setColorScheme(state.appearance === 'light' || state.appearance === 'dark' ? state.appearance : 'unspecified');
+  }, [state.appearance]);
   const p = usePalette();
   const scheme = useColorScheme();
   if (!ready) return <View style={{ flex: 1, backgroundColor: p.bg }} />;

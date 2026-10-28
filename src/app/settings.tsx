@@ -5,7 +5,7 @@ import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Txt, useToast } from '../components/ui';
+import { Btn, Chip, Txt, useToast } from '../components/ui';
 import { askPermission, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { usePartner } from '../lib/partner';
 import { DEFAULT_STATE, useStore } from '../lib/store';
@@ -59,6 +59,14 @@ export default function Settings() {
         </>)}
 
         {group('Display', <>
+          {row('Appearance', 'Light reads best in bright places; dark is easier at night', (
+            <View style={{ flexDirection: 'row', gap: S.s1 }}>
+              {(['system', 'light', 'dark'] as const).map(a => (
+                <Chip key={a} label={a === 'system' ? 'Auto' : a[0].toUpperCase() + a.slice(1)} on={(state.appearance ?? 'system') === a}
+                  onPress={() => update(s => ({ ...s, appearance: a }))} />
+              ))}
+            </View>
+          ))}
           {row('Show life grid', 'Turn off to see only the number', <Switch value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
           {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Switch value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
           {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn label="Make" onPress={() => router.push('/wallpaper')} />)}

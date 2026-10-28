@@ -28,6 +28,7 @@ export type State = {
   birth: string; // YYYY-MM-DD
   life: number;
   showGrid: boolean;
+  appearance?: 'system' | 'light' | 'dark'; // theme override; default follows the phone
   showLived?: boolean; // draw the weeks already lived, from birth (the grid then scrolls)
   shapes: boolean;
   focus?: string;
