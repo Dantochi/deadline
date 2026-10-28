@@ -42,6 +42,17 @@
     "backgroundColor": "#0B0C0E",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5a3ce26f-47bb-487f-b871-fe48c608bdac"
+      }
+    },
+    "owner": "dantochi"
   }
 }
