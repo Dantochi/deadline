@@ -44,6 +44,7 @@ function Shell() {
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="new-task" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="wallpaper" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

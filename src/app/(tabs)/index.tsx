@@ -4,9 +4,10 @@ import { Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SlidersIcon } from '../../components/icons';
 import { LifeGrid } from '../../components/LifeGrid';
+import { RollingNumber } from '../../components/RollingNumber';
 import { Chip, StatusDot, Txt } from '../../components/ui';
 import { activeTasks, useStore } from '../../lib/store';
-import { DAY, YEAR, addYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
+import { DAY, YEAR, addYears, ageYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
 import { F, S, usePalette } from '../../theme';
 
 type Unit = 'weeks' | 'months' | 'years';
@@ -40,7 +41,9 @@ export default function Life() {
   })() : null;
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg, paddingHorizontal: '4.5%' }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
+      {/* The gutter sits on an inner View: percentage padding on SafeAreaView is dropped on Android. */}
+      <View style={{ flex: 1, paddingHorizontal: '4.5%' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')}
           style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
@@ -50,9 +53,11 @@ export default function Life() {
 
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         {bday ? <Txt variant="label" dim>Happy birthday. A new row begins.</Txt> : null}
-        <Txt accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} numberOfLines={1} adjustsFontSizeToFit
-          style={{ fontFamily: F.dot, fontSize: 120, lineHeight: 124, color: p.ink }}>{fmt(left)}</Txt>
-        <Txt dim style={{ marginTop: S.s2, marginBottom: S.s5 }}><Txt style={{ fontFamily: F.uiSemi }}>{unit} left</Txt> until {state.life}</Txt>
+        <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: S.s3, marginTop: S.s2, marginBottom: S.s5 }}>
+          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{unit} left</Txt> until {state.life}</Txt>
+          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{fmt(ageYears(birth))} years</Txt> lived</Txt>
+        </View>
         {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} /> : null}
       </View>
 
@@ -71,6 +76,7 @@ export default function Life() {
         {(['weeks', 'months', 'years'] as Unit[]).map(u => (
           <View key={u} style={{ flex: 1 }}><Chip label={u[0].toUpperCase() + u.slice(1)} on={unit === u} onPress={() => setUnit(u)} /></View>
         ))}
+      </View>
       </View>
     </SafeAreaView>
   );

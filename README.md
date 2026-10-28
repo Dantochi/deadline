@@ -40,5 +40,7 @@ emailing it to testers, plus the extra steps for iPhones.
 - Status colours are colour-blind safe and always paired with a shape (● ◆ ▲).
 - Time left is shown in days; reminders say a time is "reserved for" you; missing a session is never shamed.
 - The life grid is always weeks at one fixed box size; lived rows drop away.
+- The big number rolls digit by digit (like a bank balance); it stays still when Reduce motion is on.
+- Settings → Lock screen wallpaper saves a full-size image of the grid to Photos.
 - iOS allows 64 scheduled notifications per app, so reminders are scheduled four days ahead and refreshed each time
   the app opens or anything changes.

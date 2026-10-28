@@ -36,7 +36,17 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Deadline saves your life grid wallpaper to your photos.",
+          "savePhotosPermission": "Deadline saves your life grid wallpaper to your photos.",
+          "granularPermissions": [
+            "photo"
+          ]
+        }
+      ]
     ],
     "scheme": "deadline",
     "backgroundColor": "#0B0C0E",

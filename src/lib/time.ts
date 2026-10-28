@@ -11,6 +11,11 @@ export const fshort = (ms: number) => new Date(ms).toLocaleDateString('en-GB', {
 export const addYears = (d: Date, n: number) => new Date(d.getFullYear() + n, d.getMonth(), d.getDate());
 export const endOfDay = (ms: number) => { const d = new Date(ms); d.setHours(23, 59, 0, 0); return +d; };
 export const parseBirth = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+/** Whole years lived, counted by birthdays rather than average year length. */
+export function ageYears(birth: Date, now = new Date()) {
+  const y = now.getFullYear() - birth.getFullYear();
+  return +addYears(birth, y) > +now ? y - 1 : y;
+}
 export const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 // Weeks are laid out as 52 per row, one row per year of life, as in the prototype.

@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
 import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
 import { activeTasks, useStore, type Task } from '../../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
-import { BTN, F, R, S, usePalette, type Status } from '../../theme';
+import { BTN, F, R, S, statusColor, usePalette, type Status } from '../../theme';
 
 const GROUP: Record<'red' | 'amber' | 'green', string> = { red: 'Act now', amber: 'Pay attention', green: 'On track' };
 
@@ -59,6 +59,25 @@ function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => vo
   const p = usePalette();
   const [armDelete, setArmDelete] = useState(false);
   const [notes, setNotes] = useState(t.notes ?? '');
+  // Notes save a moment after typing stops (and on blur), with a visible "Saved" so people trust it.
+  const [noteState, setNoteState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const pendingNotes = useRef<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const saveNotes = () => {
+    clearTimeout(noteTimer.current);
+    const v = pendingNotes.current;
+    if (v == null) return;
+    pendingNotes.current = null;
+    updateTask(t.id, x => ({ ...x, notes: v }));
+    setNoteState('saved');
+  };
+  const editNotes = (v: string) => {
+    setNotes(v); pendingNotes.current = v; setNoteState('saving');
+    clearTimeout(noteTimer.current); noteTimer.current = setTimeout(saveNotes, 700);
+  };
+  const saveRef = useRef(saveNotes);
+  saveRef.current = saveNotes;
+  useEffect(() => () => saveRef.current(), []);
   const { left, st } = info(t);
   const over = !t.done && !t.pausedAt && left < 0, paused = !!t.pausedAt && !t.done;
   const ls = !t.done && !paused && !over ? lastSlot(t) : null;
@@ -147,9 +166,15 @@ function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => vo
           {t.cue && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Cue · </Txt>{t.cue}</Txt> : null}
 
           {!t.done ? (
-            <TextInput value={notes} onChangeText={setNotes} onBlur={() => updateTask(t.id, x => ({ ...x, notes }))} multiline
+            <View style={{ gap: S.s1 }}>
+            <TextInput value={notes} onChangeText={editNotes} onBlur={saveNotes} multiline
               placeholder="Notes: progress, links, what is in the way" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
               style={{ minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.ui, fontSize: 16 }} />
+            <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1, minHeight: 20 }}>
+              {noteState === 'saved' ? <CheckIcon size={16} color={statusColor(p, 'green', true)} /> : null}
+              <Txt variant="small" dim>{noteState === 'saved' ? 'Saved' : noteState === 'saving' ? 'Saving…' : 'Saves as you type'}</Txt>
+            </View>
+            </View>
           ) : null}
 
           <View style={{ flexDirection: 'row', gap: 6 }}>

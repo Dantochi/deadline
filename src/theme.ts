@@ -19,6 +19,7 @@ const light: typeof dark = {
   scrim: 'rgba(15,17,19,0.38)',
 };
 export type Palette = typeof dark;
+export const palettes = { dark, light };
 
 export function usePalette(): Palette {
   return useColorScheme() === 'light' ? light : dark;

@@ -5,7 +5,7 @@ import { PixelRatio, Pressable, View, type LayoutChangeEvent } from 'react-nativ
 import Svg, { Path } from 'react-native-svg';
 import { activeTasks, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
-import { statusColor, usePalette } from '../theme';
+import { statusColor, usePalette, type Palette } from '../theme';
 
 const GAP = 1.5, DECADE = 6;
 
@@ -20,10 +20,10 @@ export function useGridGeometry(width: number, state: State) {
   }, [width, state.birth, state.life]);
 }
 
-export function LifeGrid({ state, maxHeight, onSelect, selected }: {
-  state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null;
+export function LifeGrid({ state, maxHeight, onSelect, selected, palette }: {
+  state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null; palette?: Palette;
 }) {
-  const p = usePalette();
+  const system = usePalette(), p = palette ?? system;
   const [width, setWidth] = useState(0);
   const g = useGridGeometry(width, state);
   const height = Math.min(g.h, maxHeight);
