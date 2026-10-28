@@ -1,15 +1,16 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Txt, useToast } from '../components/ui';
 import { askPermission, nextReminderLabel, permissionStatus } from '../lib/notifications';
+import { usePartner } from '../lib/partner';
 import { DEFAULT_STATE, useStore } from '../lib/store';
 import { addYears, pad, parseBirth, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, S, usePalette } from '../theme';
 
 export default function Settings() {
   const { state, update } = useStore();
@@ -17,6 +18,11 @@ export default function Settings() {
   const p = usePalette();
   const [perm, setPerm] = useState<string>('…');
   const [armReset, setArmReset] = useState(false);
+  const partner = usePartner();
+  const partnerSub = partner.active ? `${state.partner}. Sunday check-ins are on.`
+    : partner.incoming.length ? `${partner.incoming[0].fromName || `@${partner.incoming[0].fromUsername}`} asked to be your partner`
+      : partner.outgoing ? `Waiting for @${partner.outgoing.toUsername}`
+        : 'One person who sees your week every Sunday';
   useEffect(() => { permissionStatus().then(setPerm).catch(() => setPerm('unknown')); }, []);
 
   const row = (title: string, sub: string | undefined, right: ReactNode) => (
@@ -49,11 +55,7 @@ export default function Settings() {
               <Btn label="+" accessibilityLabel="Older" style={{ width: 48 }} onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} />
             </View>
           ))}
-          {row('Accountability partner', 'Their name. Sunday updates arrive in a later test build.', (
-            <TextInput defaultValue={state.partner} placeholder="Name" placeholderTextColor={p.dim} maxLength={30} maxFontSizeMultiplier={2}
-              onEndEditing={e => update(s => ({ ...s, partner: e.nativeEvent.text.trim() }))}
-              style={{ minWidth: 140, minHeight: 48, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 12, color: p.ink, fontFamily: F.uiMedium, fontSize: 16 }} />
-          ))}
+          {row('Accountability partner', partnerSub, <Btn label={partner.active || partner.incoming.length ? 'Open' : 'Set up'} onPress={() => router.push('/partner')} />)}
         </>)}
 
         {group('Display', <>

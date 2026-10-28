@@ -67,6 +67,13 @@ function plan(state: State, now = Date.now()): Planned[] {
       if (+d > now) out.push({ at: +d, title: red.length ? `${red.length} ${red.length === 1 ? 'task needs' : 'tasks need'} you` : 'Everything is on track', body });
     }
   }
+  // Sunday check-in with the accountability partner.
+  if (state.partner) {
+    for (let k = 0; k < WINDOW_DAYS; k++) {
+      const d = new Date(now); d.setDate(d.getDate() + k); d.setHours(18, 0, 0, 0);
+      if (d.getDay() === 0 && +d > now) out.push({ at: +d, title: 'Sunday check-in', body: `See how ${state.partner}'s week went. They can see yours too.` });
+    }
+  }
   return out.filter(p => p.at > now + 30 * 1000).sort((a, b) => a.at - b.at).slice(0, MAX);
 }
 

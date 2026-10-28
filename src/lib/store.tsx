@@ -31,7 +31,8 @@ export type State = {
   shapes: boolean;
   focus?: string;
   digest: string[]; // three times a day, HH:MM
-  partner?: string;
+  partner?: string; // partner's display name, kept in sync by PartnerProvider
+  shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
   tasks: Task[];
 };
 

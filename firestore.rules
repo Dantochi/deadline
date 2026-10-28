@@ -1,0 +1,49 @@
+rules_version = '2';
+// Deadline: accountability partner data only. Paste into Firebase → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function pairId(a, b) { return a < b ? a + '_' + b : b + '_' + a; }
+    function partners(a, b) {
+      let p = /databases/$(database)/documents/partnerships/$(pairId(a, b));
+      return exists(p) && get(p).data.status == 'active';
+    }
+
+    // Public profile: username and display name only (never the email).
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'name'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 30;
+      allow delete: if request.auth.uid == uid;
+    }
+
+    // One document per username, so names are unique.
+    match /usernames/{name} {
+      allow read: if signedIn();
+      allow create: if request.auth.uid == request.resource.data.uid && name.matches('^[a-z0-9_]{3,20}$');
+      allow delete: if request.auth.uid == resource.data.uid;
+    }
+
+    match /partnerships/{id} {
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      allow create: if signedIn()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.members == [request.resource.data.from, request.resource.data.to]
+        && request.resource.data.status == 'pending'
+        && id == pairId(request.resource.data.from, request.resource.data.to);
+      // Only the person who was asked can accept.
+      allow update: if signedIn() && request.auth.uid == resource.data.to
+        && resource.data.status == 'pending' && request.resource.data.status == 'active'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt']);
+      allow delete: if signedIn() && request.auth.uid in resource.data.members;
+    }
+
+    // Weekly summary: written by its owner, readable by their active partner.
+    match /progress/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || partners(uid, request.auth.uid));
+      allow write: if request.auth.uid == uid;
+    }
+  }
+}

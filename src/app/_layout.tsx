@@ -10,6 +10,7 @@ import { AppState, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '../components/ui';
 import { reschedule } from '../lib/notifications';
+import { PartnerProvider } from '../lib/partner';
 import { StoreProvider, useStore } from '../lib/store';
 import { usePalette } from '../theme';
 
@@ -45,6 +46,7 @@ function Shell() {
         <Stack.Screen name="new-task" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="wallpaper" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="partner" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
@@ -61,7 +63,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StoreProvider>
         <ToastProvider>
-          <Shell />
+          <PartnerProvider>
+            <Shell />
+          </PartnerProvider>
         </ToastProvider>
       </StoreProvider>
     </SafeAreaProvider>

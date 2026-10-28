@@ -4,8 +4,9 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
 import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
+import { mondayOf, otherSide, usePartner } from '../../lib/partner';
 import { activeTasks, useStore, type Task } from '../../lib/store';
-import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
+import { DAY, ymd, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
 import { BTN, F, R, S, statusColor, usePalette, type Status } from '../../theme';
 
 const GROUP: Record<'red' | 'amber' | 'green', string> = { red: 'Act now', amber: 'Pay attention', green: 'On track' };
@@ -33,6 +34,7 @@ export default function Tasks() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s6, paddingBottom: 140 }}>
         <Txt variant="h1">Tasks</Txt>
         <Txt dim style={{ marginTop: S.s2 }}>{sub}</Txt>
+        <PartnerCard />
         {group('Past deadline', 'red', over)}
         {(['red', 'amber', 'green'] as const).map(st => group(GROUP[st], st, live.filter(t => info(t).st === st)))}
         {!act.length && !paused.length ? (
@@ -50,6 +52,24 @@ export default function Tasks() {
         <Txt style={{ fontFamily: F.uiBold, fontSize: 18, lineHeight: 24 }} color={p.bg}>New task</Txt>
       </Pressable>
     </SafeAreaView>
+  );
+}
+
+function PartnerCard() {
+  const P = usePartner();
+  const p = usePalette();
+  const pending = P.incoming[0];
+  if (!P.active && !pending) return null;
+  const o = P.active ? otherSide(P.active, P.user!.uid) : null, pr = P.progress;
+  const line = pending ? `${pending.fromName || `@${pending.fromUsername}`} wants you as their accountability partner`
+    : !pr || pr.week !== ymd(mondayOf()) ? 'No update this week yet'
+      : `${pr.sessions} ${pr.sessions === 1 ? 'session' : 'sessions'} kept${pr.missed ? ` · ${pr.missed} missed` : ''}${pr.red + pr.over ? ` · ${pr.red + pr.over} need attention` : ''}`;
+  return (
+    <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push('/partner'); }}
+      style={({ pressed }) => ({ marginTop: S.s5, padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise, gap: 2, transform: [{ scale: pressed ? 0.99 : 1 }] })}>
+      <Txt variant="label" dim>{pending ? 'Partner request' : `${o!.name || `@${o!.username}`}'s week`}</Txt>
+      <Txt variant="meta">{line}</Txt>
+    </Pressable>
   );
 }
 
