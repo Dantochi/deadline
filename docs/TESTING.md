@@ -33,7 +33,7 @@ The first run asks to create an Android signing key: answer **yes** and let Expo
 ### 4. Send it to testers
 ```bash
 npx firebase-tools@latest login
-FIREBASE_ANDROID_APP_ID=1:1234567890:android:abc123 npm run distribute:android
+npm run distribute:android   # the Android App ID is built into scripts/distribute.sh
 ```
 Every tester in the `testers` group gets an email. On their phone they:
 1. Open the email and tap **Get started**, then accept the invite.
@@ -43,7 +43,7 @@ Every tester in the `testers` group gets an email. On their phone they:
 ## Each new test build
 ```bash
 npm run build:android:preview
-FIREBASE_ANDROID_APP_ID=... npm run distribute:android
+npm run distribute:android
 ```
 Or, after adding the GitHub secrets below, press a button: **GitHub → Actions → Test build → Run workflow**.
 

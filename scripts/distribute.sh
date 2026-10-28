@@ -14,7 +14,8 @@ groups="${TESTER_GROUPS:-testers}"
 notes="${RELEASE_NOTES:-Deadline test build $(date +%Y-%m-%d). Reply to the invite email with anything that felt off.}"
 
 case "$platform" in
-  android) app_id="${FIREBASE_ANDROID_APP_ID:?Set FIREBASE_ANDROID_APP_ID}"; ext=apk ;;
+  # The Android App ID identifies the Firebase app (it is not a secret); override with FIREBASE_ANDROID_APP_ID.
+  android) app_id="${FIREBASE_ANDROID_APP_ID:-1:134720562004:android:d60bf188e2dd9f68185ec1}"; ext=apk ;;
   ios)     app_id="${FIREBASE_IOS_APP_ID:?Set FIREBASE_IOS_APP_ID}"; ext=ipa ;;
   *) echo "Usage: $0 android|ios" >&2; exit 1 ;;
 esac
