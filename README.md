@@ -6,7 +6,7 @@ check-ins help you actually finish.
 
 Built with Expo SDK 58 (React Native), Expo Router and react-native-svg. This is the **core test build**: onboarding, the life
 grid, tasks with reserved times, check-ins, overdue recovery, pause, local reminders and settings.
-Wisdom, widgets, the countdown screen and Pro come in later builds.
+Widgets, the countdown screen and Pro come in later builds.
 
 ## Run it
 
@@ -28,7 +28,7 @@ emailing it to testers, plus the extra steps for iPhones.
 
 | Path | What it is |
 |---|---|
-| `src/app/` | Screens (Expo Router): `(tabs)/index` Life, `(tabs)/tasks` Tasks, `onboarding`, `new-task`, `settings` |
+| `src/app/` | Screens (Expo Router): `(tabs)/index` Life, `(tabs)/tasks` Tasks, `(tabs)/wisdom` Wisdom, `partner`, `wallpaper`, `onboarding`, `new-task`, `settings` |
 | `src/components/` | Life grid (SVG), status dots with shapes, buttons, date and time fields, icons |
 | `src/lib/store.tsx` | App state saved on the phone (AsyncStorage) |
 | `src/lib/time.ts` | Weeks, status colours by time left, reserved session maths |

@@ -33,6 +33,7 @@ export type State = {
   digest: string[]; // three times a day, HH:MM
   partner?: string; // partner's display name, kept in sync by PartnerProvider
   shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
+  saved?: string[]; // saved Wisdom quotes (quoteKey)
   tasks: Task[];
 };
 
