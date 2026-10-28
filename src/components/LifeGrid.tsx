@@ -1,7 +1,8 @@
-// The life grid: always weeks, 52 per row, one row per year. Rows already lived are removed;
-// the box size comes from the width only, so boxes never resize when units change.
-import { useMemo, useState } from 'react';
-import { PixelRatio, Pressable, View, type LayoutChangeEvent } from 'react-native';
+// The life grid: always weeks, 52 per row, one row per year. Rows already lived are removed unless
+// "Show weeks already lived" is on; then the grid starts at birth and scrolls. The box size comes from
+// the width only, so boxes never resize when units change or lived weeks are shown.
+import { useMemo, useRef, useState, type ComponentRef } from 'react';
+import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { activeTasks, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
@@ -9,23 +10,26 @@ import { statusColor, usePalette, type Palette } from '../theme';
 
 const GAP = 1.5, DECADE = 6;
 
-export function useGridGeometry(width: number, state: State) {
+export function useGridGeometry(width: number, state: State, lived = false) {
   return useMemo(() => {
     const birth = parseBirth(state.birth), wNow = weekNow(birth, state.life);
-    const lr = Math.floor(wNow / 52), rows = state.life - lr;
+    const lr = lived ? 0 : Math.floor(wNow / 52), rows = state.life - lr;
     const u = width / 52;
     const yOf = (r: number) => r * u + (Math.floor((lr + r) / 10) - Math.floor(lr / 10)) * DECADE;
     const h = rows > 0 ? yOf(rows - 1) + u - GAP : 0;
     return { birth, wNow, lr, rows, u, yOf, h };
-  }, [width, state.birth, state.life]);
+  }, [width, state.birth, state.life, lived]);
 }
 
-export function LifeGrid({ state, maxHeight, onSelect, selected, palette }: {
+export function LifeGrid({ state, maxHeight, onSelect, selected, palette, remainingOnly }: {
   state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null; palette?: Palette;
+  /** Ignore the "show lived weeks" setting (the wallpaper image cannot scroll). */ remainingOnly?: boolean;
 }) {
   const system = usePalette(), p = palette ?? system;
   const [width, setWidth] = useState(0);
-  const g = useGridGeometry(width, state);
+  const lived = !!state.showLived && !remainingOnly;
+  const scroller = useRef<ComponentRef<typeof ScrollView>>(null), scrolled = useRef(false);
+  const g = useGridGeometry(width, state, lived);
   const height = Math.min(g.h, maxHeight);
 
   // One <Path> per colour (each made of many rectangles) keeps the native view count tiny.
@@ -66,17 +70,31 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette }: {
     onSelect?.((g.lr + r) * 52 + c);
   };
 
+  const grid = (
+    <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
+      {width ? (
+        <Svg width={width} height={g.h}>
+          {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
+        </Svg>
+      ) : null}
+    </Pressable>
+  );
+
   return (
     <View onLayout={onLayout} style={{ width: '100%', height, overflow: 'hidden' }}
       accessible accessibilityRole="image"
-      accessibilityLabel={`Life grid: ${state.life * 52 - g.wNow} of ${state.life * 52} weeks left.`}>
-      <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
-        {width ? (
-          <Svg width={width} height={g.h}>
-            {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
-          </Svg>
-        ) : null}
-      </Pressable>
+      accessibilityLabel={`Life grid: ${g.wNow} weeks lived, ${state.life * 52 - g.wNow} of ${state.life * 52} left.`}>
+      {lived && g.h > maxHeight ? (
+        // Opens on this year's row with a little of the past above it.
+        <ScrollView ref={scroller} nestedScrollEnabled showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => {
+            if (scrolled.current) return;
+            scrolled.current = true;
+            scroller.current?.scrollTo({ y: Math.max(0, Math.min(g.h - maxHeight, g.yOf(Math.floor(g.wNow / 52)) - maxHeight * 0.35)), animated: false });
+          }}>
+          {grid}
+        </ScrollView>
+      ) : grid}
     </View>
   );
 }

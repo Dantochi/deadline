@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
-import { BTN, F, R, S, statusColor, usePalette, type Status } from '../theme';
+import { BTN, F, R, S, T, statusColor, usePalette, type Status } from '../theme';
 
 export const haptic = {
   tick: () => Haptics.selectionAsync().catch(() => {}),
@@ -13,12 +13,13 @@ type TxtProps = TextProps & { variant?: 'h1' | 'h2' | 'body' | 'label' | 'meta' 
 export function Txt({ variant = 'body', dim, color, style, ...rest }: TxtProps) {
   const p = usePalette();
   const v: Record<string, TextStyle> = {
-    h1: { fontFamily: F.uiHeavy, fontSize: 34, lineHeight: 38, letterSpacing: -1 },
-    h2: { fontFamily: F.uiBold, fontSize: 21, lineHeight: 26 },
-    body: { fontFamily: F.uiMedium, fontSize: 17, lineHeight: 23 },
-    label: { fontFamily: F.uiBold, fontSize: 12, lineHeight: 16, letterSpacing: 1.6, textTransform: 'uppercase' },
-    meta: { fontFamily: F.ui, fontSize: 15, lineHeight: 20 },
-    small: { fontFamily: F.ui, fontSize: 13, lineHeight: 18 },
+    h1: { fontFamily: F.uiHeavy, fontSize: T.x5, lineHeight: 40, letterSpacing: -1 },
+    h2: { fontFamily: F.uiBold, fontSize: T.xl, lineHeight: 28 },
+    body: { fontFamily: F.uiMedium, fontSize: T.base, lineHeight: 24 },
+    label: { fontFamily: F.uiBold, fontSize: T.xs, lineHeight: 16, letterSpacing: 1.6, textTransform: 'uppercase', fontVariant: ['tabular-nums'] },
+    meta: { fontFamily: F.ui, fontSize: T.md, lineHeight: 20, fontVariant: ['tabular-nums'] },
+    // Small text gets a touch of extra tracking, as optical sizing does for small sizes.
+    small: { fontFamily: F.ui, fontSize: T.sm, lineHeight: 18, letterSpacing: 0.1, fontVariant: ['tabular-nums'] },
   };
   return <Text maxFontSizeMultiplier={2} style={[v[variant], { color: color ?? (dim ? p.dim : p.ink) }, style]} {...rest} />;
 }
@@ -39,7 +40,7 @@ export function Btn({ label, icon, kind = 'pill', style, onPress, ...rest }: Btn
       {...rest}
     >
       {icon}
-      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: primary ? 18 : 16, lineHeight: primary ? 24 : 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
+      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: primary ? T.lg : T.md, lineHeight: primary ? 24 : 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
   );
 }
@@ -49,7 +50,7 @@ export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPr
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic.tick(); onPress(); }}
       style={[styles.chip, { borderColor: on ? p.ink : p.line, backgroundColor: on ? p.ink : 'transparent' }]}>
-      <Txt style={{ fontFamily: F.uiSemi, fontSize: 15 }} color={on ? p.bg : p.ink}>{label}</Txt>
+      <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={on ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
   );
 }
@@ -106,7 +107,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {msg ? (
         <View pointerEvents="none" style={[styles.toast, { backgroundColor: p.ink }]} accessibilityLiveRegion="polite">
-          <Txt style={{ fontFamily: F.uiSemi, fontSize: 15 }} color={p.bg}>{msg}</Txt>
+          <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={p.bg}>{msg}</Txt>
         </View>
       ) : null}
     </ToastCtx.Provider>

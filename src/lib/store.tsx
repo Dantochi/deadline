@@ -28,6 +28,7 @@ export type State = {
   birth: string; // YYYY-MM-DD
   life: number;
   showGrid: boolean;
+  showLived?: boolean; // draw the weeks already lived, from birth (the grid then scrolls)
   shapes: boolean;
   focus?: string;
   digest: string[]; // three times a day, HH:MM

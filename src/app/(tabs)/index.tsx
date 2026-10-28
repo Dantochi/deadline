@@ -30,6 +30,9 @@ export default function Life() {
     return Math.max(0, Math.floor((end - now) / (YEAR / 12)));
   }, [unit, state.birth, state.life, wNow]);
 
+  // Time already lived, in the same unit as the big number.
+  const lived = unit === 'weeks' ? wNow : unit === 'years' ? ageYears(birth) : Math.floor((Date.now() - +birth) / (YEAR / 12));
+
   const today = new Date(), bday = birth.getMonth() === today.getMonth() && birth.getDate() === today.getDate();
   const next = activeTasks(state)[0];
 
@@ -56,7 +59,7 @@ export default function Life() {
         <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: S.s3, marginTop: S.s2, marginBottom: S.s5 }}>
           <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{unit} left</Txt> until {state.life}</Txt>
-          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{fmt(ageYears(birth))} years</Txt> lived</Txt>
+          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{fmt(lived)} {unit}</Txt> lived</Txt>
         </View>
         {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} /> : null}
       </View>

@@ -77,7 +77,7 @@ function Week({ pr, name }: { pr: Progress | null; name: string }) {
   const thisWeek = pr.week === ymd(mondayOf());
   const when = pr.updatedAt ? Math.round((Date.now() - pr.updatedAt.toMillis()) / 36e5) : null;
   const stat = (n: number, label: string) => (
-    <View style={{ flex: 1 }}><Txt style={{ fontFamily: F.dot, fontSize: 34, lineHeight: 38 }}>{fmt(thisWeek ? n : 0)}</Txt><Txt variant="small" dim>{label}</Txt></View>
+    <View style={{ flex: 1 }}><Txt style={{ fontFamily: F.dot, fontSize: 34, lineHeight: 40 }}>{fmt(thisWeek ? n : 0)}</Txt><Txt variant="small" dim>{label}</Txt></View>
   );
   const counts = [[pr.over, 'past deadline'], [pr.red, 'act now'], [pr.amber, 'pay attention'], [pr.green, 'on track']]
     .filter(([n]) => +n > 0).map(([n, l]) => `${n} ${l}`).join(' · ');

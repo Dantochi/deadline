@@ -49,7 +49,7 @@ export default function Tasks() {
       <Pressable accessibilityRole="button" accessibilityLabel="New task" onPress={() => { haptic.tick(); router.push('/new-task'); }}
         style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 24, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
         <PlusIcon color={p.bg} />
-        <Txt style={{ fontFamily: F.uiBold, fontSize: 18, lineHeight: 24 }} color={p.bg}>New task</Txt>
+        <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
       </Pressable>
     </SafeAreaView>
   );
@@ -189,7 +189,7 @@ function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => vo
             <View style={{ gap: S.s1 }}>
             <TextInput value={notes} onChangeText={editNotes} onBlur={saveNotes} multiline
               placeholder="Notes: progress, links, what is in the way" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-              style={{ minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.ui, fontSize: 16 }} />
+              style={{ minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24 }} />
             <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1, minHeight: 20 }}>
               {noteState === 'saved' ? <CheckIcon size={16} color={statusColor(p, 'green', true)} /> : null}
               <Txt variant="small" dim>{noteState === 'saved' ? 'Saved' : noteState === 'saving' ? 'Saving…' : 'Saves as you type'}</Txt>

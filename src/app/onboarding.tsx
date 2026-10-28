@@ -30,7 +30,7 @@ export default function Onboarding() {
   );
   const heading = (t: string, sub?: string) => (
     <View style={{ gap: S.s2 }}>
-      <Txt style={{ fontFamily: F.uiHeavy, fontSize: 42, lineHeight: 44, letterSpacing: -1.4 }}>{t}</Txt>
+      <Txt style={{ fontFamily: F.uiHeavy, fontSize: 43, lineHeight: 48, letterSpacing: -1.4 }}>{t}</Txt>
       {sub ? <Txt dim>{sub}</Txt> : null}
     </View>
   );

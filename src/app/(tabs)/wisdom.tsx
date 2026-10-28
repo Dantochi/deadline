@@ -89,7 +89,7 @@ export default function Wisdom() {
           <View {...swipe.panHandlers} style={{ marginTop: S.s5, paddingTop: S.s6, paddingHorizontal: S.s5, paddingBottom: S.s2, backgroundColor: p.raise, borderRadius: R.xl, gap: 18 }}>
             <Txt aria-hidden style={{ fontFamily: F.dot, fontSize: 64, lineHeight: 40, height: 34, color: p.dim }}>“</Txt>
             <Animated.View style={{ opacity: fade, gap: 18 }} accessibilityLiveRegion="polite">
-              <Txt style={{ fontFamily: F.uiMedium, fontSize: 23, lineHeight: 30, letterSpacing: -0.3, minHeight: 30 * 4 }}>{q.q}</Txt>
+              <Txt style={{ fontFamily: F.uiMedium, fontSize: 24, lineHeight: 32, letterSpacing: -0.3, minHeight: 32 * 4 }}>{q.q}</Txt>
               <View>
                 <Txt style={{ fontFamily: F.uiBold }}>{q.who}</Txt>
                 <Txt variant="small" dim>{q.src}</Txt>

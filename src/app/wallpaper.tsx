@@ -61,7 +61,7 @@ export default function Wallpaper() {
               {/* Top third stays clear for the lock screen clock. */}
               <View style={{ height: H * 0.34 }} />
               <View style={{ width: W * 0.78 }}>
-                <LifeGrid state={state} palette={w} maxHeight={H * 0.4} />
+                <LifeGrid state={state} palette={w} maxHeight={H * 0.4} remainingOnly />
                 <Text allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: W * 0.11, lineHeight: W * 0.12, color: w.ink, marginTop: W * 0.06 }}>{fmt(weeksLeft)}</Text>
                 <Text allowFontScaling={false} style={{ fontFamily: F.ui, fontSize: W * 0.036, color: w.dim, marginTop: W * 0.01 }}>
                   <Text style={{ fontFamily: F.uiSemi, color: w.ink }}>weeks left</Text> · {fmt(ageYears(birth))} years lived

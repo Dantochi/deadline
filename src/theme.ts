@@ -35,6 +35,11 @@ export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64 
 export const R = { sm: 10, md: 14, lg: 20, xl: 28 };
 export const BTN = { m: 48, l: 56 };
 
+// Type scale: one ratio (x1.125, a "major second") from the 17pt body size, so every size relates to every other.
+// Line heights sit on the 4pt grid (13 uses 18 for readable small text). Ratio consistency, not any "magic" ratio,
+// is what the evidence supports (Ozok & Salvendy 2000; Ngo et al. 2003); the golden ratio has weak support (Green 1995).
+export const T = { xs: 12, sm: 13, md: 15, base: 17, lg: 19, xl: 21, x2: 24, x5: 34, x6: 43 };
+
 export const F = {
   ui: 'SchibstedGrotesk_400Regular',
   uiMedium: 'SchibstedGrotesk_500Medium',
