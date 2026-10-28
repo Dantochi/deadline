@@ -29,7 +29,10 @@ file="dist/deadline-$platform.$ext"
 echo "Downloading $url"
 curl -fsSL "$url" -o "$file"
 
+# Groups and notes go in files: long quoted arguments can get lost on the way through npx on Windows.
+printf '%s' "$groups" > dist/groups.txt
+printf '%s' "$notes" > dist/notes.txt
 echo "Uploading to Firebase App Distribution (groups: $groups)..."
 npx --yes firebase-tools@latest appdistribution:distribute "$file" \
-  --app "$app_id" --groups "$groups" --release-notes "$notes"
+  --app "$app_id" --groups-file dist/groups.txt --release-notes-file dist/notes.txt
 echo "Done. Testers in '$groups' get an email with the install link."
