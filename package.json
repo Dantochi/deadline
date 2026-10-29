@@ -37,15 +37,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
-    "build:android:preview": "eas build --platform android --profile preview",
-    "build:ios:preview": "eas build --platform ios --profile preview",
+    "build:android:preview": "npx --yes eas-cli@latest build --platform android --profile preview",
+    "build:ios:preview": "npx --yes eas-cli@latest build --platform ios --profile preview",
     "distribute:android": "bash scripts/distribute.sh android",
     "distribute:ios": "bash scripts/distribute.sh ios",
-    "build:android:play": "eas build --platform android --profile production",
-    "submit:android:play": "eas submit --platform android --profile production --latest",
-    "release:android:play": "eas build --platform android --profile production --auto-submit",
-    "deploy:site": "firebase deploy --only hosting",
-    "deploy:rules": "firebase deploy --only firestore:rules"
+    "build:android:play": "npx --yes eas-cli@latest build --platform android --profile production",
+    "submit:android:play": "npx --yes eas-cli@latest submit --platform android --profile production --latest",
+    "release:android:play": "npx --yes eas-cli@latest build --platform android --profile production --auto-submit",
+    "deploy:site": "npx --yes firebase-tools@latest deploy --only hosting",
+    "deploy:rules": "npx --yes firebase-tools@latest deploy --only firestore:rules"
   },
   "private": true
 }
