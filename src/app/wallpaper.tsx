@@ -7,7 +7,7 @@ import { Dimensions, Platform, Pressable, ScrollView, Text, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { CloseIcon } from '../components/icons';
-import { LifeGrid } from '../components/LifeGrid';
+import { DECADE, LifeGrid } from '../components/LifeGrid';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { ageYears, fmt, parseBirth, weekNow } from '../lib/time';
@@ -19,6 +19,7 @@ export default function Wallpaper() {
   const p = usePalette();
   const [look, setLook] = useState<'dark' | 'light'>(p === palettes.light ? 'light' : 'dark');
   const [saving, setSaving] = useState(false);
+  const [withLived, setWithLived] = useState(!!state.showLived);
   const shot = useRef<ComponentRef<typeof View>>(null);
 
   const { width: W, height: H } = Dimensions.get('screen');
@@ -26,6 +27,12 @@ export default function Wallpaper() {
   const birth = parseBirth(state.birth);
   const weeksLeft = state.life * 52 - weekNow(birth, state.life);
   const scale = Math.min(0.56, (W * 0.8) / W);
+  // An image cannot scroll, so the whole life must fit: with lived weeks the grid narrows until every row fits
+  // (boxes are square, so height = rows × width / 52 plus the decade gaps).
+  const gridMax = H * (withLived ? 0.48 : 0.4);
+  const rows = withLived ? state.life : state.life - Math.floor(weekNow(birth, state.life) / 52);
+  const gaps = Math.floor((state.life - 1) / 10) - Math.floor((state.life - rows) / 10);
+  const gridW = Math.min(W * 0.78, Math.floor(((gridMax - gaps * DECADE) * 52) / rows) - 1);
 
   const save = async () => {
     if (!shot.current || saving) return;
@@ -58,10 +65,10 @@ export default function Wallpaper() {
           <View style={{ width: W, height: H, transform: [{ scale }], transformOrigin: 'top left' }}>
             {/* Captured at full size: the scale above only affects the preview. */}
             <View ref={shot} collapsable={false} style={{ width: W, height: H, backgroundColor: w.bg, alignItems: 'center' }}>
-              {/* Top third stays clear for the lock screen clock. */}
-              <View style={{ height: H * 0.34 }} />
-              <View style={{ width: W * 0.78 }}>
-                <LifeGrid state={state} palette={w} maxHeight={H * 0.4} remainingOnly />
+              {/* The top stays clear for the lock screen clock. */}
+              <View style={{ height: H * (withLived ? 0.28 : 0.34) }} />
+              <View style={{ width: gridW }}>
+                <LifeGrid state={state} palette={w} maxHeight={gridMax} lived={withLived} />
                 <Text allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: W * 0.11, lineHeight: W * 0.12, color: w.ink, marginTop: W * 0.06 }}>{fmt(weeksLeft)}</Text>
                 <Text allowFontScaling={false} style={{ fontFamily: F.ui, fontSize: W * 0.036, color: w.dim, marginTop: W * 0.01 }}>
                   <Text style={{ fontFamily: F.uiSemi, color: w.ink }}>weeks left</Text> · {fmt(ageYears(birth))} years lived
@@ -71,6 +78,10 @@ export default function Wallpaper() {
           </View>
         </View>
 
+        <View style={{ flexDirection: 'row', gap: S.s1, alignSelf: 'stretch' }}>
+          <View style={{ flex: 1 }}><Chip label="Weeks ahead" on={!withLived} onPress={() => setWithLived(false)} /></View>
+          <View style={{ flex: 1 }}><Chip label="Whole life" on={withLived} onPress={() => setWithLived(true)} /></View>
+        </View>
         <View style={{ flexDirection: 'row', gap: S.s1, alignSelf: 'stretch' }}>
           <View style={{ flex: 1 }}><Chip label="Dark" on={look === 'dark'} onPress={() => setLook('dark')} /></View>
           <View style={{ flex: 1 }}><Chip label="Light" on={look === 'light'} onPress={() => setLook('light')} /></View>

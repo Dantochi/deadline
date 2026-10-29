@@ -8,7 +8,8 @@ import { activeTasks, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
 import { statusColor, usePalette, type Palette } from '../theme';
 
-const GAP = 1.5, DECADE = 6;
+const GAP = 1.5;
+export const DECADE = 6;
 
 export function useGridGeometry(width: number, state: State, lived = false) {
   return useMemo(() => {
@@ -21,13 +22,13 @@ export function useGridGeometry(width: number, state: State, lived = false) {
   }, [width, state.birth, state.life, lived]);
 }
 
-export function LifeGrid({ state, maxHeight, onSelect, selected, palette, remainingOnly }: {
+export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived: livedProp }: {
   state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null; palette?: Palette;
-  /** Ignore the "show lived weeks" setting (the wallpaper image cannot scroll). */ remainingOnly?: boolean;
+  /** Overrides the "show weeks already lived" setting (the wallpaper chooses its own). */ lived?: boolean;
 }) {
   const system = usePalette(), p = palette ?? system;
   const [width, setWidth] = useState(0);
-  const lived = !!state.showLived && !remainingOnly;
+  const lived = livedProp ?? !!state.showLived;
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null), scrolled = useRef(false);
   const g = useGridGeometry(width, state, lived);
   const height = Math.min(g.h, maxHeight);
