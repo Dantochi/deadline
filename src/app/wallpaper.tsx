@@ -60,7 +60,7 @@ export default function Wallpaper() {
             {/* Captured at full size: the scale above only affects the preview. */}
             <View ref={shot} collapsable={false} style={{ width: W, height: H, backgroundColor: w.bg, alignItems: 'center' }}>
               {/* Top third stays clear for the lock screen clock. Boxes keep their usual size; with lived weeks
-                  the image shows the same window the Life screen opens on, and rows outside it are left out. */}
+                  the image shows the part of the grid last scrolled to on the Life screen; rows outside it are left out. */}
               <View style={{ height: H * 0.34 }} />
               <View style={{ width: W * 0.78 }}>
                 <LifeGrid state={state} palette={w} maxHeight={H * 0.4} lived={withLived} frozen />

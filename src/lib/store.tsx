@@ -29,7 +29,8 @@ export type State = {
   life: number;
   showGrid: boolean;
   appearance?: 'system' | 'light' | 'dark'; // theme override; default follows the phone
-  showLived?: boolean; // draw the weeks already lived, from birth (the grid then scrolls)
+  showLived?: boolean;
+  gridTop?: number; // row (year of life, fractional) at the top of the lived-weeks grid where the person last scrolled // draw the weeks already lived, from birth (the grid then scrolls)
   shapes: boolean;
   focus?: string;
   digest: string[]; // three times a day, HH:MM

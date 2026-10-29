@@ -2,9 +2,9 @@
 // "Show weeks already lived" is on; then the grid starts at birth and scrolls. The box size comes from
 // the width only, so boxes never resize when units change or lived weeks are shown.
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
-import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent } from 'react-native';
+import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { activeTasks, type State } from '../lib/store';
+import { activeTasks, useStore, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
 import { statusColor, usePalette, type Palette } from '../theme';
 
@@ -73,7 +73,19 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   };
 
   // Where the lived view opens: this year's row with some of the past above it. Rows outside are cropped.
-  const openAt = Math.max(0, Math.min(g.h - maxHeight, g.yOf(Math.floor(g.wNow / 52)) - maxHeight * 0.35));
+  // Where the lived view opens: the row the person last scrolled to (remembered as a year of life, so it maps to
+  // the same place at any box size, e.g. the wallpaper), or this year with some of the past above it.
+  const { update } = useStore();
+  const yAtRow = (row: number) => { const k = Math.floor(row); return g.yOf(k) + (row - k) * g.u; };
+  const fallback = g.yOf(Math.floor(g.wNow / 52)) - maxHeight * 0.35;
+  const openAt = Math.max(0, Math.min(g.h - maxHeight, state.gridTop != null ? yAtRow(state.gridTop) : fallback));
+  const remember = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    let k = 0;
+    for (let r = 0; r < g.rows; r++) if (g.yOf(r) <= y) k = r;
+    const row = Math.round((k + Math.min(1, (y - g.yOf(k)) / g.u)) * 100) / 100;
+    if (row !== state.gridTop) update(s => ({ ...s, gridTop: row }));
+  };
 
   const grid = (
     <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
@@ -92,6 +104,7 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
       {lived && g.h > maxHeight ? (
         frozen ? <View style={{ transform: [{ translateY: -openAt }] }}>{grid}</View> : (
           <ScrollView ref={scroller} nestedScrollEnabled showsVerticalScrollIndicator={false}
+            onScrollEndDrag={remember} onMomentumScrollEnd={remember}
             onContentSizeChange={() => {
               if (scrolled.current) return;
               scrolled.current = true;
