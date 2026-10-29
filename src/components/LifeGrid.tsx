@@ -22,9 +22,10 @@ export function useGridGeometry(width: number, state: State, lived = false) {
   }, [width, state.birth, state.life, lived]);
 }
 
-export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived: livedProp }: {
+export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived: livedProp, frozen }: {
   state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null; palette?: Palette;
   /** Overrides the "show weeks already lived" setting (the wallpaper chooses its own). */ lived?: boolean;
+  /** Show the same window the scroll view opens on, without scrolling (for the wallpaper image). */ frozen?: boolean;
 }) {
   const system = usePalette(), p = palette ?? system;
   const [width, setWidth] = useState(0);
@@ -71,6 +72,9 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
     onSelect?.((g.lr + r) * 52 + c);
   };
 
+  // Where the lived view opens: this year's row with some of the past above it. Rows outside are cropped.
+  const openAt = Math.max(0, Math.min(g.h - maxHeight, g.yOf(Math.floor(g.wNow / 52)) - maxHeight * 0.35));
+
   const grid = (
     <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
       {width ? (
@@ -86,15 +90,16 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
       accessible accessibilityRole="image"
       accessibilityLabel={`Life grid: ${g.wNow} weeks lived, ${state.life * 52 - g.wNow} of ${state.life * 52} left.`}>
       {lived && g.h > maxHeight ? (
-        // Opens on this year's row with a little of the past above it.
-        <ScrollView ref={scroller} nestedScrollEnabled showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => {
-            if (scrolled.current) return;
-            scrolled.current = true;
-            scroller.current?.scrollTo({ y: Math.max(0, Math.min(g.h - maxHeight, g.yOf(Math.floor(g.wNow / 52)) - maxHeight * 0.35)), animated: false });
-          }}>
-          {grid}
-        </ScrollView>
+        frozen ? <View style={{ transform: [{ translateY: -openAt }] }}>{grid}</View> : (
+          <ScrollView ref={scroller} nestedScrollEnabled showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => {
+              if (scrolled.current) return;
+              scrolled.current = true;
+              scroller.current?.scrollTo({ y: openAt, animated: false });
+            }}>
+            {grid}
+          </ScrollView>
+        )
       ) : grid}
     </View>
   );
