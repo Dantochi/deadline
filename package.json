@@ -40,7 +40,12 @@
     "build:android:preview": "eas build --platform android --profile preview",
     "build:ios:preview": "eas build --platform ios --profile preview",
     "distribute:android": "bash scripts/distribute.sh android",
-    "distribute:ios": "bash scripts/distribute.sh ios"
+    "distribute:ios": "bash scripts/distribute.sh ios",
+    "build:android:play": "eas build --platform android --profile production",
+    "submit:android:play": "eas submit --platform android --profile production --latest",
+    "release:android:play": "eas build --platform android --profile production --auto-submit",
+    "deploy:site": "firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "private": true
 }

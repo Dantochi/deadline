@@ -21,7 +21,7 @@ The native date picker needs a development build rather than Expo Go:
 
 ## Test builds for other people
 
-See [docs/TESTING.md](docs/TESTING.md) for Firebase App Distribution: building an installable APK on EAS and
+See [docs/PLAY-STORE.md](docs/PLAY-STORE.md) for Google Play (automatic updates) and [docs/TESTING.md](docs/TESTING.md) for Firebase App Distribution: building an installable APK on EAS and
 emailing it to testers, plus the extra steps for iPhones.
 
 ## Code map
