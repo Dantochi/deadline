@@ -95,11 +95,11 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
 export default function Events() {
   const { state, update } = useStore();
   const p = usePalette();
-  const params = useLocalSearchParams<{ week?: string }>();
+  const params = useLocalSearchParams<{ week?: string; date?: string }>();
   const birth = parseBirth(state.birth);
   const fresh = (date: string): LifeEvent => ({ id: uid(), title: '', date, color: EVENT_COLORS[0].hex });
   const [editing, setEditing] = useState<LifeEvent | null>(() =>
-    params.week != null ? fresh(ymd(new Date(weekStart(birth, Number(params.week))))) : null);
+    params.date ? fresh(params.date) : params.week != null ? fresh(ymd(new Date(weekStart(birth, Number(params.week))))) : null);
 
   const events = [...(state.events ?? [])].sort((a, b) => a.date.localeCompare(b.date));
   const today = ymd(new Date());

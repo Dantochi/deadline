@@ -2,8 +2,10 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ColorSwatches } from '../../components/ColorSwatches';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
 import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
+import { taskColor } from '../../lib/calendar';
 import { mondayOf, otherSide, usePartner } from '../../lib/partner';
 import { reviewDue, weekKey, weekReview } from '../../lib/review';
 import { activeTasks, useStore, type Task } from '../../lib/store';
@@ -100,6 +102,7 @@ function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => vo
   const toast = useToast();
   const p = usePalette();
   const [armDelete, setArmDelete] = useState(false);
+  const [pickColor, setPickColor] = useState(false);
   const [notes, setNotes] = useState(t.notes ?? '');
   // Notes save a moment after typing stops (and on blur), with a visible "Saved" so people trust it.
   const [noteState, setNoteState] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -206,6 +209,13 @@ function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => vo
           {whenLine(t) && !t.done && !paused ? <Txt variant="meta"><Txt variant="meta" dim>Reserved · </Txt>{whenLine(t)}</Txt> : null}
           {t.ifthen && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Backup · </Txt>{t.ifthen}</Txt> : null}
           {t.cue && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Cue · </Txt>{t.cue}</Txt> : null}
+
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: pickColor }} onPress={() => setPickColor(v => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 44, marginTop: -S.s2 }}>
+            <View style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: taskColor(p, t) }} />
+            <Txt variant="meta"><Txt variant="meta" dim>Calendar colour · </Txt>{t.color ? 'Your colour' : 'Auto (status)'}</Txt>
+          </Pressable>
+          {pickColor ? <ColorSwatches value={t.color} auto onChange={c => { updateTask(t.id, x => ({ ...x, color: c })); setPickColor(false); }} /> : null}
 
           {!t.done ? (
             <View style={{ gap: S.s1 }}>

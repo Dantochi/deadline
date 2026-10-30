@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ColorSwatches } from '../components/ColorSwatches';
 import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
@@ -29,6 +30,7 @@ export default function NewTask() {
   const [more, setMore] = useState(false);
   const [ifthen, setIfthen] = useState('');
   const [cue, setCue] = useState('');
+  const [color, setColor] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
   const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
@@ -40,7 +42,7 @@ export default function NewTask() {
     const t: Task = {
       id: uid(), title: title.trim(), start: Date.now(), deadline: dl,
       slot: days.length ? { days, time: `${pad(time.getHours())}:${pad(time.getMinutes())}` } : null,
-      place: place.trim(), ifthen: ifthen.trim(), cue: cue.trim(),
+      place: place.trim(), ifthen: ifthen.trim(), cue: cue.trim(), color,
     };
     update(s => ({ ...s, tasks: [...s.tasks, t] }));
     haptic.ok();
@@ -89,6 +91,12 @@ export default function NewTask() {
           <View style={{ gap: S.s2 }}>
             <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Where?</Txt>
             <TextInput value={place} onChangeText={setPlace} placeholder="At my desk" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
+          </View>
+
+          <View style={{ gap: S.s2 }}>
+            <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Colour on the Year calendar</Txt>
+            <ColorSwatches value={color} onChange={setColor} auto />
+            <Txt variant="small" dim>Auto follows the status: green, then amber, then red as time runs out.</Txt>
           </View>
 
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: more }} onPress={() => setMore(m => !m)} style={{ minHeight: 48, justifyContent: 'center' }}>

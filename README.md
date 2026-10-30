@@ -45,5 +45,6 @@ emailing it to testers, plus the extra steps for iPhones.
 - Settings → Lock screen wallpaper saves a full-size image of the grid to Photos.
 - Settings → Important dates (or "+ Mark" on a tapped week) colours chosen weeks: one day, a span, or every year.
 - Weekly review ("Your week", Sundays 18:00 and a card on Sun/Mon), digest preview in Settings, Android home-screen widgets (Small, Medium, Large, Deadlines).
+- Year tab: every day of a chosen year as a box; task days in the task's colour (tinted while running, full on the deadline), important dates, and a dot for reserved sessions.
 - iOS allows 64 scheduled notifications per app, so reminders are scheduled four days ahead and refreshed each time
   the app opens or anything changes.

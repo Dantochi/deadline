@@ -53,3 +53,9 @@ export const BookIcon = ({ size = 20, color }: P) => (
 export const ArrowOutIcon = ({ size = 18, color }: P) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round"><Path d="M7 17L17 7M9 7h8v8" /></Svg>
 );
+export const CalendarIcon = ({ size = 24, color }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x={3.5} y={5} width={17} height={15.5} rx={3} /><Path d="M3.5 10h17M8 3v4M16 3v4" />
+    <Rect x={7} y={13} width={3} height={3} rx={0.6} fill={color} stroke="none" /><Rect x={14} y={13} width={3} height={3} rx={0.6} fill={color} stroke="none" opacity={0.4} />
+  </Svg>
+);

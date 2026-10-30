@@ -22,6 +22,7 @@ export type Task = {
   done?: boolean;
   doneAt?: number;
   letGo?: boolean;
+  color?: string | null; // the person's colour for this task on the Year calendar (default: status colour)
 };
 
 export type State = {
