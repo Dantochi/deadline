@@ -5,12 +5,37 @@ import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Chip, Txt, useToast } from '../components/ui';
-import { askPermission, nextReminderLabel, permissionStatus } from '../lib/notifications';
+import { Btn, Chip, StatusDot, Txt, useToast } from '../components/ui';
+import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { usePartner } from '../lib/partner';
 import { DEFAULT_STATE, useStore } from '../lib/store';
-import { addYears, pad, parseBirth, ymd } from '../lib/time';
-import { F, S, usePalette } from '../theme';
+import { addYears, pad, parseBirth, slotLabel, ymd } from '../lib/time';
+import { F, R, S, usePalette } from '../theme';
+
+// What the next digest notification will say: built by the same code that schedules it.
+function DigestPreview() {
+  const { state } = useStore();
+  const p = usePalette();
+  const at = nextDigestAt(state), c = digestContent(state, at), d = new Date(at);
+  return (
+    <View style={{ marginTop: S.s3, gap: S.s2 }}>
+      <Txt variant="small" dim>Arrives {slotLabel(at)}. One notification, most urgent first.</Txt>
+      <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise2, gap: S.s1 }}>
+        <Txt variant="small" dim><Txt variant="small" style={{ fontFamily: F.uiSemi }}>Deadline</Txt> · {pad(d.getHours())}:{pad(d.getMinutes())}</Txt>
+        <Txt style={{ fontFamily: F.uiBold }}>{c.title}</Txt>
+        {c.slots.map((l, i) => <Txt key={i} variant="meta" dim>{l}</Txt>)}
+        {c.tasks.map((t, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 28 }}>
+            <StatusDot st={t.st} shapes={state.shapes} size={8} />
+            <Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
+            <Txt variant="small" dim>{t.left}</Txt>
+          </View>
+        ))}
+        {!c.tasks.length ? <Txt variant="meta" dim>Add a deadline to start a clock.</Txt> : null}
+      </View>
+    </View>
+  );
+}
 
 export default function Settings() {
   const { state, update } = useStore();
@@ -18,6 +43,7 @@ export default function Settings() {
   const p = usePalette();
   const [perm, setPerm] = useState<string>('…');
   const [armReset, setArmReset] = useState(false);
+  const [showDigest, setShowDigest] = useState(false);
   const partner = usePartner();
   const partnerSub = partner.active ? `${state.partner}. Sunday check-ins are on.`
     : partner.incoming.length ? `${partner.incoming[0].fromName || `@${partner.incoming[0].fromUsername}`} asked to be your partner`
@@ -70,6 +96,7 @@ export default function Settings() {
           {row('Show life grid', 'Turn off to see only the number', <Switch value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
           {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Switch value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
           {row('Important dates', `${(state.events ?? []).length || 'No'} dates on your life grid`, <Btn label="Open" onPress={() => router.push('/events')} />)}
+          {row('Widgets', 'Your weeks and deadlines on the home screen', <Btn label="Open" onPress={() => router.push('/widgets')} />)}
           {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn label="Make" onPress={() => router.push('/wallpaper')} />)}
           {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
@@ -91,9 +118,12 @@ export default function Settings() {
               </View>
             ))}
           </View>
+          <Btn style={{ marginTop: S.s3 }} label={showDigest ? 'Hide preview' : 'Preview next digest'} onPress={() => setShowDigest(!showDigest)} />
+          {showDigest ? <DigestPreview /> : null}
         </>)}
 
         {group('More', <>
+          {row('Weekly review', 'Arrives every Sunday at 18:00', <Btn label="Open" onPress={() => router.push('/review')} />)}
           {row('Replay intro', undefined, <Btn label="Replay" onPress={() => { update(s => ({ ...s, onboarded: false })); router.replace('/onboarding'); }} />)}
           {row('Erase everything', 'Removes all tasks and settings on this phone', <Btn label={armReset ? 'Tap again' : 'Erase'} onPress={() => {
             if (!armReset) return setArmReset(true);

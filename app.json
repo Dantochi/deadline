@@ -46,6 +46,62 @@
             "photo"
           ]
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/doto/800ExtraBold/Doto_800ExtraBold.ttf",
+            "./node_modules/@expo-google-fonts/schibsted-grotesk/600SemiBold/SchibstedGrotesk_600SemiBold.ttf"
+          ],
+          "widgets": [
+            {
+              "name": "LifeSmall",
+              "label": "Deadline \u00b7 Weeks left",
+              "description": "Your weeks left, at a glance",
+              "minWidth": "110dp",
+              "minHeight": "50dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 1,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 7200000,
+              "widgetCategory": "home_screen|keyguard"
+            },
+            {
+              "name": "LifeMedium",
+              "label": "Deadline \u00b7 Life in years",
+              "description": "Weeks left and your whole life in years",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 7200000
+            },
+            {
+              "name": "LifeLarge",
+              "label": "Deadline \u00b7 Next ten years",
+              "description": "Weeks left, your next deadline and the next ten years in weeks",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 7200000
+            },
+            {
+              "name": "Tasks",
+              "label": "Deadline \u00b7 Deadlines",
+              "description": "Your most urgent deadlines",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 7200000
+            }
+          ]
+        }
       ]
     ],
     "scheme": "deadline",

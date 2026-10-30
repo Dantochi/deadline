@@ -35,7 +35,29 @@ export async function askPermission() {
   return p.granted;
 }
 
-type Planned = { at: number; title: string; body: string };
+type Planned = { at: number; title: string; body: string; url?: string };
+
+const shape = (st: string) => (st === 'red' ? '▲' : st === 'amber' ? '◆' : '●');
+
+/** One digest: most urgent first, with the next reserved times (within 36 hours of when it arrives). */
+export function digestContent(state: State, at: number) {
+  const act = activeTasks(state), red = act.filter(t => info(t).st === 'red' || info(t).left < 0);
+  const slots = act.map(t => ({ t, n: nextSlot(t, at) })).filter(x => x.n != null && x.n - at < 36 * 36e5)
+    .sort((a, b) => a.n! - b.n!).slice(0, 2).map(x => `${slotLabel(x.n!)} is reserved for \u201c${x.t.title}\u201d.`);
+  const tasks = act.slice(0, 4).map(t => ({ title: t.title, st: info(t).st, left: leftShort(info(t).left) }));
+  const title = red.length ? `${red.length} ${red.length === 1 ? 'task needs' : 'tasks need'} you` : 'Everything is on track';
+  const lines = [...slots, ...tasks.map(x => `${state.shapes === false ? '' : shape(x.st) + ' '}${x.title} \u00b7 ${x.left}`)];
+  return { title, slots, tasks, body: lines.join('\n') || 'Add a deadline to start a clock.' };
+}
+
+export function nextDigestAt(state: State, from = Date.now()) {
+  const times = [...state.digest].sort();
+  for (let k = 0; k < 2; k++) for (const tm of times) {
+    const [h, m] = tm.split(':').map(Number), d = new Date(from); d.setDate(d.getDate() + k); d.setHours(h, m, 0, 0);
+    if (+d > from) return +d;
+  }
+  return from;
+}
 
 function plan(state: State, now = Date.now()): Planned[] {
   const out: Planned[] = [];
@@ -50,29 +72,28 @@ function plan(state: State, now = Date.now()): Planned[] {
       const d = new Date(n), time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
       // Evening before (20:00) and 15 minutes before: "reserved for you" framing.
       const eve = new Date(n); eve.setDate(eve.getDate() - 1); eve.setHours(20, 0, 0, 0);
-      if (+eve > now) out.push({ at: +eve, title: `Tomorrow ${time} is reserved for this`, body: `${t.title}${t.place ? ` · ${t.place}` : ''}` });
-      if (n - 15 * 6e4 > now) out.push({ at: n - 15 * 6e4, title: `In 15 minutes: ${t.title}`, body: t.ifthen ? `Backup plan: ${t.ifthen}` : t.cue ? `Cue: ${t.cue}` : 'Your reserved session is about to start.' });
+      if (+eve > now) out.push({ at: +eve, title: `Tomorrow ${time} is reserved for this`, body: `${t.title}${t.place ? ` · ${t.place}` : ''}`, url: '/tasks' });
+      if (n - 15 * 6e4 > now) out.push({ at: n - 15 * 6e4, title: `In 15 minutes: ${t.title}`, body: t.ifthen ? `Backup plan: ${t.ifthen}` : t.cue ? `Cue: ${t.cue}` : 'Your reserved session is about to start.', url: '/tasks' });
       // Check-in one hour after the session starts.
-      out.push({ at: n + 60 * 6e4, title: `Did your ${time} session happen?`, body: `Open Deadline to log ${t.title}.` });
+      out.push({ at: n + 60 * 6e4, title: `Did your ${time} session happen?`, body: `Open Deadline to log ${t.title}.`, url: '/tasks' });
       from = n + 60 * 1000;
     }
   }
 
   // Three digests a day (Fitz et al., 2019): everything together, most urgent first.
-  const red = act.filter(t => info(t).st === 'red');
-  const body = act.slice(0, 3).map(t => `${t.title} · ${leftShort(info(t).left)}`).join('\n') || 'Add a deadline to start a clock.';
   for (let k = 0; k < WINDOW_DAYS; k++) {
     for (const tm of state.digest) {
       const [h, m] = tm.split(':').map(Number), d = new Date(now); d.setDate(d.getDate() + k); d.setHours(h, m, 0, 0);
-      if (+d > now) out.push({ at: +d, title: red.length ? `${red.length} ${red.length === 1 ? 'task needs' : 'tasks need'} you` : 'Everything is on track', body });
+      if (+d > now) { const c = digestContent(state, +d); out.push({ at: +d, title: c.title, body: c.body, url: '/tasks' }); }
     }
   }
-  // Sunday check-in with the accountability partner.
-  if (state.partner) {
-    for (let k = 0; k < WINDOW_DAYS; k++) {
-      const d = new Date(now); d.setDate(d.getDate() + k); d.setHours(18, 0, 0, 0);
-      if (d.getDay() === 0 && +d > now) out.push({ at: +d, title: 'Sunday check-in', body: `See how ${state.partner}'s week went. They can see yours too.` });
-    }
+  // Weekly review every Sunday at 18:00 (with the partner's week too, when there is a partner).
+  for (let k = 0; k < WINDOW_DAYS; k++) {
+    const d = new Date(now); d.setDate(d.getDate() + k); d.setHours(18, 0, 0, 0);
+    if (d.getDay() === 0 && +d > now) out.push({
+      at: +d, title: 'Your week is ready', url: '/review',
+      body: state.partner ? `What you finished, what needs you next, and how ${state.partner}'s week went.` : 'What you finished, and what needs you next week.',
+    });
   }
   return out.filter(p => p.at > now + 30 * 1000).sort((a, b) => a.at - b.at).slice(0, MAX);
 }
@@ -84,7 +105,7 @@ export async function reschedule(state: State) {
   await Notifications.cancelAllScheduledNotificationsAsync();
   for (const p of plan(state)) {
     await Notifications.scheduleNotificationAsync({
-      content: { title: p.title, body: p.body },
+      content: { title: p.title, body: p.body, data: p.url ? { url: p.url } : undefined },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.at, channelId: CHANNEL },
     });
   }

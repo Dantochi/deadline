@@ -2,9 +2,10 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
+import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
 import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
 import { mondayOf, otherSide, usePartner } from '../../lib/partner';
+import { reviewDue, weekKey, weekReview } from '../../lib/review';
 import { activeTasks, useStore, type Task } from '../../lib/store';
 import { DAY, ymd, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
 import { BTN, F, R, S, statusColor, usePalette, type Status } from '../../theme';
@@ -34,6 +35,7 @@ export default function Tasks() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s6, paddingBottom: 140 }}>
         <Txt variant="h1">Tasks</Txt>
         <Txt dim style={{ marginTop: S.s2 }}>{sub}</Txt>
+        <ReviewCard />
         <PartnerCard />
         {group('Past deadline', 'red', over)}
         {(['red', 'amber', 'green'] as const).map(st => group(GROUP[st], st, live.filter(t => info(t).st === st)))}
@@ -52,6 +54,26 @@ export default function Tasks() {
         <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
       </Pressable>
     </SafeAreaView>
+  );
+}
+
+// On Sunday and Monday, until opened or dismissed: a door into the weekly review.
+function ReviewCard() {
+  const { state, update } = useStore();
+  const p = usePalette();
+  if (!reviewDue(state)) return null;
+  const r = weekReview(state);
+  return (
+    <View style={{ marginTop: S.s5, flexDirection: 'row', alignItems: 'center', borderRadius: R.lg, backgroundColor: p.raise }}>
+      <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push('/review'); }} style={{ flex: 1, padding: S.s4, gap: 2 }}>
+        <Txt style={{ fontFamily: F.uiBold }}>Your week is ready</Txt>
+        <Txt variant="meta" dim>{r.finished.length} finished · {r.needYou.length} {r.needYou.length === 1 ? 'needs' : 'need'} you · {r.sessions} sessions</Txt>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => update(s => ({ ...s, reviewSeen: weekKey() }))}
+        style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: S.s1 }}>
+        <CloseIcon color={p.dim} />
+      </Pressable>
+    </View>
   );
 }
 

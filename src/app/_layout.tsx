@@ -3,7 +3,8 @@ import {
   SchibstedGrotesk_400Regular, SchibstedGrotesk_500Medium, SchibstedGrotesk_600SemiBold,
   SchibstedGrotesk_700Bold, SchibstedGrotesk_800ExtraBold, useFonts,
 } from '@expo-google-fonts/schibsted-grotesk';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { AppState, Appearance, View, useColorScheme } from 'react-native';
@@ -11,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '../components/ui';
 import { reschedule } from '../lib/notifications';
 import { PartnerProvider } from '../lib/partner';
+import { refreshWidgets } from '../widgets/sync';
 import { StoreProvider, useStore } from '../lib/store';
 import { usePalette } from '../theme';
 
@@ -21,11 +23,26 @@ function ReminderSync() {
   // Reschedule (debounced) whenever tasks or settings change, and whenever the app comes back.
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(() => { reschedule(state).catch(() => {}); }, 800);
+    const t = setTimeout(() => { reschedule(state).catch(() => {}); refreshWidgets(state).catch(() => {}); }, 800);
     return () => clearTimeout(t);
   }, [state, ready]);
   useEffect(() => {
-    const sub = AppState.addEventListener('change', s => { if (s === 'active') reschedule(latest.current).catch(() => {}); });
+    const sub = AppState.addEventListener('change', s => { if (s === 'active') { reschedule(latest.current).catch(() => {}); refreshWidgets(latest.current).catch(() => {}); } });
+    return () => sub.remove();
+  }, []);
+  return null;
+}
+
+// Tapping a notification opens the screen it is about (tasks for reminders and digests, the weekly review on Sunday).
+function NotificationLinks() {
+  useEffect(() => {
+    const open = (r: Notifications.NotificationResponse | null) => {
+      const url = r?.notification.request.content.data?.url;
+      if (typeof url === 'string') router.push(url as never);
+    };
+    // On a cold start, wait a moment so the navigator is mounted before pushing.
+    Notifications.getLastNotificationResponseAsync().then(r => setTimeout(() => open(r), 400)).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
     return () => sub.remove();
   }, []);
   return null;
@@ -45,6 +62,7 @@ function Shell() {
     <>
       <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
       <ReminderSync />
+      <NotificationLinks />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.bg } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
@@ -53,6 +71,8 @@ function Shell() {
         <Stack.Screen name="wallpaper" options={{ presentation: 'modal' }} />
         <Stack.Screen name="partner" options={{ presentation: 'modal' }} />
         <Stack.Screen name="events" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="widgets" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

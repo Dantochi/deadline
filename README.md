@@ -44,5 +44,6 @@ emailing it to testers, plus the extra steps for iPhones.
 - The big number rolls digit by digit (like a bank balance); it stays still when Reduce motion is on.
 - Settings → Lock screen wallpaper saves a full-size image of the grid to Photos.
 - Settings → Important dates (or "+ Mark" on a tapped week) colours chosen weeks: one day, a span, or every year.
+- Weekly review ("Your week", Sundays 18:00 and a card on Sun/Mon), digest preview in Settings, Android home-screen widgets (Small, Medium, Large, Deadlines).
 - iOS allows 64 scheduled notifications per app, so reminders are scheduled four days ahead and refreshed each time
   the app opens or anything changes.

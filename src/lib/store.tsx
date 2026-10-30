@@ -36,13 +36,14 @@ export type State = {
   focus?: string;
   digest: string[]; // three times a day, HH:MM
   partner?: string; // partner's display name, kept in sync by PartnerProvider
+  reviewSeen?: string; // Monday (YYYY-MM-DD) of the week whose review was opened
   shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
   events?: LifeEvent[]; // important dates shown on the life grid
   saved?: string[]; // saved Wisdom quotes (quoteKey)
   tasks: Task[];
 };
 
-const KEY = 'deadline.v1';
+export const KEY = 'deadline.v1';
 export const DEFAULT_STATE: State = {
   onboarded: false, birth: '1995-01-01', life: 80, showGrid: true, shapes: true,
   digest: ['09:00', '15:00', '21:00'], tasks: [],
