@@ -4,10 +4,9 @@ import { EVENT_COLORS } from '../lib/events';
 import { F, S, usePalette } from '../theme';
 import { Txt, haptic } from './ui';
 
-export const TASK_COLORS = [
-  ...EVENT_COLORS,
-  { name: 'Red', hex: '#FF6B3D' }, { name: 'Amber', hex: '#FFCB47' }, { name: 'Green', hex: '#3CCFB0' },
-];
+// Eight colours, the same set as important dates: beyond about eight, colours get hard to tell apart
+// (Tseng et al. 2023). "Auto" covers the status red, amber and green.
+export const TASK_COLORS = EVENT_COLORS;
 
 export function ColorSwatches({ value, onChange, auto, colors = TASK_COLORS }: {
   value?: string | null; onChange: (hex: string | null) => void; auto?: boolean; colors?: { name: string; hex: string }[];
