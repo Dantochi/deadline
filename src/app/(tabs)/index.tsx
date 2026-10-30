@@ -6,6 +6,7 @@ import { SlidersIcon } from '../../components/icons';
 import { LifeGrid } from '../../components/LifeGrid';
 import { RollingNumber } from '../../components/RollingNumber';
 import { Chip, StatusDot, Txt } from '../../components/ui';
+import { eventsInWeek } from '../../lib/events';
 import { activeTasks, useStore } from '../../lib/store';
 import { DAY, YEAR, addYears, ageYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
 import { F, S, usePalette } from '../../theme';
@@ -21,7 +22,7 @@ export default function Life() {
   const birth = parseBirth(state.birth);
   const wNow = weekNow(birth, state.life);
 
-  useEffect(() => { if (sel == null) return; const t = setTimeout(() => setSel(null), 5000); return () => clearTimeout(t); }, [sel]);
+  useEffect(() => { if (sel == null) return; const t = setTimeout(() => setSel(null), 8000); return () => clearTimeout(t); }, [sel]);
 
   const left = useMemo(() => {
     const now = Date.now(), end = +addYears(birth, state.life);
@@ -40,7 +41,7 @@ export default function Life() {
     const s = weekStart(birth, sel), e = weekEnd(birth, sel), age = Math.floor((s - +birth) / YEAR);
     const head = sel === wNow ? 'This week' : e <= Date.now() ? 'Lived' : `In ${fmt(sel - wNow)} weeks`;
     const hit = activeTasks(state).find(t => Math.max(t.start, Date.now()) < e && t.deadline > s);
-    return { line: `${head} · age ${age} · ${fshort(s)} – ${fdate(e - DAY)}`, hit };
+    return { line: `${head} · age ${age} · ${fshort(s)} – ${fdate(e - DAY)}`, hit, events: eventsInWeek(state, sel) };
   })() : null;
 
   return (
@@ -67,8 +68,19 @@ export default function Life() {
       <View style={{ minHeight: 52, justifyContent: 'center', marginTop: S.s3 }} accessibilityLiveRegion="polite">
         {detail ? (
           <>
-            <Txt variant="meta" style={{ fontFamily: F.uiSemi }}>{detail.line}</Txt>
-            {detail.hit ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><StatusDot st={info(detail.hit).st} shapes={state.shapes} size={8} /><Txt variant="meta" dim numberOfLines={1}>{detail.hit.title}</Txt></View> : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
+              <Txt variant="meta" style={{ fontFamily: F.uiSemi, flex: 1 }} numberOfLines={1}>{detail.line}</Txt>
+              <Pressable accessibilityRole="button" accessibilityLabel="Mark this week as an important date" hitSlop={12}
+                onPress={() => router.push({ pathname: '/events', params: { week: String(sel) } })}>
+                <Txt variant="meta" style={{ fontFamily: F.uiSemi }}>+ Mark</Txt>
+              </Pressable>
+            </View>
+            {detail.events.length ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: detail.events[0].color }} />
+                <Txt variant="meta" dim numberOfLines={1}>{detail.events.map(e => e.title).join(' · ')}</Txt>
+              </View>
+            ) : detail.hit ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><StatusDot st={info(detail.hit).st} shapes={state.shapes} size={8} /><Txt variant="meta" dim numberOfLines={1}>{detail.hit.title}</Txt></View> : null}
           </>
         ) : !state.showGrid && next ? (
           <Txt variant="meta" dim>Next deadline · {next.title} · {leftShort(info(next).left)}</Txt>

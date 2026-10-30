@@ -52,6 +52,7 @@ function Shell() {
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="wallpaper" options={{ presentation: 'modal' }} />
         <Stack.Screen name="partner" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="events" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

@@ -4,6 +4,7 @@
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { eventColorMap } from '../lib/events';
 import { activeTasks, useStore, type State } from '../lib/store';
 import { info, parseBirth, weekEnd, weekNow, weekStart } from '../lib/time';
 import { statusColor, usePalette, type Palette } from '../theme';
@@ -44,6 +45,7 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
       return { s: Math.max(t.start, now), e: t.deadline, color: statusColor(p, st), rank };
     }).filter(o => o.e > now);
     const byColor = new Map<string, string[]>();
+    const events = eventColorMap(state);
     for (let r = 0; r < g.rows; r++) for (let c = 0; c < 52; c++) {
       const i = (g.lr + r) * 52 + c, s = weekStart(g.birth, i), e = weekEnd(g.birth, i);
       let color = p.ahead;
@@ -54,6 +56,9 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
         for (const o of overlays) if (o.s < e && o.e > s && (!best || o.rank < best.rank)) best = o;
         if (best) color = best.color;
       }
+      // Important dates sit on top of lived weeks and tasks; this week stays bright so it is always findable.
+      const ev = events.get(i);
+      if (ev && i !== g.wNow) color = ev;
       if (i === selected && i !== g.wNow) color = p.dim;
       const x0 = snap(c * g.u), y0 = snap(g.yOf(r));
       const w = +(snap(c * g.u + box) - x0).toFixed(2), h = +(snap(g.yOf(r) + box) - y0).toFixed(2);
@@ -72,7 +77,6 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
     onSelect?.((g.lr + r) * 52 + c);
   };
 
-  // Where the lived view opens: this year's row with some of the past above it. Rows outside are cropped.
   // Where the lived view opens: the row the person last scrolled to (remembered as a year of life, so it maps to
   // the same place at any box size, e.g. the wallpaper), or this year with some of the past above it.
   const { update } = useStore();

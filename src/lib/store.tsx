@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { LifeEvent } from './events';
 import { info } from './time';
 
 export type Task = {
@@ -36,6 +37,7 @@ export type State = {
   digest: string[]; // three times a day, HH:MM
   partner?: string; // partner's display name, kept in sync by PartnerProvider
   shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
+  events?: LifeEvent[]; // important dates shown on the life grid
   saved?: string[]; // saved Wisdom quotes (quoteKey)
   tasks: Task[];
 };
