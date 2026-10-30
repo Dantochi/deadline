@@ -143,3 +143,29 @@ x-height and distinct confusable letters. Changing the font would cost the app's
 - Miniukovich et al. (2023). The effect of prototypicality on webpage aesthetics, usability, and trustworthiness. *IJHCS*. https://consensus.app/papers/details/7e0162757fb0521f944f9c6e199415f5/
 - Iseki et al. (2025). Perception of luxury and product quality in package design. *Journal of Sensory Studies*. https://consensus.app/papers/details/b1bffcd860905712945e0bd20fcd9d1d/
 - Schroll et al. (2018). Humanizing products with handwritten typefaces. *Journal of Consumer Research*. https://consensus.app/papers/details/70dc8d3054e45a59ae64794d78bb7bc1/
+
+## Year calendar (focus + context)
+
+- **One large month plus the whole year as an overview.** On small screens, a fisheye calendar that keeps an
+  overview next to the detailed period made complex calendar tasks significantly faster than a standard
+  calendar. Users still preferred a plain day view for simple daily checks
+  ([DateLens, Bederson et al. 2003](https://consensus.app/papers/details/65364d464fef53feadd4f74f4500bacd/)).
+  On small screens, people valued keeping their place over a simpler zoom
+  ([Gerken et al. 2006](https://consensus.app/papers/details/f4d21f5e5d585740842e025918b54c99/)). Deadline's
+  version: the month at full width with ~50dp day cells, and the 12 months below, which stay in view. Tapping a
+  small month moves the focus; swiping moves month by month.
+- **Day cells big enough for thumbs.** One-handed thumb taps needed targets of about 9.2 mm to avoid extra
+  errors ([Parhi, Karlson & Bederson 2006](https://www.microsoft.com/en-us/research/?p=155150)). The old
+  3-column year view had ~13dp boxes, too small to tap. The overview months are now only for changing month.
+- **Calendar layout makes cycles visible.** Placing data on a calendar exposes weekly patterns and outliers at
+  a glance (van Wijk & van Selow, InfoVis 1999).
+- **Colour plus a second cue.** Category judgements get harder as the number of colours grows
+  ([Tseng et al. 2023](https://consensus.app/papers/details/67b5320051fe5f488a87afd7ff241cba/)). Pairing colour
+  with another cue improved accuracy, most for 5–8 categories
+  ([Tseng et al. 2026](https://consensus.app/papers/details/0514a7f14fef50a78ae7ab982482e095/)). Here a task
+  running is tinted, a deadline or important date is full colour with bold digits, a reserved session has a
+  dot, and lived days are muted.
+- **Patents.** Calendar-navigation patents from the early 2000s, such as a day-to-month jump that lists the
+  year's months (US 6686939) and month calendar views (US 7257778), are listed as expired. The month and
+  year-overview pattern is long-established. patents.google.com is blocked in this session, so I could not
+  confirm their claims or status.
