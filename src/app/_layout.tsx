@@ -20,12 +20,20 @@ function ReminderSync() {
   const { state, ready } = useStore();
   const latest = useRef(state);
   latest.current = state;
-  // Reschedule (debounced) whenever tasks or settings change, and whenever the app comes back.
+  // Reschedule reminders and redraw widgets only when something they show changes (not on scrolling, opening the
+  // review, etc.), debounced, and whenever the app comes back.
+  const notifKey = JSON.stringify([state.onboarded, state.tasks, state.digest, state.partner, state.shapes]);
+  const widgetKey = JSON.stringify([state.tasks, state.events, state.birth, state.life, state.shapes, state.appearance]);
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(() => { reschedule(state).catch(() => {}); refreshWidgets(state).catch(() => {}); }, 800);
+    const t = setTimeout(() => { reschedule(latest.current).catch(() => {}); }, 800);
     return () => clearTimeout(t);
-  }, [state, ready]);
+  }, [notifKey, ready]);
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => { refreshWidgets(latest.current).catch(() => {}); }, 1200);
+    return () => clearTimeout(t);
+  }, [widgetKey, ready]);
   useEffect(() => {
     const sub = AppState.addEventListener('change', s => { if (s === 'active') { reschedule(latest.current).catch(() => {}); refreshWidgets(latest.current).catch(() => {}); } });
     return () => sub.remove();

@@ -23,9 +23,13 @@ export function weekStart(birth: Date, i: number) { return +addYears(birth, Math
 export function weekEnd(birth: Date, i: number) {
   return i % 52 === 51 ? +addYears(birth, Math.floor(i / 52) + 1) : weekStart(birth, i) + 7 * DAY;
 }
+/** The week containing `now`, worked out directly (one year lookup) instead of walking every week of a life. */
 export function weekNow(birth: Date, life: number, now = Date.now()) {
-  for (let i = 0; i < life * 52; i++) if (weekEnd(birth, i) > now) return i;
-  return life * 52 - 1;
+  let y = new Date(now).getFullYear() - birth.getFullYear();
+  if (+addYears(birth, y) > now) y--;
+  if (y < 0) return 0;
+  if (y >= life) return life * 52 - 1;
+  return y * 52 + Math.min(51, Math.floor((now - +addYears(birth, y)) / (7 * DAY)));
 }
 
 export type Info = { pct: number; left: number; total: number; st: Status };

@@ -98,12 +98,18 @@ function plan(state: State, now = Date.now()): Planned[] {
   return out.filter(p => p.at > now + 30 * 1000).sort((a, b) => a.at - b.at).slice(0, MAX);
 }
 
+let lastPlan = '';
+
 export async function reschedule(state: State) {
   if (!state.onboarded) return;
   if ((await permissionStatus()) !== 'granted') return;
+  // Cancelling and re-adding ~60 notifications crosses to native code for each one; skip it when nothing changed.
+  const planned = plan(state), sig = JSON.stringify(planned);
+  if (sig === lastPlan) return;
   await ensureChannel();
   await Notifications.cancelAllScheduledNotificationsAsync();
-  for (const p of plan(state)) {
+  lastPlan = sig;
+  for (const p of planned) {
     await Notifications.scheduleNotificationAsync({
       content: { title: p.title, body: p.body, data: p.url ? { url: p.url } : undefined },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.at, channelId: CHANNEL },

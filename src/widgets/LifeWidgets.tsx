@@ -12,22 +12,27 @@ type Hex = `#${string}`;
 const hex = (c: string) => c as Hex;
 const FONT_UI = 'SchibstedGrotesk_600SemiBold', FONT_NUM = 'Doto_800ExtraBold';
 
-/** One week's colour, by the same rules as the life grid (this week, important dates, tasks, lived, ahead). */
-function weekColor(state: State, p: Palette, i: number, events: Map<number, string>, now = Date.now()) {
-  const birth = parseBirth(state.birth), w = weekNow(birth, state.life);
-  if (i === w) return p.ink;
-  const ev = events.get(i);
-  if (ev) return ev;
-  const s = weekStart(birth, i), e = weekEnd(birth, i);
-  if (e <= now) return p.lived;
-  let best: { c: string; r: number } | null = null;
-  for (const t of activeTasks(state)) {
-    if (Math.max(t.start, now) < e && t.deadline > s) {
-      const st = info(t).st, r = st === 'red' ? 0 : st === 'amber' ? 1 : 2;
-      if (!best || r < best.r) best = { c: statusColor(p, st), r };
-    }
+/** Week colours for a range, by the same rules as the life grid (this week, important dates, tasks, lived,
+ *  ahead). Everything that doesn't depend on the week (this week, task overlays) is worked out once. */
+function weekColors(state: State, p: Palette, first: number, count: number, now = Date.now()) {
+  const birth = parseBirth(state.birth), w = weekNow(birth, state.life, now), events = eventColorMap(state);
+  const overlays = activeTasks(state).map(t => {
+    const st = info(t).st;
+    return { s: Math.max(t.start, now), e: t.deadline, r: st === 'red' ? 0 : st === 'amber' ? 1 : 2, c: statusColor(p, st) };
+  });
+  const out: string[] = [];
+  for (let k = 0; k < count; k++) {
+    const i = first + k;
+    if (i === w) { out.push(p.ink); continue; }
+    const ev = events.get(i);
+    if (ev) { out.push(ev); continue; }
+    const s = weekStart(birth, i), e = weekEnd(birth, i);
+    if (e <= now) { out.push(p.lived); continue; }
+    let best: (typeof overlays)[number] | null = null;
+    for (const o of overlays) if (o.s < e && o.e > s && (!best || o.r < best.r)) best = o;
+    out.push(best ? best.c : p.ahead);
   }
-  return best ? best.c : p.ahead;
+  return out;
 }
 
 function gridSvg(cells: string[], cols: number, width: number) {
@@ -84,8 +89,7 @@ export function MediumWidget({ state, p, width }: { state: State; p: Palette; wi
 export function LargeWidget({ state, p, width }: { state: State; p: Palette; width: number }) {
   const n = weeksLeft(state), birth = parseBirth(state.birth), w = weekNow(birth, state.life);
   const first = Math.floor(w / 52) * 52, total = Math.min(520, state.life * 52 - first);
-  const events = eventColorMap(state);
-  const cells = Array.from({ length: total }, (_, k) => weekColor(state, p, first + k, events));
+  const cells = weekColors(state, p, first, total);
   const gw = Math.max(120, width - 28), g = gridSvg(cells, 52, gw);
   const t = activeTasks(state)[0], ti = t ? info(t) : null;
   return (

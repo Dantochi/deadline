@@ -169,3 +169,42 @@ x-height and distinct confusable letters. Changing the font would cost the app's
   year's months (US 6686939) and month calendar views (US 7257778), are listed as expired. The month and
   year-overview pattern is long-established. patents.google.com is blocked in this session, so I could not
   confirm their claims or status.
+
+## Motion and speed
+
+**What the evidence says**
+- **Speed matters more than looks.** In a 300-person study of Android note apps, response time influenced
+  satisfaction more than visual design (β 0.57 vs 0.37;
+  [Li 2026](https://consensus.app/papers/details/524857905ec4542b912c691612735e6d/)). For taps, feedback within
+  about 0.2 s and finishing within about 1 s satisfied users, and smooth motion raised perceived speed
+  ([Kim 2014](https://consensus.app/papers/details/159d796a524456758dc2661ebaf72c99/)).
+- **Animated transitions help people follow a change.** They improved graphical perception in controlled
+  experiments ([Heer & Robertson 2007](https://consensus.app/papers/details/66117f8f4bb7589390c1dd94b9bb1cae/)),
+  and staged, short transitions read best.
+- **Motion must be optional.** All motion here is skipped when the phone's Reduce motion setting is on.
+
+**Where Deadline uses motion now**
+| Place | Motion | Why |
+|---|---|---|
+| Life number | Digits roll into place, staggered right to left, 650 ms ease-out | Shows the value changing when switching weeks, months and years |
+| Year month change | New month slides in from the side you moved towards (220 ms) | Keeps your place between months |
+| Day page, ‹ › | Content slides in from that side (200 ms) | Same continuity between days |
+| Day boxes | Shrink slightly while pressed (instant) | Feedback under 0.2 s |
+| Task row | Details fade and slide in when opened (200 ms) | Shows where the details came from |
+| Life week details | Fade in on tap (160 ms) | Ties the details to the tapped week |
+| Tabs | Cross-fade between Life, Year and Wisdom | Softer than a hard cut |
+| Status dots | Slow pulse (red fastest) | Already present: urgency without words |
+
+**Possible later:** a short "afterglow" on weeks a task has just changed, so you see what moved; a check-mark
+pop when you answer "Yes" to a check-in.
+
+**Speed fixes (measured on the build server, roughly 5–10× slower on a mid-range Android phone)**
+- **Finding this week:** worked out directly instead of walking through every week of a life. 0.49 ms → 0.002
+  ms, with identical results on 36,310 test dates.
+- **Large widget:** 196 ms → 0.6 ms per draw. It used to search for "this week" once for each of its 520 boxes.
+- **Life grid:** two date calculations per row instead of two per box (2.2 → 0.2 ms). It now redraws only when
+  tasks, dates, colours, size or the day change. Tapping a week draws one highlight box instead of rebuilding
+  the whole grid.
+- **Reminders and widgets:** these were redone after every change, including scrolling and opening the review.
+  Now they run only when something they show changes, and reminders are skipped when the plan is identical.
+- **Saving:** batched after changes settle (300 ms), and flushed when the app goes to the background.

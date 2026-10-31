@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronIcon, CloseIcon, PlusIcon } from '../components/icons';
+import { Enter } from '../components/Motion';
 import { PartnerCard, TaskRow } from '../components/TaskParts';
 import { Section, Txt, haptic } from '../components/ui';
 import { dayDetail } from '../lib/calendar';
@@ -23,6 +24,7 @@ export default function Day() {
   const today = ymd(new Date());
   const [key, setKey] = useState(params.date ?? today);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [dir, setDir] = useState(0);
   const date = at(key), isToday = key === today, past = key < today;
   const birth = parseBirth(state.birth), first = ymd(birth), last = ymd(addYears(birth, state.life));
 
@@ -30,7 +32,7 @@ export default function Day() {
   const move = (n: number) => {
     const next = ymd(new Date(+date + n * DAY));
     if (next < first || next > last) return;
-    haptic.tick(); setOpenId(null); setKey(next);
+    haptic.tick(); setOpenId(null); setDir(n); setKey(next);
   };
 
   const row = (t: Task) => <TaskRow key={t.id} t={t} open={openId === t.id} onToggle={() => { haptic.tick(); setOpenId(openId === t.id ? null : t.id); }} />;
@@ -75,6 +77,7 @@ export default function Day() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: 140 }}>
+        <Enter id={key} from={{ x: dir * 20 }} duration={200}>
         {/* The weekly review lives in the Year screen's strip; the partner's week shows here, on today. */}
         {isToday ? <PartnerCard /> : null}
 
@@ -111,6 +114,7 @@ export default function Day() {
           style={{ height: 48, justifyContent: 'center', marginTop: S.s5 }}>
           <Txt style={{ fontFamily: F.uiSemi }} dim>+ Mark this day as an important date</Txt>
         </Pressable>
+        </Enter>
       </ScrollView>
 
       {!past ? (

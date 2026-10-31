@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ColorSwatches } from './ColorSwatches';
+import { Enter } from './Motion';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from './icons';
 import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from './ui';
 import { taskColor } from '../lib/calendar';
@@ -125,7 +126,7 @@ export function TaskRow({ t, open, onToggle }: { t: Task; open: boolean; onToggl
       </Pressable>
 
       {open ? (
-        <View style={{ paddingLeft: 28, paddingBottom: S.s5, gap: S.s4 }}>
+        <Enter id={t.id} style={{ paddingLeft: 28, paddingBottom: S.s5, gap: S.s4 }}>
           {over ? (
             <View style={{ backgroundColor: p.raise, borderRadius: R.lg, padding: S.s4, gap: S.s3 }}>
               <Txt style={{ fontFamily: F.uiSemi }}>The deadline passed {leftShort(left).replace(' over', '')} ago.</Txt>
@@ -208,7 +209,7 @@ export function TaskRow({ t, open, onToggle }: { t: Task; open: boolean; onToggl
             )}
           </View>
           {t.done && t.doneAt ? <Txt variant="small" dim>Finished {fshort(t.doneAt)}</Txt> : null}
-        </View>
+        </Enter>
       ) : null}
     </View>
   );

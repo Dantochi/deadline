@@ -8,6 +8,7 @@ import { PanResponder, Pressable, ScrollView, View, useWindowDimensions } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { ChevronIcon, CloseIcon, PlusIcon } from '../../components/icons';
+import { Enter } from '../../components/Motion';
 import { Txt, haptic } from '../../components/ui';
 import { MONTHS, yearCells, type DayCell } from '../../lib/calendar';
 import { usePartner } from '../../lib/partner';
@@ -68,9 +69,10 @@ export default function Year() {
   const minY = birth.getFullYear(), maxY = addYears(birth, state.life).getFullYear();
   const [year, setYear] = useState(thisYear);
   const [month, setMonth] = useState(now.getMonth());
+  const [dir, setDir] = useState(0); // which way the month moved, so it slides in from that side
 
   const inner = width * 0.91;
-  const cells = useMemo(() => yearCells(state, p, year), [state, p, year]);
+  const cells = useMemo(() => yearCells(state, p, year), [state.tasks, state.events, p, year]); // eslint-disable-line react-hooks/exhaustive-deps
   const todayKey = ymd(now);
   const openDay = (key: string) => { haptic.tick(); router.push({ pathname: '/day', params: { date: key } }); };
 
@@ -78,7 +80,7 @@ export default function Year() {
     let ny = y, nm = m;
     if (nm < 0) { nm = 11; ny--; } else if (nm > 11) { nm = 0; ny++; }
     if (ny < minY || ny > maxY) return;
-    haptic.tick(); setYear(ny); setMonth(nm);
+    haptic.tick(); setDir(ny * 12 + nm > year * 12 + month ? 1 : -1); setYear(ny); setMonth(nm);
   };
   const focusRef = useRef(focus);
   focusRef.current = focus;
@@ -101,7 +103,7 @@ export default function Year() {
         accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : ''}${c?.fill ? (c.strong ? ', deadline or important date' : ', task running') : ''}${c?.session ? ', session reserved' : ''}`}
         onPress={() => openDay(key)}
         style={({ pressed }) => ({ position: 'absolute', left: x, top: y, width: box, height: box, backgroundColor: look.fill,
-          borderWidth: today ? 2 : 0, borderColor: p.ink, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
+          borderWidth: today ? 2 : 0, borderColor: p.ink, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
         <Txt allowFontScaling={false} style={{ fontFamily: today || c?.strong ? F.uiBold : F.uiMedium, fontSize: 15, lineHeight: 18 }} color={look.text}>{d}</Txt>
         <View style={{ width: 5, height: 5, marginTop: 3, backgroundColor: c?.session && key >= todayKey ? look.text : 'transparent' }} />
       </Pressable>,
@@ -159,7 +161,7 @@ export default function Year() {
           <View style={{ height: 24, flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => <Txt key={i} variant="small" dim allowFontScaling={false} style={{ width: cell, textAlign: 'center', fontFamily: F.uiSemi }}>{w}</Txt>)}
           </View>
-          <View style={{ height: 6 * cell }}>{big}</View>
+          <Enter id={`${year}-${month}`} from={{ x: dir * 24 }} duration={220} style={{ height: 6 * cell }}>{big}</Enter>
         </View>
 
         {/* Context: the whole year, fixed size (every small month is six rows). */}

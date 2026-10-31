@@ -4,6 +4,7 @@ import { Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SlidersIcon } from '../../components/icons';
 import { LifeGrid } from '../../components/LifeGrid';
+import { Enter } from '../../components/Motion';
 import { RollingNumber } from '../../components/RollingNumber';
 import { Chip, StatusDot, Txt } from '../../components/ui';
 import { eventsInWeek } from '../../lib/events';
@@ -67,7 +68,7 @@ export default function Life() {
 
       <View style={{ height: 52, justifyContent: 'center', marginTop: S.s3 }} accessibilityLiveRegion="polite">
         {detail ? (
-          <>
+          <Enter id={sel ?? -1} from={{ y: 4 }} duration={160}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
               <Txt variant="meta" style={{ fontFamily: F.uiSemi, flex: 1 }} numberOfLines={1}>{detail.line}</Txt>
               <Pressable accessibilityRole="button" accessibilityLabel="Mark this week as an important date" hitSlop={12}
@@ -81,7 +82,7 @@ export default function Life() {
                 <Txt variant="meta" dim numberOfLines={1}>{detail.events.map(e => e.title).join(' · ')}</Txt>
               </View>
             ) : detail.hit ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><StatusDot st={info(detail.hit).st} shapes={state.shapes} size={8} /><Txt variant="meta" dim numberOfLines={1}>{detail.hit.title}</Txt></View> : null}
-          </>
+          </Enter>
         ) : !state.showGrid && next ? (
           <Txt variant="meta" dim numberOfLines={2}>Next deadline · {next.title} · {leftShort(info(next).left)}</Txt>
         ) : null}

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import type { LifeEvent } from './events';
 import { info } from './time';
 
@@ -70,9 +71,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .finally(() => { loaded.current = true; setReady(true); });
   }, []);
 
+  // Save shortly after changes settle, not on every keystroke-sized update; flush when the app goes to background.
+  const latest = useRef(state);
+  latest.current = state;
   useEffect(() => {
-    if (loaded.current) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch(() => {});
+    if (!loaded.current) return;
+    const t = setTimeout(() => { AsyncStorage.setItem(KEY, JSON.stringify(latest.current)).catch(() => {}); }, 300);
+    return () => clearTimeout(t);
   }, [state]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', s => {
+      if (s !== 'active' && loaded.current) AsyncStorage.setItem(KEY, JSON.stringify(latest.current)).catch(() => {});
+    });
+    return () => sub.remove();
+  }, []);
 
   const update = useCallback((fn: (s: State) => State) => setState(fn), []);
   const updateTask = useCallback((id: string, fn: (t: Task) => Task) =>
