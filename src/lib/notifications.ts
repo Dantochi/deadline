@@ -72,10 +72,10 @@ function plan(state: State, now = Date.now()): Planned[] {
       const d = new Date(n), time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
       // Evening before (20:00) and 15 minutes before: "reserved for you" framing.
       const eve = new Date(n); eve.setDate(eve.getDate() - 1); eve.setHours(20, 0, 0, 0);
-      if (+eve > now) out.push({ at: +eve, title: `Tomorrow ${time} is reserved for this`, body: `${t.title}${t.place ? ` · ${t.place}` : ''}`, url: '/tasks' });
-      if (n - 15 * 6e4 > now) out.push({ at: n - 15 * 6e4, title: `In 15 minutes: ${t.title}`, body: t.ifthen ? `Backup plan: ${t.ifthen}` : t.cue ? `Cue: ${t.cue}` : 'Your reserved session is about to start.', url: '/tasks' });
+      if (+eve > now) out.push({ at: +eve, title: `Tomorrow ${time} is reserved for this`, body: `${t.title}${t.place ? ` · ${t.place}` : ''}`, url: '/day' });
+      if (n - 15 * 6e4 > now) out.push({ at: n - 15 * 6e4, title: `In 15 minutes: ${t.title}`, body: t.ifthen ? `Backup plan: ${t.ifthen}` : t.cue ? `Cue: ${t.cue}` : 'Your reserved session is about to start.', url: '/day' });
       // Check-in one hour after the session starts.
-      out.push({ at: n + 60 * 6e4, title: `Did your ${time} session happen?`, body: `Open Deadline to log ${t.title}.`, url: '/tasks' });
+      out.push({ at: n + 60 * 6e4, title: `Did your ${time} session happen?`, body: `Open Deadline to log ${t.title}.`, url: '/day' });
       from = n + 60 * 1000;
     }
   }
@@ -84,7 +84,7 @@ function plan(state: State, now = Date.now()): Planned[] {
   for (let k = 0; k < WINDOW_DAYS; k++) {
     for (const tm of state.digest) {
       const [h, m] = tm.split(':').map(Number), d = new Date(now); d.setDate(d.getDate() + k); d.setHours(h, m, 0, 0);
-      if (+d > now) { const c = digestContent(state, +d); out.push({ at: +d, title: c.title, body: c.body, url: '/tasks' }); }
+      if (+d > now) { const c = digestContent(state, +d); out.push({ at: +d, title: c.title, body: c.body, url: '/day' }); }
     }
   }
   // Weekly review every Sunday at 18:00 (with the partner's week too, when there is a partner).

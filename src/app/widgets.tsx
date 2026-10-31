@@ -59,7 +59,7 @@ export default function Widgets() {
         </View>
         {Platform.OS === 'android' ? (
           <>
-            <View style={{ alignItems: 'center', justifyContent: 'center', padding: S.s5, borderRadius: R.xl, backgroundColor: p.bg, minHeight: 2 * cell + 48 }}>
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: S.s5, borderRadius: R.xl, backgroundColor: p.bg, height: 2 * cell + 48 }}>
               <Preview />
             </View>
             <Txt variant="meta" dim>{s.note}. Follows your phone's light or dark mode, opens Deadline when tapped, and updates when a task changes or a week ends.</Txt>

@@ -1,4 +1,4 @@
-// Your week: the weekly review. Opens from the Sunday notification, the card on the Tasks tab, or Settings.
+// Your week: the weekly review. Opens from the Sunday notification, the strip on the Year screen, or Settings.
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -47,14 +47,14 @@ export default function Review() {
         {r.missed ? <Txt variant="meta" dim>{r.missed} {r.missed === 1 ? 'session' : 'sessions'} didn't happen. That's normal; the ones you kept still count.</Txt> : null}
 
         {r.focus ? (
-          <View style={{ gap: S.s1, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+          <View style={{ height: 168, gap: S.s1, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
             <Txt variant="label" dim>Focus next week</Txt>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
               <StatusDot st={info(r.focus).st} shapes={state.shapes} />
               <Txt variant="h2" style={{ flex: 1 }} numberOfLines={2}>{r.focus.title}</Txt>
             </View>
-            <Txt variant="meta" dim>{leftShort(info(r.focus).left)} left{whenLine(r.focus) ? ` · next session ${whenLine(r.focus)}` : ''}</Txt>
-            {!whenLine(r.focus) ? <Txt variant="small" dim>Reserving a time makes it far more likely to happen. Open the task to add one.</Txt> : null}
+            <Txt variant="meta" dim numberOfLines={1}>{leftShort(info(r.focus).left)} left{whenLine(r.focus) ? ` · next session ${whenLine(r.focus)}` : ''}</Txt>
+            {!whenLine(r.focus) ? <Txt variant="small" dim numberOfLines={2}>Reserving a time makes it far more likely to happen. Open it from today on the Year screen to add one.</Txt> : null}
           </View>
         ) : null}
 

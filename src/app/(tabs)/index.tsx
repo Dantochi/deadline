@@ -65,7 +65,7 @@ export default function Life() {
         {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} /> : null}
       </View>
 
-      <View style={{ minHeight: 52, justifyContent: 'center', marginTop: S.s3 }} accessibilityLiveRegion="polite">
+      <View style={{ height: 52, justifyContent: 'center', marginTop: S.s3 }} accessibilityLiveRegion="polite">
         {detail ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
@@ -83,7 +83,7 @@ export default function Life() {
             ) : detail.hit ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><StatusDot st={info(detail.hit).st} shapes={state.shapes} size={8} /><Txt variant="meta" dim numberOfLines={1}>{detail.hit.title}</Txt></View> : null}
           </>
         ) : !state.showGrid && next ? (
-          <Txt variant="meta" dim>Next deadline · {next.title} · {leftShort(info(next).left)}</Txt>
+          <Txt variant="meta" dim numberOfLines={2}>Next deadline · {next.title} · {leftShort(info(next).left)}</Txt>
         ) : null}
       </View>
 

@@ -86,13 +86,16 @@ function Week({ pr, name }: { pr: Progress | null; name: string }) {
       <Txt variant="small" dim>{thisWeek ? 'This week' : 'Nothing logged this week yet'}{when != null ? ` · updated ${when < 1 ? 'just now' : when < 24 ? `${when} h ago` : `${Math.round(when / 24)} d ago`}` : ''}</Txt>
       <View style={{ flexDirection: 'row', gap: S.s3 }}>{stat(pr.sessions, 'sessions kept')}{stat(pr.missed, 'missed')}{stat(pr.done, 'finished')}</View>
       {counts ? <Txt variant="meta">{counts}</Txt> : null}
-      {pr.tasks.map((t, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 28 }}>
-          <StatusDot st={t.st} shapes={state.shapes} size={9} />
-          <Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
-          <Txt variant="small" dim>{t.days < 0 ? `${-t.days} d over` : `${t.days} d`}</Txt>
-        </View>
-      ))}
+      {/* Five fixed rows, so the card keeps its size however many tasks are shared. */}
+      <View style={{ height: 5 * 28 }}>
+        {pr.tasks.slice(0, 5).map((t, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, height: 28 }}>
+            <StatusDot st={t.st} shapes={state.shapes} size={9} />
+            <Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
+            <Txt variant="small" dim>{t.days < 0 ? `${-t.days} d over` : `${t.days} d`}</Txt>
+          </View>
+        ))}
+      </View>
       <Txt variant="small" dim>A kind word works better than pressure. If they missed sessions, ask what got in the way.</Txt>
     </View>
   );

@@ -1,66 +1,21 @@
+// Task building blocks shared by the Day screen: the expandable task row (check-ins, recovery, notes, colour,
+// done/pause) and the weekly review and partner cards.
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ColorSwatches } from '../../components/ColorSwatches';
-import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from '../../components/icons';
-import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from '../../components/ui';
-import { taskColor } from '../../lib/calendar';
-import { mondayOf, otherSide, usePartner } from '../../lib/partner';
-import { reviewDue, weekKey, weekReview } from '../../lib/review';
-import { activeTasks, useStore, type Task } from '../../lib/store';
-import { DAY, ymd, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../../lib/time';
-import { BTN, F, R, S, statusColor, usePalette, type Status } from '../../theme';
-
-const GROUP: Record<'red' | 'amber' | 'green', string> = { red: 'Act now', amber: 'Pay attention', green: 'On track' };
-
-export default function Tasks() {
-  const { state } = useStore();
-  const p = usePalette();
-  const [openId, setOpenId] = useState<string | null>(null);
-  const act = activeTasks(state);
-  const over = act.filter(t => info(t).left < 0), live = act.filter(t => info(t).left >= 0);
-  const paused = state.tasks.filter(t => t.pausedAt && !t.done), done = state.tasks.filter(t => t.done);
-  const red = live.filter(t => info(t).st === 'red').length;
-  const need = (n: number) => `${n} ${n === 1 ? 'needs' : 'need'} you now`;
-  const sub = !act.length ? (paused.length ? 'Everything is paused.' : 'Nothing on the clock yet.')
-    : over.length ? `${over.length} past the deadline · ${need(red)}.` : red ? `${need(red)}. ${live.length - red} more running.` : `${live.length} running. All on time.`;
-
-  const group = (label: string, st: Status, list: Task[]) => list.length ? (
-    <Section key={label} label={label} st={st} count={list.length}>
-      {list.map(t => <Row key={t.id} t={t} open={openId === t.id} onToggle={() => { haptic.tick(); setOpenId(openId === t.id ? null : t.id); }} />)}
-    </Section>
-  ) : null;
-
-  return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s6, paddingBottom: 140 }}>
-        <Txt variant="h1">Tasks</Txt>
-        <Txt dim style={{ marginTop: S.s2 }}>{sub}</Txt>
-        <ReviewCard />
-        <PartnerCard />
-        {group('Past deadline', 'red', over)}
-        {(['red', 'amber', 'green'] as const).map(st => group(GROUP[st], st, live.filter(t => info(t).st === st)))}
-        {!act.length && !paused.length ? (
-          <View style={{ paddingVertical: S.s8, alignItems: 'center', gap: S.s2 }}>
-            <Txt variant="h2">No deadlines yet</Txt>
-            <Txt dim style={{ textAlign: 'center' }}>Give a goal an end date and it gets its own boxes.</Txt>
-          </View>
-        ) : null}
-        {group('Paused', 'paused', paused)}
-        {group('Done', 'done', done)}
-      </ScrollView>
-      <Pressable accessibilityRole="button" accessibilityLabel="New task" onPress={() => { haptic.tick(); router.push('/new-task'); }}
-        style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 24, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-        <PlusIcon color={p.bg} />
-        <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
-      </Pressable>
-    </SafeAreaView>
-  );
-}
+import { ColorSwatches } from './ColorSwatches';
+import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from './icons';
+import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from './ui';
+import { taskColor } from '../lib/calendar';
+import { mondayOf, otherSide, usePartner } from '../lib/partner';
+import { reviewDue, weekKey, weekReview } from '../lib/review';
+import { activeTasks, useStore, type Task } from '../lib/store';
+import { DAY, ymd, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../lib/time';
+import { BTN, F, R, S, statusColor, usePalette, type Status } from '../theme';
 
 // On Sunday and Monday, until opened or dismissed: a door into the weekly review.
-function ReviewCard() {
+export function ReviewCard() {
   const { state, update } = useStore();
   const p = usePalette();
   if (!reviewDue(state)) return null;
@@ -79,7 +34,7 @@ function ReviewCard() {
   );
 }
 
-function PartnerCard() {
+export function PartnerCard() {
   const P = usePartner();
   const p = usePalette();
   const pending = P.incoming[0];
@@ -97,7 +52,7 @@ function PartnerCard() {
   );
 }
 
-function Row({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => void }) {
+export function TaskRow({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => void }) {
   const { state, update, updateTask } = useStore();
   const toast = useToast();
   const p = usePalette();

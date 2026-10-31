@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,8 +22,13 @@ export default function NewTask() {
   const toast = useToast();
   const p = usePalette();
   const [title, setTitle] = useState('');
-  const [deadline, setDeadline] = useState(new Date(Date.now() + 30 * DAY));
-  const [quick, setQuick] = useState<number | null>(30);
+  const params = useLocalSearchParams<{ deadline?: string }>();
+  // Opened from a day on the Year screen: that day is the deadline.
+  const [deadline, setDeadline] = useState(() => {
+    if (!params.deadline) return new Date(Date.now() + 30 * DAY);
+    const [y, m, d] = params.deadline.split('-').map(Number); return new Date(y, m - 1, d, 12);
+  });
+  const [quick, setQuick] = useState<number | null>(params.deadline ? null : 30);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [time, setTime] = useState(() => { const d = new Date(); d.setHours(7, 0, 0, 0); return d; });
   const [place, setPlace] = useState('');

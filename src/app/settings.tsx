@@ -23,15 +23,17 @@ function DigestPreview() {
       <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise2, gap: S.s1 }}>
         <Txt variant="small" dim><Txt variant="small" style={{ fontFamily: F.uiSemi }}>Deadline</Txt> · {pad(d.getHours())}:{pad(d.getMinutes())}</Txt>
         <Txt style={{ fontFamily: F.uiBold }}>{c.title}</Txt>
-        {c.slots.map((l, i) => <Txt key={i} variant="meta" dim>{l}</Txt>)}
-        {c.tasks.map((t, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 28 }}>
-            <StatusDot st={t.st} shapes={state.shapes} size={8} />
-            <Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt>
-            <Txt variant="small" dim>{t.left}</Txt>
-          </View>
-        ))}
-        {!c.tasks.length ? <Txt variant="meta" dim>Add a deadline to start a clock.</Txt> : null}
+        {/* Fixed rows (two reserved times, four tasks) so the preview keeps one size whatever it holds. */}
+        {[0, 1].map(i => <Txt key={`s${i}`} variant="meta" dim numberOfLines={1} style={{ height: 22 }}>{c.slots[i] ?? ''}</Txt>)}
+        {[0, 1, 2, 3].map(i => {
+          const t = c.tasks[i];
+          return (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, height: 28 }}>
+              {t ? <><StatusDot st={t.st} shapes={state.shapes} size={8} /><Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}>{t.title}</Txt><Txt variant="small" dim>{t.left}</Txt></>
+                : i === 0 ? <Txt variant="meta" dim>Add a deadline to start a clock.</Txt> : null}
+            </View>
+          );
+        })}
       </View>
     </View>
   );
