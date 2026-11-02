@@ -169,7 +169,7 @@ export function TaskRow({ t, open, onToggle }: { t: Task; open: boolean; onToggl
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: pickColor }} onPress={() => setPickColor(v => !v)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 44, marginTop: -S.s2 }}>
             <View style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: taskColor(p, t) }} />
-            <Txt variant="meta"><Txt variant="meta" dim>Calendar colour · </Txt>{t.color ? 'Your colour' : 'Auto (status)'}</Txt>
+            <Txt variant="meta"><Txt variant="meta" dim>Calendar colour · </Txt>{t.color ? 'Your colour' : 'Theme'}</Txt>
           </Pressable>
           {pickColor ? <ColorSwatches value={t.color} auto onChange={c => { updateTask(t.id, x => ({ ...x, color: c })); setPickColor(false); }} /> : null}
 

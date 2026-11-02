@@ -158,7 +158,7 @@ export default function NewTask() {
           <View style={{ gap: S.s2 }}>
             <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Colour on the Year calendar</Txt>
             <ColorSwatches value={color} onChange={setColor} auto />
-            <Txt variant="small" dim>Auto follows the status: green, then amber, then red as time runs out.</Txt>
+            <Txt variant="small" dim>The first circle follows the app: light boxes in dark mode, dark boxes in light mode.</Txt>
           </View>
 
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: more }} onPress={() => setMore(m => !m)} style={{ minHeight: 48, justifyContent: 'center' }}>

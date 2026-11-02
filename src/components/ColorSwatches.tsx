@@ -1,11 +1,12 @@
-// A row of colour swatches (44pt targets). `auto` adds an "Auto" choice that clears the colour.
+// A row of colour swatches (44pt targets). `auto` adds a "Theme" choice that clears the colour, so the task
+// follows the app's light or dark theme.
 import { Pressable, View } from 'react-native';
 import { EVENT_COLORS } from '../lib/events';
-import { F, S, usePalette } from '../theme';
-import { Txt, haptic } from './ui';
+import { S, usePalette } from '../theme';
+import { haptic } from './ui';
 
 // Eight colours, the same set as important dates: beyond about eight, colours get hard to tell apart
-// (Tseng et al. 2023). "Auto" covers the status red, amber and green.
+// (Tseng et al. 2023).
 export const TASK_COLORS = EVENT_COLORS;
 
 export function ColorSwatches({ value, onChange, auto, colors = TASK_COLORS }: {
@@ -16,11 +17,9 @@ export function ColorSwatches({ value, onChange, auto, colors = TASK_COLORS }: {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1 }}>
       {auto ? (
-        <Pressable accessibilityRole="radio" accessibilityLabel="Auto: status colour" accessibilityState={{ selected: !value }}
+        <Pressable accessibilityRole="radio" accessibilityLabel="Theme colour, follows light or dark mode" accessibilityState={{ selected: !value }}
           onPress={() => { haptic.tick(); onChange(null); }} style={ring(!value)}>
-          <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: p.line, alignItems: 'center', justifyContent: 'center' }}>
-            <Txt style={{ fontFamily: F.uiBold, fontSize: 11 }}>Auto</Txt>
-          </View>
+          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: p.ink, borderWidth: 1, borderColor: p.line }} />
         </Pressable>
       ) : null}
       {colors.map(c => (

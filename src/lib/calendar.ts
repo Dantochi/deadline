@@ -2,12 +2,13 @@
 import type { LifeEvent } from './events';
 import { type State, type Task } from './store';
 import { DAY, info, nextSlot, ymd } from './time';
-import { statusColor, type Palette } from '../theme';
+import type { Palette } from '../theme';
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/** A task's colour on the calendar: the colour the person chose, or its status colour. */
-export const taskColor = (p: Palette, t: Task) => t.color ?? statusColor(p, info(t).st);
+/** A task's colour on the Year calendar and Timeline: the colour the person chose, or the app's own ink, which is
+ *  light in dark mode and dark in light mode, so unpicked tasks match the theme. */
+export const taskColor = (p: Palette, t: Task) => t.color ?? p.ink;
 
 const dayStart = (ms: number) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return +d; };
 

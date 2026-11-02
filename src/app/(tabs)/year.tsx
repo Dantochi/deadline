@@ -103,7 +103,7 @@ export default function Year() {
         accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : ''}${c?.fill ? (c.strong ? ', deadline or important date' : ', task running') : ''}${c?.session ? ', session reserved' : ''}`}
         onPress={() => openDay(key)}
         style={({ pressed }) => ({ position: 'absolute', left: x, top: y, width: box, height: box, backgroundColor: look.fill,
-          borderWidth: today ? 2 : 0, borderColor: p.ink, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
+          borderWidth: today ? 2 : 0, borderColor: p.redInk, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
         <Txt allowFontScaling={false} style={{ fontFamily: today || c?.strong ? F.uiBold : F.uiMedium, fontSize: 15, lineHeight: 18 }} color={look.text}>{d}</Txt>
         <View style={{ width: 5, height: 5, marginTop: 3, backgroundColor: c?.session && key >= todayKey ? look.text : 'transparent' }} />
       </Pressable>,
@@ -116,8 +116,8 @@ export default function Year() {
     const f = new Date(year, m, 1), ld = (f.getDay() + 6) % 7, n = new Date(year, m + 1, 0).getDate(), items = [];
     for (let d = 1; d <= n; d++) {
       const k = ld + d - 1, key = ymd(new Date(year, m, d)), look = dayLook(p, cells.get(key), key < todayKey);
-      items.push(<Rect key={d} x={(k % 7) * u} y={Math.floor(k / 7) * u} width={mbox} height={mbox} fill={key === todayKey ? p.ink : look.fill} />);
-      if (cells.get(key)?.session && key > todayKey) items.push(<Circle key={`s${d}`} cx={(k % 7) * u + mbox / 2} cy={Math.floor(k / 7) * u + mbox / 2} r={Math.max(0.8, mbox * 0.16)} fill={p.ink} />);
+      items.push(<Rect key={d} x={(k % 7) * u} y={Math.floor(k / 7) * u} width={mbox} height={mbox} fill={key === todayKey ? p.redInk : look.fill} />);
+      if (cells.get(key)?.session && key > todayKey) items.push(<Circle key={`s${d}`} cx={(k % 7) * u + mbox / 2} cy={Math.floor(k / 7) * u + mbox / 2} r={Math.max(0.8, mbox * 0.16)} fill={cells.get(key)?.strong ? p.bg : p.ink} />);
     }
     const on = m === month;
     return (
@@ -170,7 +170,7 @@ export default function Year() {
           {Array.from({ length: 12 }, (_, m) => mini(m))}
         </View>
         <View style={{ height: 44, flexDirection: 'row', alignItems: 'center', columnGap: S.s4, marginTop: S.s4 }}>
-          {[['Running', `${p.green}70`], ['Due or date', p.green]].map(([l, c]) => (
+          {[['Running', `${p.ink}70`], ['Due or date', p.ink]].map(([l, c]) => (
             <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 12, height: 12, backgroundColor: c }} /><Txt variant="small" dim>{l}</Txt>
             </View>
