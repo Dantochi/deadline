@@ -82,6 +82,7 @@ function Shell() {
         <Stack.Screen name="widgets" options={{ presentation: 'modal' }} />
         <Stack.Screen name="review" options={{ presentation: 'modal' }} />
         <Stack.Screen name="day" />
+        <Stack.Screen name="timeline" />
       </Stack>
     </>
   );

@@ -7,7 +7,7 @@ import { useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Rect } from 'react-native-svg';
-import { ChevronIcon, CloseIcon, PlusIcon } from '../../components/icons';
+import { ChevronIcon, CloseIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
 import { Txt, haptic } from '../../components/ui';
 import { MONTHS, yearCells, type DayCell } from '../../lib/calendar';
@@ -15,7 +15,7 @@ import { usePartner } from '../../lib/partner';
 import { reviewDue, weekKey, weekReview } from '../../lib/review';
 import { activeTasks, useStore } from '../../lib/store';
 import { addYears, info, nextSlot, parseBirth, slotLabel, ymd } from '../../lib/time';
-import { BTN, F, R, S, usePalette, type Palette } from '../../theme';
+import { F, R, S, usePalette, type Palette } from '../../theme';
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const STRIP = 72;
@@ -182,11 +182,6 @@ export default function Year() {
         </View>
       </ScrollView>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="New task" onPress={() => { haptic.tick(); router.push('/new-task'); }}
-        style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 24, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-        <PlusIcon color={p.bg} />
-        <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
-      </Pressable>
     </SafeAreaView>
   );
 }

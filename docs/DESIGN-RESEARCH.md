@@ -208,3 +208,32 @@ pop when you answer "Yes" to a check-in.
 - **Reminders and widgets:** these were redone after every change, including scrolling and opening the review.
   Now they run only when something they show changes, and reminders are skipped when the plan is identical.
 - **Saving:** batched after changes settle (300 ms), and flushed when the app goes to the background.
+
+## Making the time a required, gentle step (new-task form)
+
+- **Date and time, not just a date.** Prompting people to write the date *and time* they would act raised
+  follow-through by 4.2 points (33.1% → 37.3%); a date alone did nothing significant
+  ([Milkman et al. 2011, PNAS](https://consensus.app/papers/details/57f6c7ef6c2e59da9da607efeb9b4051/)). Plans
+  tied to a time-and-place cue work across 642 tests
+  ([Sheeran et al. 2024](https://consensus.app/papers/details/5f9f7367e3d95edca818b636686bbd2d/)).
+- **A pre-filled, honest suggestion.** Defaults shift choices strongly (d = 0.68 across 58 studies;
+  [Jachimowicz et al. 2019](https://consensus.app/papers/details/3acd0367c8105d88858871badac1257d/)). Being open
+  that it's a default doesn't weaken it
+  ([Lemken 2021](https://consensus.app/papers/details/dbec012ee20b5e88a87454c852f6540f/)). The form pre-fills
+  the nearest free half-hour and says so.
+- **No error popups mid-form.** Errors work better shown after input than while typing
+  ([Bargas-Avila et al. 2007](https://core.ac.uk/download/85219257.pdf)). The save button says what's missing
+  ("Pick at least one day") and stays disabled until then.
+- **Planning alone is not enough for repeated actions.** Choosing gym days and times alone had no effect
+  ([Carrera et al. 2018](https://consensus.app/papers/details/071cc699476054eaad2af1e9ac59204b/)). The reminders,
+  check-ins and timeline supply the follow-through.
+
+**The form now:** What → Deadline → **When will you work on it?** (Repeat on days or Once on a date, a start time
+pre-filled with a free slot, a length of 15 min to 1½ h, a 06:00–23:00 bar showing the session against times
+already taken, and an overlap warning with a one-tap free alternative) → Where → Colour → optional backup plan
+and cue. There is no way to save without a time.
+
+**Timeline (day view):** square blocks at their time, as tall as they last, side by side when they overlap; a
+fixed strip for deadlines and important dates; a now line; tap a block to open the task, or an empty hour to plan
+a session there. IBM's expired day-calendar patents (US 5,023,851; US 5,129,057) show time-slot day views are
+long-established.

@@ -23,6 +23,7 @@ export type Task = {
   done?: boolean;
   doneAt?: number;
   letGo?: boolean;
+  minutes?: number; // length of each reserved session (default 30)
   color?: string | null; // the person's colour for this task on the Year calendar (default: status colour)
 };
 

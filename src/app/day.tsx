@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronIcon, CloseIcon, PlusIcon } from '../components/icons';
+import { CalendarIcon, ChevronIcon, CloseIcon, PlusIcon } from '../components/icons';
 import { Enter } from '../components/Motion';
 import { PartnerCard, TaskRow } from '../components/TaskParts';
 import { Section, Txt, haptic } from '../components/ui';
@@ -20,10 +20,10 @@ const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return n
 export default function Day() {
   const { state } = useStore();
   const p = usePalette();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; task?: string }>();
   const today = ymd(new Date());
   const [key, setKey] = useState(params.date ?? today);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(params.task ?? null);
   const [dir, setDir] = useState(0);
   const date = at(key), isToday = key === today, past = key < today;
   const birth = parseBirth(state.birth), first = ymd(birth), last = ymd(addYears(birth, state.life));
@@ -76,6 +76,13 @@ export default function Day() {
         </Pressable>
       </View>
 
+      {/* Fixed row: the same day as hours. */}
+      <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push({ pathname: '/timeline', params: { date: key } }); }}
+        style={{ height: 48, marginHorizontal: '4.5%', flexDirection: 'row', alignItems: 'center', gap: S.s2, paddingHorizontal: S.s4, backgroundColor: p.raise }}>
+        <CalendarIcon size={20} color={p.ink} />
+        <Txt style={{ fontFamily: F.uiSemi, flex: 1 }}>See the day by the hour</Txt>
+        <ChevronIcon size={18} color={p.dim} />
+      </Pressable>
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: 140 }}>
         <Enter id={key} from={{ x: dir * 20 }} duration={200}>
         {/* The weekly review lives in the Year screen's strip; the partner's week shows here, on today. */}
@@ -118,11 +125,11 @@ export default function Day() {
       </ScrollView>
 
       {!past ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={isToday ? 'New task' : 'New task due this day'}
-          onPress={() => { haptic.tick(); router.push(isToday ? '/new-task' : { pathname: '/new-task', params: { deadline: key } }); }}
+        <Pressable accessibilityRole="button" accessibilityLabel={isToday ? 'New task' : 'New task on this day'}
+          onPress={() => { haptic.tick(); router.push(isToday ? '/new-task' : { pathname: '/new-task', params: { deadline: key, on: key } }); }}
           style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 32, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
           <PlusIcon color={p.bg} />
-          <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>{isToday ? 'New task' : 'Due this day'}</Txt>
+          <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
         </Pressable>
       ) : null}
     </SafeAreaView>
