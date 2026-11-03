@@ -68,6 +68,7 @@ export function dayDetail(state: State, ms: number) {
   const tasks = state.tasks.filter(t => !t.letGo && t.start < e && t.deadline >= s).map(t => ({ t, due: t.deadline >= s && t.deadline < e }));
   const sessions = state.tasks.filter(t => !t.done && !t.pausedAt).map(t => ({ t, n: nextSlot(t, s) })).filter(x => x.n != null && x.n < e);
   const events = (state.events ?? []).filter(ev => eventDays(ev, year).includes(key));
-  return { tasks, sessions, events };
+  const steps = state.tasks.filter(t => !t.letGo).flatMap(t => (t.steps ?? []).filter(st => st.date != null && st.date >= s && st.date < e).map(st => ({ t, st })));
+  return { tasks, sessions, events, steps };
 }
 

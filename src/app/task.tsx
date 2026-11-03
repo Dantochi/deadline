@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, UndoIcon } from '../components/icons';
+import { Steps } from '../components/Steps';
 import { useDeleteTask } from '../components/TaskParts';
 import { BoxStrip, Chip, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore, type Task } from '../lib/store';
@@ -146,6 +147,9 @@ export default function TaskScreen() {
           {t.cue ? line('Cue', t.cue) : null}
           {t.done && t.doneAt ? line('Finished', fshort(t.doneAt)) : null}
         </View>
+
+        {/* Breaking work into steps is one of the best-supported ways to start (and to plan time realistically). */}
+        <Steps t={t} />
 
         {t.notes ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Open notes" onPress={() => setNotesOpen(true)}

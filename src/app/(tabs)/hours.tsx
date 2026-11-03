@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ColorSwatches } from '../../components/ColorSwatches';
+import { MicIcon } from '../../components/Voice';
 import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
 import { Txt, haptic } from '../../components/ui';
@@ -85,7 +86,13 @@ export default function Hours() {
             <Txt variant="small" style={{ fontFamily: F.uiBold }} color={p.bg} numberOfLines={1}>{ev.title}</Txt>
           </View>
         ))}
-        {!due.length && !detail.events.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
+        {detail.steps.map(({ t, st }) => (
+          <Pressable key={st.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })}
+            style={{ height: 32, paddingHorizontal: S.s3, justifyContent: 'center', borderWidth: 1, borderColor: taskColor(p, t) }}>
+            <Txt variant="small" style={{ fontFamily: F.uiSemi, textDecorationLine: st.done ? 'line-through' : 'none' }} numberOfLines={1}>Step · {st.title}</Txt>
+          </Pressable>
+        ))}
+        {!due.length && !detail.events.length && !detail.steps.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
       </ScrollView>
 
       <ScrollView ref={scroller} contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s2, paddingBottom: S.s8 }}>
@@ -131,6 +138,14 @@ export default function Hours() {
         </Enter>
       </ScrollView>
 
+      {/* Say a task: it lands on this day's timeline at the time you say. */}
+      {!past ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Say a task"
+          onPress={() => { haptic.tick(); router.push({ pathname: '/new-task', params: isToday ? { voice: '1' } : { voice: '1', on: key } }); }}
+          style={({ pressed }) => ({ position: 'absolute', left: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: p.ink, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+          <MicIcon color={p.bg} />
+        </Pressable>
+      ) : null}
       {!isToday ? (
         <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setDir(key > today ? -1 : 1); setKey(today); }}
           style={{ position: 'absolute', right: 20, bottom: 24, height: 44, paddingHorizontal: S.s4, justifyContent: 'center', backgroundColor: p.ink }}>

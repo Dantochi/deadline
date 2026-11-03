@@ -4,6 +4,8 @@ import { AppState } from 'react-native';
 import type { LifeEvent } from './events';
 import { info } from './time';
 
+export type Step = { id: string; title: string; date?: number | null; done: boolean };
+
 export type Task = {
   id: string;
   title: string;
@@ -15,7 +17,7 @@ export type Task = {
   cue?: string;
   ifthen?: string;
   notes?: string;
-  steps?: { title: string; date: number; done: boolean }[];
+  steps?: Step[]; // subtasks, each optionally dated
   checks?: number[];
   sessions?: number[];
   missedAt?: number | null;

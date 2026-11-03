@@ -2,15 +2,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CloseIcon } from '../components/icons';
+import { CheckIcon, CloseIcon } from '../components/icons';
+import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
+import { parseTask } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
 import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, R, S, statusColor, usePalette } from '../theme';
 
 const LENGTHS = [15, 30, 45, 60, 90];
+const lenLabel = (m: number) => (m === 90 ? '1½ h' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60}` : ''}`);
 type Unit = 'week' | 'month' | 'year';
 const UNITS: Unit[] = ['week', 'month', 'year'];
 /** `n` weeks, months or years from now (months and years by the calendar, not a fixed number of days). */
@@ -29,7 +32,7 @@ export default function NewTask() {
   const { state, update } = useStore();
   const toast = useToast();
   const p = usePalette();
-  const params = useLocalSearchParams<{ deadline?: string; on?: string; time?: string; edit?: string }>();
+  const params = useLocalSearchParams<{ deadline?: string; on?: string; time?: string; edit?: string; voice?: string }>();
   // Editing an existing task: every field starts from it.
   const ed = params.edit ? state.tasks.find(t => t.id === params.edit) : undefined;
   const [title, setTitle] = useState(ed?.title ?? '');
@@ -64,6 +67,26 @@ export default function NewTask() {
   const [ifthen, setIfthen] = useState(ed?.ifthen ?? '');
   const [cue, setCue] = useState(ed?.cue ?? '');
   const [err, setErr] = useState('');
+  // Voice (or typed) capture: fills the fields below, and shows what it understood so it can be checked.
+  const [voiceOpen, setVoiceOpen] = useState(params.voice === '1');
+  const [heard, setHeard] = useState<string[]>([]);
+  const setClock = (hm: string) => { const m = fromHM(hm); const d = new Date(); d.setHours(Math.floor(m / 60), m % 60, 0, 0); setTime(d); };
+  const apply = (sentence: string) => {
+    const r = parseTask(sentence);
+    if (r.title) setTitle(r.title);
+    let dl = deadline;
+    if (r.deadline) { dl = r.deadline; setDeadline(r.deadline); setQuick(null); }
+    const wd = r.days ?? (r.once ? [r.once.getDay()] : days);
+    if (r.days) { setMode('repeat'); setDays(r.days); }
+    if (r.once) {
+      setMode('once'); setOnceDate(r.once);
+      if (r.once > dl) { setDeadline(r.once); setQuick(null); }
+    }
+    if (r.minutes) setMinutes(r.minutes);
+    if (r.time) { setClock(r.time); setTouchedTime(true); }
+    else if (r.days || r.once) setClock(suggestTime(state, wd, r.minutes ?? minutes));
+    setHeard(r.found); setErr('');
+  };
 
   const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
@@ -107,9 +130,21 @@ export default function NewTask() {
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: S.s7, gap: S.s5 }} keyboardShouldPersistTaps="handled">
-          <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
-            placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-            style={{ fontFamily: F.uiSemi, fontSize: 21, color: p.ink, borderBottomWidth: 1, borderBottomColor: p.line, paddingVertical: S.s3 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }}>
+            <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
+              placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
+              style={{ flex: 1, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
+              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: p.raise2 }}>
+              <MicIcon color={p.ink} />
+            </Pressable>
+          </View>
+          {heard.length ? (
+            <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s3 }}>
+              <CheckIcon size={16} color={statusColor(p, 'green', true)} />
+              <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>Understood · </Txt>{heard.join(' · ')}</Txt>
+            </View>
+          ) : null}
 
           <View style={{ gap: S.s2 }}>
             <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Deadline</Txt>
@@ -152,7 +187,7 @@ export default function NewTask() {
               <View style={{ flex: 1 }}><DateTimeField label="Start time" mode="time" value={time} onChange={d => { setTime(d); setTouchedTime(true); }} /></View>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1 }}>
-              {LENGTHS.map(m => <Chip key={m} label={m < 60 ? `${m} min` : `${m / 60 === 1 ? '1' : '1½'} h`} on={minutes === m} onPress={() => setMinutes(m)} />)}
+              {(LENGTHS.includes(minutes) ? LENGTHS : [...LENGTHS, minutes].sort((a, b) => a - b)).map(m => <Chip key={m} label={lenLabel(m)} on={minutes === m} onPress={() => setMinutes(m)} />)}
             </View>
             <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
               busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
@@ -208,6 +243,7 @@ export default function NewTask() {
           })()}
         </ScrollView>
       </KeyboardAvoidingView>
+      <VoiceSheet open={voiceOpen} onClose={() => setVoiceOpen(false)} onResult={apply} />
     </SafeAreaView>
   );
 }

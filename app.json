@@ -102,6 +102,13 @@
             }
           ]
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Deadline listens only while the mic is on, to turn what you say into a task.",
+          "speechRecognitionPermission": "Deadline turns what you say into a task's name, deadline and time."
+        }
       ]
     ],
     "scheme": "deadline",

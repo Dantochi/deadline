@@ -82,13 +82,20 @@ export default function Day() {
         {/* The weekly review lives in the Year screen's strip; the partner's week shows here, on today. */}
         {isToday ? <PartnerCard /> : null}
 
-        {d.events.length || d.sessions.length ? (
+        {d.events.length || d.sessions.length || d.steps.length ? (
           <View style={{ marginTop: S.s5, gap: S.s2 }}>
             {d.events.map(ev => (
               <View key={ev.id} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, height: 44, paddingHorizontal: S.s4, backgroundColor: p.raise, borderRadius: R.md }}>
                 <View style={{ width: 12, height: 12, backgroundColor: ev.color }} />
                 <Txt numberOfLines={1} style={{ flex: 1, fontFamily: F.uiSemi }}>{ev.title}</Txt>
               </View>
+            ))}
+            {d.steps.map(({ t, st }) => (
+              <Pressable key={st.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, height: 44, paddingHorizontal: S.s4, backgroundColor: p.raise, borderRadius: R.md }}>
+                <View style={{ width: 12, height: 12, borderWidth: 2, borderColor: p.dim, backgroundColor: st.done ? p.dim : 'transparent' }} />
+                <Txt numberOfLines={1} variant="meta" style={{ flex: 1, textDecorationLine: st.done ? 'line-through' : 'none' }}>Step · {st.title} <Txt variant="meta" dim>({t.title})</Txt></Txt>
+              </Pressable>
             ))}
             {d.sessions.map(({ t, n }) => {
               const s = new Date(n!);
