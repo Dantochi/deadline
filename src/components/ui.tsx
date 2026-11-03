@@ -92,22 +92,29 @@ export function BoxStrip({ n, gone, st }: { n: number; gone: number; st: Status 
 }
 
 // Tiny toast, one at a time.
-const ToastCtx = createContext<(msg: string, ms?: number) => void>(() => {});
+type ToastAction = { label: string; onPress: () => void };
+const ToastCtx = createContext<(msg: string, ms?: number, action?: ToastAction) => void>(() => {});
 export function ToastProvider({ children }: { children: ReactNode }) {
   const p = usePalette();
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ text: string; action?: ToastAction } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const show = useCallback((m: string, ms = 2600) => {
-    setMsg(m);
+  // An optional action (e.g. Undo after a delete) keeps the toast up longer and makes it tappable.
+  const show = useCallback((m: string, ms = 2600, action?: ToastAction) => {
+    setMsg({ text: m, action });
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMsg(null), ms);
+    timer.current = setTimeout(() => setMsg(null), action ? Math.max(ms, 6000) : ms);
   }, []);
   return (
     <ToastCtx.Provider value={show}>
       {children}
       {msg ? (
-        <View pointerEvents="none" style={[styles.toast, { backgroundColor: p.ink }]} accessibilityLiveRegion="polite">
-          <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={p.bg}>{msg}</Txt>
+        <View pointerEvents={msg.action ? 'box-none' : 'none'} style={[styles.toast, { backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: S.s3 }]} accessibilityLiveRegion="polite">
+          <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20, flex: msg.action ? 1 : undefined }} color={p.bg}>{msg.text}</Txt>
+          {msg.action ? (
+            <Pressable accessibilityRole="button" hitSlop={12} onPress={() => { haptic.tick(); msg.action!.onPress(); setMsg(null); }}>
+              <Txt style={{ fontFamily: F.uiBold, fontSize: T.md, lineHeight: 20, textDecorationLine: 'underline' }} color={p.bg}>{msg.action.label}</Txt>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
     </ToastCtx.Provider>

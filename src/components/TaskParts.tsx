@@ -1,19 +1,15 @@
-// Task building blocks shared by the Day screen: the expandable task row (check-ins, recovery, notes, colour,
-// done/pause) and the weekly review and partner cards.
+// Task building blocks shared by the date screens: the task row (tap to open, swipe to finish or delete), the
+// delete-with-undo hook, and the weekly review and partner cards.
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ColorSwatches } from './ColorSwatches';
-import { Enter } from './Motion';
-import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, PlusIcon, UndoIcon } from './icons';
-import { BoxStrip, Btn, Chip, Section, StatusDot, Txt, haptic, useToast } from './ui';
-import { taskColor } from '../lib/calendar';
+import { useRef } from 'react';
+import { Animated, PanResponder, Pressable, View } from 'react-native';
+import { CheckIcon, CloseIcon } from './icons';
+import { StatusDot, Txt, haptic, useToast } from './ui';
 import { mondayOf, otherSide, usePartner } from '../lib/partner';
 import { reviewDue, weekKey, weekReview } from '../lib/review';
-import { activeTasks, useStore, type Task } from '../lib/store';
-import { DAY, ymd, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../lib/time';
-import { BTN, F, R, S, statusColor, usePalette, type Status } from '../theme';
+import { useStore, type Task } from '../lib/store';
+import { info, leftShort, ymd } from '../lib/time';
+import { F, R, S, statusColor, usePalette } from '../theme';
 
 // On Sunday and Monday, until opened or dismissed: a door into the weekly review.
 export function ReviewCard() {
@@ -53,164 +49,66 @@ export function PartnerCard() {
   );
 }
 
-export function TaskRow({ t, open, onToggle }: { t: Task; open: boolean; onToggle: () => void }) {
-  const { state, update, updateTask } = useStore();
+/** Deletes a task with an Undo toast. Shared by the task screen and swipe-to-delete on rows. */
+export function useDeleteTask() {
+  const { update } = useStore();
+  const toast = useToast();
+  return (t: Task) => {
+    update(s => ({ ...s, tasks: s.tasks.filter(x => x.id !== t.id) }));
+    haptic.warn();
+    toast(`Deleted “${t.title}”`, 6000, { label: 'Undo', onPress: () => update(s => ({ ...s, tasks: [...s.tasks, t] })) });
+  };
+}
+
+/** A task in a list: tap to open its screen; swipe right to mark it done, left to delete (both with Undo). */
+export function TaskRow({ t }: { t: Task }) {
+  const { state, updateTask } = useStore();
   const toast = useToast();
   const p = usePalette();
-  const [armDelete, setArmDelete] = useState(false);
-  const [pickColor, setPickColor] = useState(false);
-  const [notes, setNotes] = useState(t.notes ?? '');
-  // Notes save a moment after typing stops (and on blur), with a visible "Saved" so people trust it.
-  const [noteState, setNoteState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const pendingNotes = useRef<string | null>(null);
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const saveNotes = () => {
-    clearTimeout(noteTimer.current);
-    const v = pendingNotes.current;
-    if (v == null) return;
-    pendingNotes.current = null;
-    updateTask(t.id, x => ({ ...x, notes: v }));
-    setNoteState('saved');
-  };
-  const editNotes = (v: string) => {
-    setNotes(v); pendingNotes.current = v; setNoteState('saving');
-    clearTimeout(noteTimer.current); noteTimer.current = setTimeout(saveNotes, 700);
-  };
-  const saveRef = useRef(saveNotes);
-  saveRef.current = saveNotes;
-  useEffect(() => () => saveRef.current(), []);
+  const del = useDeleteTask();
   const { left, st } = info(t);
-  const over = !t.done && !t.pausedAt && left < 0, paused = !!t.pausedAt && !t.done;
-  const ls = !t.done && !paused && !over ? lastSlot(t) : null;
-  const ask = ls != null && !(t.checks ?? []).includes(ls);
-  const [rescheduling, setRescheduling] = useState(false);
+  const paused = !!t.pausedAt && !t.done;
   const label = t.done ? (t.letGo ? 'Let go' : 'Done') : paused ? 'Paused' : leftShort(left);
-  const sb = boxesAt(t, Date.now());
-
-  const complete = () => {
-    updateTask(t.id, x => ({ ...x, done: true, doneAt: Date.now() }));
-    haptic.ok();
-    const d = Math.round((t.deadline - Date.now()) / DAY);
-    toast(d > 0 ? `Done, ${d >= 14 ? `${Math.round(d / 7)} weeks` : `${d} day${d === 1 ? '' : 's'}`} early.` : 'Done.', 3200);
-  };
-  const extend = (days: number) => {
-    const nd = endOfDay(Date.now() + days * DAY);
-    // A new deadline is a fresh start: the clock restarts from today.
-    updateTask(t.id, x => ({ ...x, deadline: nd, start: Date.now() }));
-    haptic.ok(); toast(`New deadline ${fdate(nd)}. A fresh start.`);
-  };
-  const checkIn = (yes: boolean) => {
-    if (ls == null) return;
-    if (yes) {
-      const back = t.missedAt != null && t.missedAt < ls;
-      updateTask(t.id, x => ({ ...x, checks: [...(x.checks ?? []), ls], sessions: [...(x.sessions ?? []), ls], missedAt: null }));
-      haptic.ok();
-      // Coming back after a miss is the moment worth rewarding.
-      toast(back ? 'Welcome back. Returning after a miss is what builds the habit.' : 'Session logged. That is how it gets done.', back ? 3800 : 2600);
-    } else {
-      updateTask(t.id, x => ({ ...x, checks: [...(x.checks ?? []), ls], missedAt: ls }));
-      setRescheduling(true);
-    }
-  };
-  const reserveAt = (ms: number) => { updateTask(t.id, x => ({ ...x, oneOff: ms })); setRescheduling(false); haptic.ok(); toast(`${slotLabel(ms)} is reserved for this.`); };
-  const at = (dayOff: number, h: number, m: number) => { const d = new Date(); d.setDate(d.getDate() + dayOff); d.setHours(h, m, 0, 0); return +d; };
-  const [uh, um] = (t.slot?.time ?? '07:00').split(':').map(Number);
+  const x = useRef(new Animated.Value(0)).current;
+  const tRef = useRef(t);
+  tRef.current = t;
+  const swipe = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (_, g) => x.setValue(g.dx),
+    onPanResponderRelease: (_, g) => {
+      const cur = tRef.current;
+      if (g.dx < -110) {
+        Animated.timing(x, { toValue: -500, duration: 160, useNativeDriver: true }).start(() => { del(cur); x.setValue(0); });
+      } else if (g.dx > 110 && !cur.done) {
+        Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
+        updateTask(cur.id, y => ({ ...y, done: true, doneAt: Date.now() }));
+        haptic.ok();
+        toast(`Done: ${cur.title}`, 6000, { label: 'Undo', onPress: () => updateTask(cur.id, y => ({ ...y, done: false, doneAt: undefined })) });
+      } else {
+        Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+    onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
+  })).current;
+  const showDone = x.interpolate({ inputRange: [0, 60], outputRange: [0, 1], extrapolate: 'clamp' });
+  const showDel = x.interpolate({ inputRange: [-60, 0], outputRange: [1, 0], extrapolate: 'clamp' });
 
   return (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: p.line }}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${t.title}, ${label}`} onPress={onToggle}
-        style={{ minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: S.s4, paddingVertical: S.s3 }}>
-        <View style={{ width: 12, alignItems: 'center' }}><StatusDot st={st} shapes={state.shapes} /></View>
-        <Txt style={[{ flex: 1 }, t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
-        <Txt variant="meta" dim>{label}</Txt>
-      </Pressable>
-
-      {open ? (
-        <Enter id={t.id} style={{ paddingLeft: 28, paddingBottom: S.s5, gap: S.s4 }}>
-          {over ? (
-            <View style={{ backgroundColor: p.raise, borderRadius: R.lg, padding: S.s4, gap: S.s3 }}>
-              <Txt style={{ fontFamily: F.uiSemi }}>The deadline passed {leftShort(left).replace(' over', '')} ago.</Txt>
-              <Txt variant="meta" dim>That happens. Choose what is true now.</Txt>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-                <Chip label="+3 days" onPress={() => extend(3)} /><Chip label="+1 week" onPress={() => extend(7)} /><Chip label="+2 weeks" onPress={() => extend(14)} />
-              </View>
-            </View>
-          ) : null}
-
-          {!t.done && !paused && !over ? (
-            <>
-              <BoxStrip n={sb.n} gone={sb.gone} st={st} />
-              <Txt variant="meta" dim style={{ marginTop: -S.s2 }}>{sb.n - sb.gone} of {sb.n} {sb.unit}s left · due {fdate(t.deadline)}</Txt>
-            </>
-          ) : null}
-
-          {ask && !rescheduling ? (
-            <View style={{ backgroundColor: p.raise, borderRadius: R.md, padding: S.s3, paddingLeft: S.s4, gap: S.s3 }}>
-              <Txt variant="meta">Did your {pad(new Date(ls!).getHours())}:{pad(new Date(ls!).getMinutes())} session happen?</Txt>
-              <View style={{ flexDirection: 'row', gap: S.s2 }}><Chip label="Yes" onPress={() => checkIn(true)} /><Chip label="Not today" onPress={() => checkIn(false)} /></View>
-            </View>
-          ) : null}
-          {rescheduling ? (
-            <View style={{ backgroundColor: p.raise, borderRadius: R.md, padding: S.s4, gap: S.s3 }}>
-              <Txt variant="meta">No problem. Missing one session does not undo the others. Find another time:</Txt>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-                {new Date().getHours() < 18 ? <Chip label="This evening" onPress={() => reserveAt(at(0, 19, 0))} /> : null}
-                <Chip label="Tomorrow, usual time" onPress={() => reserveAt(at(1, uh, um))} />
-                <Chip label="Tomorrow evening" onPress={() => reserveAt(at(1, 19, 0))} />
-              </View>
-            </View>
-          ) : null}
-
-          {paused ? <Txt variant="meta" dim>Paused since {fdate(t.pausedAt!)}. The clock is stopped. When you resume, the deadline moves by the time you were away.</Txt> : null}
-          {whenLine(t) && !t.done && !paused ? <Txt variant="meta"><Txt variant="meta" dim>Reserved · </Txt>{whenLine(t)}</Txt> : null}
-          {t.ifthen && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Backup · </Txt>{t.ifthen}</Txt> : null}
-          {t.cue && !t.done ? <Txt variant="meta" style={{ marginTop: -S.s3 }}><Txt variant="meta" dim>Cue · </Txt>{t.cue}</Txt> : null}
-
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: pickColor }} onPress={() => setPickColor(v => !v)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, minHeight: 44, marginTop: -S.s2 }}>
-            <View style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: taskColor(p, t) }} />
-            <Txt variant="meta"><Txt variant="meta" dim>Calendar colour · </Txt>{t.color ? 'Your colour' : 'Theme'}</Txt>
-          </Pressable>
-          {pickColor ? <ColorSwatches value={t.color} auto onChange={c => { updateTask(t.id, x => ({ ...x, color: c })); setPickColor(false); }} /> : null}
-
-          {!t.done ? (
-            <View style={{ gap: S.s1 }}>
-            <TextInput value={notes} onChangeText={editNotes} onBlur={saveNotes} multiline
-              placeholder="Notes: progress, links, what is in the way" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-              style={{ minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24 }} />
-            <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1, minHeight: 20 }}>
-              {noteState === 'saved' ? <CheckIcon size={16} color={statusColor(p, 'green', true)} /> : null}
-              <Txt variant="small" dim>{noteState === 'saved' ? 'Saved' : noteState === 'saving' ? 'Saving…' : 'Saves as you type'}</Txt>
-            </View>
-            </View>
-          ) : null}
-
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {t.done ? (
-              <>
-                <Btn style={{ flex: 1 }} label="Restore" icon={<UndoIcon color={p.dim} />} onPress={() => updateTask(t.id, x => ({ ...x, done: false, letGo: false, doneAt: undefined }))} />
-                <Btn style={{ flex: 1 }} label={armDelete ? 'Tap again' : 'Delete'} onPress={() => {
-                  if (!armDelete) { setArmDelete(true); haptic.warn(); return; }
-                  update(s => ({ ...s, tasks: s.tasks.filter(x => x.id !== t.id) })); toast('Deleted');
-                }} />
-              </>
-            ) : paused ? (
-              <Btn style={{ flex: 1 }} label="Resume" icon={<PlayIcon color={p.dim} />} onPress={() => {
-                const away = Date.now() - (t.pausedAt ?? Date.now());
-                updateTask(t.id, x => ({ ...x, pausedAt: null, deadline: x.deadline + away, start: x.start + away }));
-                toast(`Welcome back. Deadline moved to ${fdate(t.deadline + away)}.`);
-              }} />
-            ) : (
-              <>
-                <Btn style={{ flex: 1 }} label="Done" icon={<CheckIcon color={p.dim} />} onPress={complete} />
-                <Btn style={{ flex: 1 }} label="Pause" icon={<PauseIcon color={p.dim} />} onPress={() => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); }} />
-                {over ? <Btn style={{ flex: 1 }} label="Let go" onPress={() => { updateTask(t.id, x => ({ ...x, done: true, letGo: true, doneAt: Date.now() })); toast('Let go. That time is yours again.'); }} /> : null}
-              </>
-            )}
-          </View>
-          {t.done && t.doneAt ? <Txt variant="small" dim>Finished {fshort(t.doneAt)}</Txt> : null}
-        </Enter>
-      ) : null}
+    <View style={{ borderBottomWidth: 1, borderBottomColor: p.line, overflow: 'hidden' }}>
+      {/* What a swipe will do, revealed underneath. */}
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: S.s4, backgroundColor: p.raise }}>
+        <Animated.View style={{ opacity: showDone, flexDirection: 'row', alignItems: 'center', gap: S.s2 }}><CheckIcon color={statusColor(p, 'green', true)} /><Txt style={{ fontFamily: F.uiSemi }} color={statusColor(p, 'green', true)}>{t.done ? '' : 'Done'}</Txt></Animated.View>
+        <Animated.View style={{ opacity: showDel }}><Txt style={{ fontFamily: F.uiSemi }} color={p.redInk}>Delete</Txt></Animated.View>
+      </Animated.View>
+      <Animated.View {...swipe.panHandlers} style={{ transform: [{ translateX: x }], backgroundColor: p.bg }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${label}`} accessibilityHint="Opens the task. Swipe right for done, left to delete."
+          onPress={() => { haptic.tick(); router.push({ pathname: '/task', params: { id: t.id } }); }}
+          style={({ pressed }) => ({ height: 64, flexDirection: 'row', alignItems: 'center', gap: S.s4, opacity: pressed ? 0.7 : 1 })}>
+          <View style={{ width: 12, alignItems: 'center' }}><StatusDot st={st} shapes={state.shapes} /></View>
+          <Txt numberOfLines={1} style={[{ flex: 1 }, t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
+          <Txt variant="meta" dim>{label}</Txt>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }

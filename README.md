@@ -28,7 +28,7 @@ emailing it to testers, plus the extra steps for iPhones.
 
 | Path | What it is |
 |---|---|
-| `src/app/` | Screens (Expo Router): `(tabs)/index` Life, `(tabs)/year` Year, `day` (a date's tasks), `(tabs)/wisdom` Wisdom, `partner`, `wallpaper`, `onboarding`, `new-task`, `settings` |
+| `src/app/` | Screens (Expo Router): `(tabs)/index` Life, `(tabs)/year` Year, `(tabs)/hours` Day (by the hour), `day` (a date's tasks), `task` (one task), `(tabs)/wisdom` Wisdom, `partner`, `wallpaper`, `onboarding`, `new-task`, `settings` |
 | `src/components/` | Life grid (SVG), status dots with shapes, buttons, date and time fields, icons |
 | `src/lib/store.tsx` | App state saved on the phone (AsyncStorage) |
 | `src/lib/time.ts` | Weeks, status colours by time left, reserved session maths |

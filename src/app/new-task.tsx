@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ColorSwatches } from '../components/ColorSwatches';
 import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
@@ -12,7 +11,14 @@ import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
 import { F, R, S, usePalette } from '../theme';
 
 const LENGTHS = [15, 30, 45, 60, 90];
-const QUICK: [string, number][] = [['2 weeks', 14], ['1 month', 30], ['3 months', 91], ['1 year', 365]];
+type Unit = 'week' | 'month' | 'year';
+const UNITS: Unit[] = ['week', 'month', 'year'];
+/** `n` weeks, months or years from now (months and years by the calendar, not a fixed number of days). */
+const fromNow = (u: Unit, n: number) => {
+  const d = new Date();
+  if (u === 'week') d.setDate(d.getDate() + 7 * n); else if (u === 'month') d.setMonth(d.getMonth() + n); else d.setFullYear(d.getFullYear() + n);
+  return d;
+};
 const DAYS: [string, number, string][] = [['M', 1, 'Monday'], ['T', 2, 'Tuesday'], ['W', 3, 'Wednesday'], ['T', 4, 'Thursday'], ['F', 5, 'Friday'], ['S', 6, 'Saturday'], ['S', 0, 'Sunday']];
 const HINTS: Record<string, string> = {
   career: 'Apply for three senior roles', health: 'Run a 10K', money: 'Save three months of rent', learning: 'Finish the data course',
@@ -23,11 +29,14 @@ export default function NewTask() {
   const { state, update } = useStore();
   const toast = useToast();
   const p = usePalette();
-  const [title, setTitle] = useState('');
-  const params = useLocalSearchParams<{ deadline?: string; on?: string; time?: string }>();
+  const params = useLocalSearchParams<{ deadline?: string; on?: string; time?: string; edit?: string }>();
+  // Editing an existing task: every field starts from it.
+  const ed = params.edit ? state.tasks.find(t => t.id === params.edit) : undefined;
+  const [title, setTitle] = useState(ed?.title ?? '');
   const onDate = params.on ? (() => { const [y, m, d] = params.on!.split('-').map(Number); return new Date(y, m - 1, d, 12); })() : null;
   // Opened from a day on the Year screen: that day is the deadline.
   const [deadline, setDeadline] = useState(() => {
+    if (ed) return new Date(ed.deadline);
     if (!params.deadline) {
       // From an hour on the Timeline: make sure the deadline isn't before that session.
       const base = new Date(Date.now() + 30 * DAY);
@@ -37,21 +46,23 @@ export default function NewTask() {
     }
     const [y, m, d] = params.deadline.split('-').map(Number); return new Date(y, m - 1, d, 12);
   });
-  const [quick, setQuick] = useState<number | null>(params.deadline ? null : 30);
+  // Quick deadlines: 1 week, 1 month or 1 year; once one is picked, − and + step it by that unit.
+  const [quick, setQuick] = useState<{ u: Unit; n: number } | null>(ed || params.deadline || params.on ? null : { u: 'month', n: 1 });
+  const pickQuick = (u: Unit, n: number) => { const v = Math.max(1, Math.min(u === 'week' ? 52 : u === 'month' ? 24 : 10, n)); haptic.tick(); setQuick({ u, n: v }); setDeadline(fromNow(u, v)); };
   // When: always answered. "Repeat" (days of the week) or "Once" (one date). A free time is pre-filled and said
   // to be a suggestion; there is no way to save without a time (Milkman et al. 2011: date *and* time prompts work).
-  const [mode, setMode] = useState<'repeat' | 'once'>(onDate ? 'once' : 'repeat');
-  const [days, setDays] = useState<number[]>(onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5]);
-  const [onceDate, setOnceDate] = useState<Date>(onDate ?? new Date(Date.now() + DAY));
-  const [minutes, setMinutes] = useState(DEFAULT_MINUTES);
-  const [suggested, setSuggested] = useState(() => params.time ?? suggestTime(state, onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5], DEFAULT_MINUTES));
+  const [mode, setMode] = useState<'repeat' | 'once'>(ed ? (ed.slot ? 'repeat' : 'once') : onDate ? 'once' : 'repeat');
+  const [days, setDays] = useState<number[]>(ed?.slot?.days ?? (onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5]));
+  const [onceDate, setOnceDate] = useState<Date>(ed?.oneOff ? new Date(ed.oneOff) : onDate ?? new Date(Date.now() + DAY));
+  const [minutes, setMinutes] = useState(ed?.minutes ?? DEFAULT_MINUTES);
+  const edTime = ed ? (ed.slot?.time ?? (ed.oneOff ? `${pad(new Date(ed.oneOff).getHours())}:${pad(new Date(ed.oneOff).getMinutes())}` : undefined)) : undefined;
+  const [suggested, setSuggested] = useState(() => edTime ?? params.time ?? suggestTime(state, onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5], DEFAULT_MINUTES));
   const [time, setTime] = useState(() => { const d = new Date(); const m = fromHM(params.time ?? suggested); d.setHours(Math.floor(m / 60), m % 60, 0, 0); return d; });
-  const [touchedTime, setTouchedTime] = useState(!!params.time);
-  const [place, setPlace] = useState('');
-  const [more, setMore] = useState(false);
-  const [ifthen, setIfthen] = useState('');
-  const [cue, setCue] = useState('');
-  const [color, setColor] = useState<string | null>(null);
+  const [touchedTime, setTouchedTime] = useState(!!params.time || !!ed);
+  const [place, setPlace] = useState(ed?.place ?? '');
+  const [more, setMore] = useState(!!(ed?.ifthen || ed?.cue));
+  const [ifthen, setIfthen] = useState(ed?.ifthen ?? '');
+  const [cue, setCue] = useState(ed?.cue ?? '');
   const [err, setErr] = useState('');
 
   const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
@@ -59,19 +70,26 @@ export default function NewTask() {
   const save = () => {
     if (!title.trim()) return setErr('Give the task a name.');
     const dl = endOfDay(+deadline);
-    if (dl <= Date.now()) return setErr('Pick a deadline from tomorrow onwards.');
+    if (dl <= Date.now() && !(ed && dl === ed.deadline)) return setErr('Pick a deadline from tomorrow onwards.');
     const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
     let oneOff: number | null = null;
     if (mode === 'once') {
       const d = new Date(onceDate); d.setHours(time.getHours(), time.getMinutes(), 0, 0); oneOff = +d;
-      if (oneOff <= Date.now()) return setErr('Pick a time that is still ahead.');
+      if (oneOff <= Date.now() && !(ed && oneOff === ed.oneOff)) return setErr('Pick a time that is still ahead.');
       if (oneOff > dl) return setErr('The session is after the deadline. Move one of them.');
     }
-    const t: Task = {
-      id: uid(), title: title.trim(), start: Date.now(), deadline: dl, minutes,
+    const fields = {
+      title: title.trim(), deadline: dl, minutes,
       slot: mode === 'repeat' ? { days, time: hm } : null, oneOff,
-      place: place.trim(), ifthen: ifthen.trim(), cue: cue.trim(), color,
+      place: place.trim(), ifthen: ifthen.trim(), cue: cue.trim(),
     };
+    if (ed) {
+      // Editing keeps history (start, sessions, check-ins, notes, colour); only the plan changes.
+      update(s => ({ ...s, tasks: s.tasks.map(x => (x.id === ed.id ? { ...x, ...fields } : x)) }));
+      haptic.ok(); toast('Saved'); router.back();
+      return;
+    }
+    const t: Task = { id: uid(), start: Date.now(), color: null, ...fields };
     update(s => ({ ...s, tasks: [...s.tasks, t] }));
     haptic.ok();
     const n = nextSlot(t);
@@ -83,7 +101,7 @@ export default function NewTask() {
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
-          <Txt variant="h2" style={{ flex: 1 }}>New task</Txt>
+          <Txt variant="h2" style={{ flex: 1 }}>{ed ? 'Edit task' : 'New task'}</Txt>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
             <CloseIcon color={p.dim} />
           </Pressable>
@@ -96,7 +114,17 @@ export default function NewTask() {
           <View style={{ gap: S.s2 }}>
             <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Deadline</Txt>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-              {QUICK.map(([l, d]) => <Chip key={l} label={l} on={quick === d} onPress={() => { setQuick(d); setDeadline(new Date(Date.now() + d * DAY)); }} />)}
+              {UNITS.map(u => quick?.u === u ? (
+                <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderColor: p.ink, backgroundColor: p.ink }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>−</Txt>
+                  </Pressable>
+                  <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }} color={p.bg}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>+</Txt>
+                  </Pressable>
+                </View>
+              ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
             </View>
             <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); }} />
           </View>
@@ -126,12 +154,12 @@ export default function NewTask() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1 }}>
               {LENGTHS.map(m => <Chip key={m} label={m < 60 ? `${m} min` : `${m / 60 === 1 ? '1' : '1½'} h`} on={minutes === m} onPress={() => setMinutes(m)} />)}
             </View>
-            <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={color ?? p.ink}
-              busy={state.tasks.filter(t => !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
+            <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
+              busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
                 .map(t => [fromHM(t.slot!.time), t.minutes ?? DEFAULT_MINUTES] as [number, number])} />
             {(() => {
               const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
-              const clash = overlaps(state, mode === 'repeat' ? days : [onceDate.getDay()], hm, minutes);
+              const clash = overlaps(state, mode === 'repeat' ? days : [onceDate.getDay()], hm, minutes, ed?.id);
               const end = toHM(fromHM(hm) + minutes);
               if (clash.length) {
                 const alt = suggestTime(state, mode === 'repeat' ? days : [onceDate.getDay()], minutes, hm);
@@ -155,12 +183,6 @@ export default function NewTask() {
             <TextInput value={place} onChangeText={setPlace} placeholder="At my desk" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
           </View>
 
-          <View style={{ gap: S.s2 }}>
-            <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Colour on the Year calendar</Txt>
-            <ColorSwatches value={color} onChange={setColor} auto />
-            <Txt variant="small" dim>The first circle follows the app: light boxes in dark mode, dark boxes in light mode.</Txt>
-          </View>
-
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: more }} onPress={() => setMore(m => !m)} style={{ minHeight: 48, justifyContent: 'center' }}>
             <Txt style={{ fontFamily: F.uiSemi }} dim>{more ? '−' : '+'}  Make the plan stronger</Txt>
           </Pressable>
@@ -182,7 +204,7 @@ export default function NewTask() {
           {/* Saving needs a time: with "Repeat", at least one day. The button says what is missing, no error popup. */}
           {(() => {
             const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
-            return <Btn kind="primary" label={missing ?? 'Reserve the time and start'} disabled={!!missing} style={missing ? { opacity: 0.45 } : undefined} onPress={save} />;
+            return <Btn kind="primary" label={missing ?? (ed ? 'Save changes' : 'Reserve the time and start')} disabled={!!missing} style={missing ? { opacity: 0.45 } : undefined} onPress={save} />;
           })()}
         </ScrollView>
       </KeyboardAvoidingView>

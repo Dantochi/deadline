@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CalendarIcon, ChevronIcon, CloseIcon, PlusIcon } from '../components/icons';
+import { TaskFabs } from '../components/Fabs';
 import { Enter } from '../components/Motion';
 import { PartnerCard, TaskRow } from '../components/TaskParts';
 import { Section, Txt, haptic } from '../components/ui';
@@ -23,7 +24,6 @@ export default function Day() {
   const params = useLocalSearchParams<{ date?: string; task?: string }>();
   const today = ymd(new Date());
   const [key, setKey] = useState(params.date ?? today);
-  const [openId, setOpenId] = useState<string | null>(params.task ?? null);
   const [dir, setDir] = useState(0);
   const date = at(key), isToday = key === today, past = key < today;
   const birth = parseBirth(state.birth), first = ymd(birth), last = ymd(addYears(birth, state.life));
@@ -32,10 +32,10 @@ export default function Day() {
   const move = (n: number) => {
     const next = ymd(new Date(+date + n * DAY));
     if (next < first || next > last) return;
-    haptic.tick(); setOpenId(null); setDir(n); setKey(next);
+    haptic.tick(); setDir(n); setKey(next);
   };
 
-  const row = (t: Task) => <TaskRow key={t.id} t={t} open={openId === t.id} onToggle={() => { haptic.tick(); setOpenId(openId === t.id ? null : t.id); }} />;
+  const row = (t: Task) => <TaskRow key={t.id} t={t} />;
   const group = (label: string, st: Status, list: Task[]) => (list.length ? <Section key={label} label={label} st={st} count={list.length}>{list.map(row)}</Section> : null);
 
   // Today: everything that can be acted on. Other days: what that day holds.
@@ -77,12 +77,6 @@ export default function Day() {
       </View>
 
       {/* Fixed row: the same day as hours. */}
-      <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push({ pathname: '/timeline', params: { date: key } }); }}
-        style={{ height: 48, marginHorizontal: '4.5%', flexDirection: 'row', alignItems: 'center', gap: S.s2, paddingHorizontal: S.s4, backgroundColor: p.raise }}>
-        <CalendarIcon size={20} color={p.ink} />
-        <Txt style={{ fontFamily: F.uiSemi, flex: 1 }}>See the day by the hour</Txt>
-        <ChevronIcon size={18} color={p.dim} />
-      </Pressable>
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: 140 }}>
         <Enter id={key} from={{ x: dir * 20 }} duration={200}>
         {/* The weekly review lives in the Year screen's strip; the partner's week shows here, on today. */}
@@ -117,21 +111,11 @@ export default function Day() {
           </View>
         ) : null}
 
-        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/events', params: { date: key } })}
-          style={{ height: 48, justifyContent: 'center', marginTop: S.s5 }}>
-          <Txt style={{ fontFamily: F.uiSemi }} dim>+ Mark this day as an important date</Txt>
-        </Pressable>
         </Enter>
       </ScrollView>
 
-      {!past ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={isToday ? 'New task' : 'New task on this day'}
-          onPress={() => { haptic.tick(); router.push(isToday ? '/new-task' : { pathname: '/new-task', params: { deadline: key, on: key } }); }}
-          style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 32, height: BTN.l, paddingLeft: 16, paddingRight: 20, borderRadius: R.lg, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: 8, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <PlusIcon color={p.bg} />
-          <Txt style={{ fontFamily: F.uiBold, fontSize: 19, lineHeight: 24 }} color={p.bg}>New task</Txt>
-        </Pressable>
-      ) : null}
+      <TaskFabs onDate={() => router.push({ pathname: '/events', params: { date: key } })}
+        onTask={past ? undefined : () => router.push(isToday ? '/new-task' : { pathname: '/new-task', params: { deadline: key, on: key } })} />
     </SafeAreaView>
   );
 }

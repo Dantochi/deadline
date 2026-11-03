@@ -1,30 +1,35 @@
-// Timeline: one day as hours, like a calendar day view. Each reserved session is a square block at its time,
-// as tall as it lasts, in the task's colour; overlapping sessions sit side by side. Deadlines and important dates
-// sit in a fixed strip above the hours. Tap a block to open the task; tap an empty hour to plan a session there.
+// Day tab: one day as hours, like a calendar day view. Each reserved session is a square block at its time, as
+// tall as it lasts, in the task's colour; overlapping sessions sit side by side. Deadlines and important dates sit
+// in a fixed strip above the hours. Tap a block to open the task, press and hold it to change its colour (the only
+// place colours are changed), and tap an empty hour to plan a session there.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronIcon, CloseIcon } from '../components/icons';
-import { Enter } from '../components/Motion';
-import { Txt, haptic } from '../components/ui';
-import { dayDetail, taskColor } from '../lib/calendar';
-import { columns, sessionsOn, toHM } from '../lib/schedule';
-import { useStore } from '../lib/store';
-import { DAY, addYears, pad, parseBirth, ymd } from '../lib/time';
-import { F, S, usePalette } from '../theme';
+import { ColorSwatches } from '../../components/ColorSwatches';
+import { ChevronIcon } from '../../components/icons';
+import { Enter } from '../../components/Motion';
+import { Txt, haptic } from '../../components/ui';
+import { dayDetail, taskColor } from '../../lib/calendar';
+import { columns, sessionsOn, toHM } from '../../lib/schedule';
+import { useStore, type Task } from '../../lib/store';
+import { DAY, addYears, pad, parseBirth, ymd } from '../../lib/time';
+import { F, S, usePalette } from '../../theme';
 
 const HOUR = 64, GUTTER = 52;
 const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
 
-export default function Timeline() {
-  const { state } = useStore();
+export default function Hours() {
+  const { state, updateTask } = useStore();
   const p = usePalette();
   const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ date?: string }>();
   const today = ymd(new Date());
   const [key, setKey] = useState(params.date ?? today);
   const [dir, setDir] = useState(0);
+  const [colorFor, setColorFor] = useState<Task | null>(null);
+  // Opened from a date page with ?date=: follow it.
+  useEffect(() => { if (params.date) setKey(params.date); }, [params.date]);
   const date = at(key), isToday = key === today, past = key < today;
   const birth = parseBirth(state.birth), first = ymd(birth), last = ymd(addYears(birth, state.life));
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
@@ -51,7 +56,7 @@ export default function Timeline() {
   const nowMin = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Fixed header: day and arrows to the days either side. */}
       <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%' }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -12 }}>
@@ -61,11 +66,8 @@ export default function Timeline() {
           <Txt variant="label" dim>{isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'long' })}</Txt>
           <Txt variant="h2" numberOfLines={1}>{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Txt>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <ChevronIcon color={p.ink} />
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
-          <CloseIcon color={p.dim} />
         </Pressable>
       </View>
 
@@ -73,7 +75,7 @@ export default function Timeline() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 44, flexGrow: 0 }}
         contentContainerStyle={{ paddingHorizontal: '4.5%', gap: S.s2, alignItems: 'center' }}>
         {due.map(t => (
-          <Pressable key={t.id} onPress={() => router.push({ pathname: '/day', params: { date: key, task: t.id } })}
+          <Pressable key={t.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })} onLongPress={() => setColorFor(t)}
             style={{ height: 32, paddingHorizontal: S.s3, flexDirection: 'row', alignItems: 'center', gap: S.s2, backgroundColor: taskColor(p, t) }}>
             <Txt variant="small" style={{ fontFamily: F.uiBold }} color={p.bg} numberOfLines={1}>Due · {t.title}</Txt>
           </Pressable>
@@ -107,7 +109,8 @@ export default function Timeline() {
               return (
                 <Pressable key={`${b.t.id}${b.start}`} accessibilityRole="button"
                   accessibilityLabel={`${b.t.title}, ${toHM(d.getHours() * 60 + d.getMinutes())} for ${b.minutes} minutes${b.state === 'done' ? ', done' : b.state === 'missed' ? ', did not happen' : ''}`}
-                  onPress={() => { haptic.tick(); router.push({ pathname: '/day', params: { date: key, task: b.t.id } }); }}
+                  onPress={() => { haptic.tick(); router.push({ pathname: '/task', params: { id: b.t.id } }); }}
+                  onLongPress={() => { haptic.tick(); setColorFor(b.t); }} delayLongPress={350}
                   style={({ pressed }) => ({ position: 'absolute', top, left: GUTTER + col * w + 1, width: w - 2, height: h - 2, padding: 6,
                     backgroundColor: muted ? `${c}55` : c, borderLeftWidth: 3, borderLeftColor: b.state === 'done' ? p.ink : 'transparent', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
                   <Txt numberOfLines={h > 44 ? 2 : 1} style={{ fontFamily: F.uiBold, fontSize: 13, lineHeight: 16 }} color={muted ? p.ink : p.bg}>
@@ -127,6 +130,25 @@ export default function Timeline() {
           </View>
         </Enter>
       </ScrollView>
+
+      {!isToday ? (
+        <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setDir(key > today ? -1 : 1); setKey(today); }}
+          style={{ position: 'absolute', right: 20, bottom: 24, height: 44, paddingHorizontal: S.s4, justifyContent: 'center', backgroundColor: p.ink }}>
+          <Txt style={{ fontFamily: F.uiBold }} color={p.bg}>Today</Txt>
+        </Pressable>
+      ) : null}
+
+      {/* Colour, changed only here: press and hold a session. */}
+      <Modal transparent visible={!!colorFor} animationType="fade" onRequestClose={() => setColorFor(null)}>
+        <Pressable style={{ flex: 1, backgroundColor: p.scrim, justifyContent: 'flex-end' }} onPress={() => setColorFor(null)}>
+          <Pressable style={{ backgroundColor: p.raise, padding: S.s5, paddingBottom: S.s7, gap: S.s3 }} onPress={() => {}}>
+            <Txt variant="label" dim>Colour</Txt>
+            <Txt variant="h2" numberOfLines={1}>{colorFor?.title}</Txt>
+            <ColorSwatches auto value={colorFor?.color} onChange={c => { if (colorFor) updateTask(colorFor.id, x => ({ ...x, color: c })); haptic.ok(); setColorFor(null); }} />
+            <Txt variant="small" dim>The first circle follows the app: light in dark mode, dark in light mode. Used on the Year calendar and here.</Txt>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
