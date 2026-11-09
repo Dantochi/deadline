@@ -18,6 +18,8 @@ export const MicIcon = ({ color, size = 22 }: { color: string; size?: number }) 
   </Svg>
 );
 
+const MAX_RESTARTS = 30;
+const SILENCE: string[] = ['no-speech', 'speech-timeout'];
 const locale = () => { try { return Intl.DateTimeFormat().resolvedOptions().locale || 'en-US'; } catch { return 'en-US'; } };
 
 export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose: () => void; onResult: (text: string) => void }) {
@@ -35,8 +37,9 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
 
   useSpeechRecognitionEvent('start', () => setListening(true));
   useSpeechRecognitionEvent('end', () => {
-    // Ended by the phone, not by a tap: carry on listening (a few times at most).
-    if (want.current && restarts.current < 4) { restarts.current++; listen(); return; }
+    // Ended by the phone, not by a tap: carry on listening. The one-minute safety stop bounds the restarts.
+    // A short gap lets the recogniser release the microphone first, or the restart fails as "busy".
+    if (want.current && restarts.current < MAX_RESTARTS) { restarts.current++; setTimeout(() => { if (want.current) listen(); }, 150); return; }
     want.current = false; setListening(false);
   });
   useSpeechRecognitionEvent('result', e => {
@@ -45,7 +48,9 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
     else setText(join(kept.current, said));
   });
   useSpeechRecognitionEvent('error', e => {
-    if (want.current && e.error === 'no-speech' && restarts.current < 4) return; // 'end' follows and restarts
+    // A pause in speech: Android reports it as an error ("speech-timeout" or "no-speech") and ends.
+    // That is not a failure here; 'end' follows and listening starts again.
+    if (want.current && SILENCE.includes(e.error) && restarts.current < MAX_RESTARTS) return;
     want.current = false;
     setListening(false);
     setError(e.error === 'not-allowed' ? 'Microphone access is off. You can type it instead.'
