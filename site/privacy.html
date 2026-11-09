@@ -11,7 +11,7 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 </style></head>
 <body><main><nav><a href="/">Deadline</a><a href="/privacy">Privacy</a><a href="/delete-account">Delete account</a></nav>
 <h1>Privacy policy</h1>
-<p class="dim">Last updated 29 October 2026</p>
+<p class="dim">Last updated 9 November 2026</p>
 <p>Deadline is built so that almost everything stays on your phone. This page explains what the app stores, what leaves your phone, and the choices you have.</p>
 
 <h2>Stored only on your phone</h2>
@@ -31,11 +31,14 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <li><b>A weekly summary</b> that only your active partner can read: sessions kept and missed, tasks finished, how many tasks are on track or need attention, and, if you allow it, task titles. Notes are never shared.</li>
 </ul>
 
+<h2>Only if you turn on "Understand with Gemini"</h2>
+<p>This setting is off unless you turn it on (Settings → Voice). When it is on, the sentence you say or type to create a task, together with today's date, is sent to Google's Gemini model through Firebase AI Logic so it can pick out the deadline, days, times, length and subtasks. Nothing else is sent: not your other tasks, notes, birth date or account. Deadline does not store these sentences on a server. Google processes them under the <a href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a>; while Deadline uses Google's free tier, those terms let Google use what is sent to improve its products, so avoid saying anything private in a task sentence. With the setting off, sentences are read only on your phone.</p>
+
 <h2>Permissions</h2>
 <ul>
 <li><b>Notifications</b>: reminders are scheduled on your phone. No reminder content is sent to a server.</li>
 <li><b>Photos</b> (save only): used when you save a wallpaper image of your life grid. The app does not read your photo library.</li>
-<li><b>Microphone</b> (only while the mic is on): when you say a task, your phone's own speech service turns it into text. On many phones that service is run by Google or Apple and may process the audio on their servers. Deadline receives only the text, reads the dates and times from it on your phone, and never stores or sends audio.</li>
+<li><b>Microphone</b> (only while the mic is on): when you say a task, your phone's own speech service turns it into text. On many phones that service is run by Google or Apple and may process the audio on their servers. Deadline receives only the text, reads the dates and times from it on your phone (or with Gemini, if you turned that on), and never stores or sends audio.</li>
 </ul>
 
 <h2>What we do not do</h2>
@@ -47,6 +50,7 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <h2>Your choices</h2>
 <ul>
 <li>Use the app without an account; everything except the partner feature works offline.</li>
+<li>Leave "Understand with Gemini" off to keep task sentences on your phone.</li>
 <li>Turn off task titles in Settings → Accountability partner to share counts only.</li>
 <li>Delete your account and all shared data in the app (Settings → Accountability partner → Delete account), or see <a href="/delete-account">Delete your account</a>.</li>
 </ul>
@@ -55,5 +59,5 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <p>Deadline is not directed at children under 13.</p>
 
 <h2>Changes and contact</h2>
-<p>If a future version adds features that use your data differently (for example AI suggestions), this policy will be updated before that version is released. Contact: <a href="mailto:REPLACE_WITH_SUPPORT_EMAIL">REPLACE_WITH_SUPPORT_EMAIL</a></p>
+<p>If a future version uses your data differently, this policy will be updated before that version is released. Contact: <a href="mailto:REPLACE_WITH_SUPPORT_EMAIL">REPLACE_WITH_SUPPORT_EMAIL</a></p>
 </main></body></html>

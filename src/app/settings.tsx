@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, StatusDot, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
+import { aiAvailable } from '../lib/ai';
 import { usePartner } from '../lib/partner';
 import { ChevronIcon, CloseIcon } from '../components/icons';
 import { DEFAULT_STATE, TAB_TITLES, fixTabOrder, useStore } from '../lib/store';
@@ -128,6 +129,14 @@ export default function Settings() {
             })}
           </View>
           {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
+        </>)}
+
+        {group('Voice', <>
+          {row('Understand with Gemini', aiAvailable
+            ? 'Better at long sentences and spoken lists. Sends what you say or type for a task (not your other data) to Google. Off: everything is read on your phone.'
+            : 'Needs Firebase set up in this build', (
+            <Switch disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
+          ))}
         </>)}
 
         {group('Reminders', <>

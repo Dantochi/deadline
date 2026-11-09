@@ -58,6 +58,7 @@ export type State = {
   events?: LifeEvent[]; // important dates shown on the life grid
   saved?: string[]; // saved Wisdom quotes (quoteKey)
   tabOrder?: TabName[]; // order of the bottom tabs, set in Settings
+  aiParse?: boolean; // let Gemini read spoken/typed tasks (sends the sentence to Google); off by default
   tasks: Task[];
 };
 

@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon } from '../components/icons';
 import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
-import { parseTask } from '../lib/parse';
+import { aiAvailable, aiParse } from '../lib/ai';
+import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromDuration, fromHM, overlaps, suggestTime, toDuration, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
 import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
@@ -108,31 +109,48 @@ export default function NewTask() {
   const [heard, setHeard] = useState<string[]>([]);
   const [newSteps, setNewSteps] = useState<string[]>([]); // subtasks said by voice, added on save
   const setClock = (hm: string) => { const m = fromHM(hm); const d = new Date(); d.setHours(Math.floor(m / 60), m % 60, 0, 0); setTime(d); };
-  const apply = (sentence: string) => {
-    const r = parseTask(sentence);
-    if (r.title) setTitle(r.title);
-    let dl = deadline;
-    if (r.deadline) { dl = r.deadline; setDeadline(r.deadline); setQuick(null); }
-    const wd = r.days ?? (r.once ? [r.once.getDay()] : days);
-    if (r.days) { setMode('repeat'); setDays(r.days); }
-    if (r.once) {
-      setMode('once'); setOnceDate(r.once);
-      if (r.once > dl) { setDeadline(r.once); setQuick(null); }
-    }
-    let len = r.minutes ?? minutes;
+  // Fills the form from a reading of the sentence. `base` is the form as it was before, so a second reading
+  // (Gemini's, after the instant on-phone one) replaces the first instead of mixing with it.
+  type Base = { deadline: Date; days: number[]; minutes: number; time: Date; mode: typeof mode; title: string };
+  const fill = (r: Parsed, base: Base) => {
+    setTitle(r.title || base.title);
+    const dl = r.deadline ?? base.deadline;
+    setDeadline(dl); if (r.deadline) setQuick(null);
+    const wd = r.days ?? (r.once ? [r.once.getDay()] : base.days);
+    setMode(r.days ? 'repeat' : r.once ? 'once' : base.mode);
+    setDays(r.days ?? base.days);
+    if (r.once) { setOnceDate(r.once); if (r.once > dl) { setDeadline(r.once); setQuick(null); } }
+    let len = r.minutes ?? base.minutes;
     let startHM = r.time;
     if (!startHM && (r.days || r.once)) startHM = suggestTime(state, wd, len);
     // "until 9pm": the length runs from the start to that end.
     if (r.end && !r.minutes) {
-      const from = fromHM(startHM ?? `${pad(time.getHours())}:${pad(time.getMinutes())}`), to = fromHM(r.end);
+      const from = fromHM(startHM ?? `${pad(base.time.getHours())}:${pad(base.time.getMinutes())}`), to = fromHM(r.end);
       if (to > from && to - from <= 16 * 60) len = to - from;
     }
-    if (len !== minutes) setMinutes(len);
-    if (r.time) { setClock(r.time); setTouchedTime(true); }
-    else if (startHM) setClock(startHM);
-    if (r.steps?.length) setNewSteps(r.steps);
+    setMinutes(len);
+    if (startHM) setClock(startHM); else setTime(base.time);
+    setTouchedTime(!!r.time);
+    setNewSteps(r.steps ?? []);
     setHeard(r.found); setErr('');
   };
+  const seq = useRef(0);
+  const [thinking, setThinking] = useState(false);
+  const apply = (sentence: string) => {
+    const base: Base = { deadline, days, minutes, time, mode, title };
+    const n = ++seq.current;
+    fill(parseTask(sentence), base); // instant, on the phone
+    setBy('phone');
+    if (!state.aiParse || !aiAvailable) return;
+    // Then Gemini, if turned on; its reading replaces the first unless something newer was said meanwhile.
+    setThinking(true);
+    aiParse(sentence).then(r => {
+      if (n !== seq.current) return;
+      setThinking(false);
+      if (r) { fill(r, base); setBy('gemini'); }
+    });
+  };
+  const [by, setBy] = useState<'phone' | 'gemini'>('phone');
 
   const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
@@ -189,7 +207,7 @@ export default function NewTask() {
           {heard.length ? (
             <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s3 }}>
               <CheckIcon size={16} color={statusColor(p, 'green', true)} />
-              <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>Understood · </Txt>{heard.join(' · ')}</Txt>
+              <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… · ' : by === 'gemini' ? 'Understood by Gemini · ' : 'Understood · '}</Txt>{heard.join(' · ')}</Txt>
             </View>
           ) : null}
           {newSteps.length ? (

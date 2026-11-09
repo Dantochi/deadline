@@ -1,12 +1,13 @@
-// Firebase is only used for the optional accountability partner: accounts, usernames and a weekly summary.
-// Everything else stays on the phone. Fill these in from Firebase → Project settings → Your apps → Web app
+// Firebase is used for the optional accountability partner (accounts, usernames, a weekly summary) and, when
+// turned on in Settings, for Gemini reading a spoken task (lib/ai). Everything else stays on the phone.
+// Fill these in from Firebase → Project settings → Your apps → Web app
 // (see docs/PARTNER.md). These values identify the project; they are not secrets.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApps, initializeApp } from 'firebase/app';
 import { getReactNativePersistence, initializeAuth, type Auth } from '@firebase/auth';
 import { initializeFirestore, type Firestore } from 'firebase/firestore';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: '',
   authDomain: 'deadline-c21d9.firebaseapp.com',
   projectId: 'deadline-c21d9',
