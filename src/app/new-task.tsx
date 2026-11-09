@@ -24,6 +24,9 @@ const fromNow = (u: Unit, n: number) => {
   return d;
 };
 const DAYS: [string, number, string][] = [['M', 1, 'Monday'], ['T', 2, 'Tuesday'], ['W', 3, 'Wednesday'], ['T', 4, 'Thursday'], ['F', 5, 'Friday'], ['S', 6, 'Saturday'], ['S', 0, 'Sunday']];
+/** Where / "Make the plan stronger" (backup plan and cue) on the form. Off for now; set true to bring them back. */
+const PLAN_EXTRAS = false;
+
 const HINTS: Record<string, string> = {
   career: 'Apply for three senior roles', health: 'Run a 10K', money: 'Save three months of rent', learning: 'Finish the data course',
   family: 'Plan the family reunion', creative: 'Finish the first draft', home: 'Repaint the bedroom',
@@ -268,6 +271,8 @@ export default function NewTask() {
             })()}
           </View>
 
+          {/* Where, backup plan and cue: switched off for now (PLAN_EXTRAS). Saved values are kept on edit. */}
+          {PLAN_EXTRAS ? <>
           <View style={{ gap: S.s3 }}>
             <Txt variant="label" dim>Where?</Txt>
             <TextInput value={place} onChangeText={setPlace} placeholder="At my desk" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
@@ -289,6 +294,7 @@ export default function NewTask() {
               </View>
             </View>
           ) : null}
+          </> : null}
 
           {err ? <Txt variant="meta" color={p.redInk} style={{ fontFamily: F.uiSemi }}>{err}</Txt> : null}
           {/* Saving needs a time: with "Repeat", at least one day. The button says what is missing, no error popup. */}
