@@ -51,22 +51,23 @@ export default function Year() {
   })).current;
 
   // The focused month: 7 columns straight on the page, always six rows tall. No boxes: a number, and under it a
-  // circle in the colour of the day's most urgent task. Only today is outlined.
+  // circle in the colour of the day's most urgent task. Only today is outlined. Days already past are greyed out
+  // and carry no mark.
   const cell = inner / 7;
   const first = new Date(year, month, 1), lead = (first.getDay() + 6) % 7, days = new Date(year, month + 1, 0).getDate();
   const big = [];
   for (let d = 1; d <= days; d++) {
     const k = lead + d - 1, x = (k % 7) * cell, y = Math.floor(k / 7) * cell;
-    const key = ymd(new Date(year, month, d)), c = cells.get(key), today = key === todayKey;
+    const key = ymd(new Date(year, month, d)), past = key < todayKey, c = past ? undefined : cells.get(key), today = key === todayKey;
     const mark = c?.urgent ? statusColor(p, c.urgent) : undefined;
     big.push(
       <Pressable key={d} accessibilityRole="button"
-        accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : ''}${c?.urgent ? `, ${c.urgent === 'red' ? 'act now' : c.urgent === 'amber' ? 'pay attention' : 'on track'}` : ''}${c?.event ? ', important date' : ''}`}
+        accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : past ? ', past' : ''}${c?.urgent ? `, ${c.urgent === 'red' ? 'act now' : c.urgent === 'amber' ? 'pay attention' : 'on track'}` : ''}${c?.event ? ', important date' : ''}`}
         accessibilityHint="Opens the day. Press and hold for its timeline."
         onPress={() => openDay(key)} onLongPress={() => openTimeline(key)} delayLongPress={380}
         style={({ pressed }) => ({ position: 'absolute', left: x + 2, top: y + 2, width: cell - 4, height: cell - 4, alignItems: 'center', justifyContent: 'center',
           borderWidth: today ? 1.5 : 0, borderColor: p.ink, borderRadius: R.sm - 4, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
-        <Txt allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: 17, lineHeight: 20 }}>{d}</Txt>
+        <Txt allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: 17, lineHeight: 20 }} color={past ? p.lived : p.ink}>{d}</Txt>
         <View style={{ width: 6, height: 6, borderRadius: 3, marginTop: 4, backgroundColor: mark ?? 'transparent', borderWidth: !mark && c?.event ? 1.5 : 0, borderColor: c?.event }} />
       </Pressable>,
     );
@@ -82,9 +83,10 @@ export default function Year() {
     for (let d = 1; d <= n; d++) {
       const k = ld + d - 1, key = ymd(new Date(year, m, d)), c = cells.get(key);
       const x = (k % 7) * u + off, y = Math.floor(k / 7) * u + off;
-      // Every day the same box; a day with a task takes its most urgent status colour, an important date its own.
-      // Plain days use `ahead`, the life grid's colour for weeks still to come, on the same page background.
-      items.push(<Rect key={d} x={x} y={y} width={box} height={box} fill={c?.urgent ? statusColor(p, c.urgent) : c?.event ?? p.ahead} />);
+      // As on the life grid: days already past in `lived` grey, with no task colour; days to come in `ahead`,
+      // or the colour of their most urgent task, or an important date's own colour.
+      const fill = key < todayKey ? p.lived : c?.urgent ? statusColor(p, c.urgent) : c?.event ?? p.ahead;
+      items.push(<Rect key={d} x={x} y={y} width={box} height={box} fill={fill} />);
       if (key === todayKey) items.push(<Rect key="today" x={x - 1} y={y - 1} width={box + 2} height={box + 2} fill="none" stroke={p.ink} strokeWidth={1} />);
     }
     const on = m === month;
