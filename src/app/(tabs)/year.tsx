@@ -7,9 +7,10 @@ import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Rect } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 import { Glass } from '../../components/Glass';
 import { ChevronIcon } from '../../components/icons';
+import { GAP } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
 import { Txt, haptic } from '../../components/ui';
 import { MONTHS, yearCells } from '../../lib/calendar';
@@ -50,9 +51,9 @@ export default function Year() {
     onPanResponderRelease: (_, g) => { if (Math.abs(g.dx) > 50) focusRef.current(yearRef.current, monthRef.current + (g.dx < 0 ? 1 : -1)); },
   })).current;
 
-  // The focused month: 7 columns inside a glass card, always six rows tall. No boxes: a number, and under it a circle
-  // in the colour of the day's most urgent task. Only today is outlined.
-  const PAD = S.s2, cell = (inner - PAD * 2) / 7;
+  // The focused month: 7 columns straight on the page, always six rows tall. No boxes: a number, and under it a
+  // circle in the colour of the day's most urgent task. Only today is outlined.
+  const PAD = S.s2, cell = inner / 7;
   const first = new Date(year, month, 1), lead = (first.getDay() + 6) % 7, days = new Date(year, month + 1, 0).getDate();
   const big = [];
   for (let d = 1; d <= days; d++) {
@@ -72,23 +73,26 @@ export default function Year() {
     );
   }
 
-  // The year at a glance: 12 small months, 6 across. Tap one to focus it.
-  const COLS = 6, mg = 8, mw = (inner - PAD * 2 - 1 - mg * (COLS - 1)) / COLS, u = mw / 7, mbox = u - 1;
+  // The year at a glance: 12 small months, 4 across and 3 down, about the size of the month above. Tap one to
+  // focus it. Each day is a square box the same size as a week box on the life grid (width / 52 − GAP).
+  // 2 spare points for the card's hairline border and rounding, so four always fit on one row.
+  const COLS = 4, mg = S.s4, mw = (inner - PAD * 2 - 2 - mg * (COLS - 1)) / COLS, u = mw / 7;
+  const box = inner / 52 - GAP, off = (u - box) / 2;
   const mini = (m: number) => {
     const f = new Date(year, m, 1), ld = (f.getDay() + 6) % 7, n = new Date(year, m + 1, 0).getDate(), items = [];
     for (let d = 1; d <= n; d++) {
-      const k = ld + d - 1, key = ymd(new Date(year, m, d)), c = cells.get(key), cx = (k % 7) * u + mbox / 2, cy = Math.floor(k / 7) * u + mbox / 2;
-      // Every day the same faint dot; a day with a task gets a larger one in its most urgent status colour.
-      items.push(c?.urgent
-        ? <Circle key={d} cx={cx} cy={cy} r={mbox * 0.42} fill={statusColor(p, c.urgent)} />
-        : <Circle key={d} cx={cx} cy={cy} r={mbox * 0.2} fill={c?.event ?? p.dim} opacity={c?.event ? 1 : 0.5} />);
-      if (key === todayKey) items.push(<Rect key="today" x={(k % 7) * u - 0.5} y={Math.floor(k / 7) * u - 0.5} width={mbox + 1} height={mbox + 1} fill="none" stroke={p.ink} strokeWidth={1} />);
+      const k = ld + d - 1, key = ymd(new Date(year, m, d)), c = cells.get(key);
+      const x = (k % 7) * u + off, y = Math.floor(k / 7) * u + off;
+      // Every day the same box; a day with a task takes its most urgent status colour, an important date its own.
+      // Plain days use `line`: `ahead` (the life grid's colour on the page) all but vanishes on the glass card.
+      items.push(<Rect key={d} x={x} y={y} width={box} height={box} fill={c?.urgent ? statusColor(p, c.urgent) : c?.event ?? p.line} />);
+      if (key === todayKey) items.push(<Rect key="today" x={x - 1} y={y - 1} width={box + 2} height={box + 2} fill="none" stroke={p.ink} strokeWidth={1} />);
     }
     const on = m === month;
     return (
       <Pressable key={m} accessibilityRole="button" accessibilityLabel={`${MONTHS[m]} ${year}`} accessibilityState={{ selected: on }}
         onPress={() => focus(year, m)} hitSlop={4} style={{ width: mw }}>
-        <Txt variant="label" style={{ fontSize: 10, letterSpacing: 1, marginBottom: 3 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
+        <Txt variant="label" style={{ fontSize: 11, letterSpacing: 1, marginBottom: 3 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
         <Svg width={mw} height={6 * u}>{items}</Svg>
         <View style={{ height: 2, marginTop: 3, backgroundColor: on ? p.ink : 'transparent' }} />
       </Pressable>
@@ -119,17 +123,17 @@ export default function Year() {
           {arrow(1)}
         </View>
 
-        {/* Focus: the month, large, always six rows, on glass. Swipe sideways to change month. */}
-        <Glass style={{ marginTop: S.s2, padding: PAD }} {...swipe.panHandlers}>
+        {/* Focus: the month, large, always six rows, straight on the page. Swipe sideways to change month. */}
+        <View style={{ marginTop: S.s5 }} {...swipe.panHandlers}>
           <View style={{ height: 24, flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => <Txt key={i} variant="small" dim allowFontScaling={false} style={{ width: cell, textAlign: 'center', fontFamily: F.uiSemi }}>{w}</Txt>)}
           </View>
           <Enter id={`${year}-${month}`} from={{ x: dir * 24 }} duration={220} style={{ height: 6 * cell }}>{big}</Enter>
-        </Glass>
+        </View>
 
-        {/* Context: the whole year, fixed size (every small month is six rows). */}
-        <Txt variant="label" dim style={{ marginTop: S.s6, marginBottom: S.s3 }}>{year} at a glance</Txt>
-        <Glass style={{ padding: PAD, flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s3 }}>
+        {/* Context: the whole year on glass, fixed size (every small month is six rows), 48 below the month. */}
+        <Txt variant="label" dim style={{ marginTop: S.s7, marginBottom: S.s3 }}>{year} at a glance</Txt>
+        <Glass style={{ padding: PAD, flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s4 }}>
           {Array.from({ length: 12 }, (_, m) => mini(m))}
         </Glass>
       </ScrollView>

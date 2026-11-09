@@ -9,7 +9,9 @@ import { activeTasks, useStore, type State } from '../lib/store';
 import { DAY, addYears, info, parseBirth, weekNow } from '../lib/time';
 import { statusColor, usePalette, type Palette } from '../theme';
 
-const GAP = 1.5, WEEK = 7 * DAY;
+/** Space between week boxes; a box is (width / 52) − GAP. The Year overview's day boxes use the same size. */
+export const GAP = 1.5;
+const WEEK = 7 * DAY;
 export const DECADE = 6;
 
 export function useGridGeometry(width: number, state: State, lived = false) {

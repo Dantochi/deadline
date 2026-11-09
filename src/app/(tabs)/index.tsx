@@ -10,7 +10,7 @@ import { GlassSegment } from '../../components/Glass';
 import { StatusDot, Txt } from '../../components/ui';
 import { eventsInWeek } from '../../lib/events';
 import { activeTasks, useStore } from '../../lib/store';
-import { DAY, YEAR, addYears, ageYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
+import { DAY, YEAR, addYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
 import { F, S, usePalette } from '../../theme';
 
 type Unit = 'weeks' | 'months' | 'years';
@@ -35,9 +35,6 @@ export default function Life() {
     return Math.max(0, Math.floor((end - now) / (YEAR / 12)));
   }, [unit, state.birth, state.life, wNow]);
 
-  // Time already lived, in the same unit as the big number.
-  const lived = unit === 'weeks' ? wNow : unit === 'years' ? ageYears(birth) : Math.floor((Date.now() - +birth) / (YEAR / 12));
-
   const today = new Date(), bday = birth.getMonth() === today.getMonth() && birth.getDate() === today.getDate();
   const next = activeTasks(state)[0];
 
@@ -61,11 +58,7 @@ export default function Life() {
 
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         {bday ? <Txt variant="label" dim>Happy birthday. A new row begins.</Txt> : null}
-        {/* What the number counts, above it at the top left; the unit switch sits under the digits. */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: S.s3 }}>
-          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{unit} left</Txt> until {state.life}</Txt>
-          <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{fmt(lived)} {unit}</Txt> lived</Txt>
-        </View>
+        {/* The number alone; the unit switch under it says what it counts (and the label says it to screen readers). */}
         <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
         <GlassSegment<Short> options={['W', 'M', 'Y']} value={(unit[0].toUpperCase() as Short)} onChange={k => setUnit(SHORT[k])}
           labels={{ W: 'Weeks', M: 'Months', Y: 'Years' }} style={{ width: 150, marginTop: S.s2, marginBottom: S.s5 }} />

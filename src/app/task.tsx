@@ -12,7 +12,7 @@ import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
 import { BoxStrip, Chip, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
-import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../lib/time';
+import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel } from '../lib/time';
 import { F, S, statusColor, usePalette } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 
@@ -144,7 +144,6 @@ export default function TaskScreen() {
         {paused ? <Txt variant="meta" dim>Paused since {fdate(t.pausedAt!)}. The clock is stopped. When you resume, the deadline moves by the time you were away.</Txt> : null}
 
         <View style={{ gap: S.s2 }}>
-          {whenLine(t) && !t.done && !paused ? line('Reserved', `${whenLine(t)}${t.minutes ? ` · ${t.minutes} min` : ''}`) : null}
           {t.place ? line('Where', t.place) : null}
           {t.ifthen ? line('Backup', t.ifthen) : null}
           {t.cue ? line('Cue', t.cue) : null}
