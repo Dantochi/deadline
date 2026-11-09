@@ -2,7 +2,9 @@
 //   "Write chapter three by Friday, weekdays at 7am for 45 minutes"
 //   → title "Write chapter three", deadline next Friday, sessions Mon–Fri 07:00, 45 minutes.
 // Deadline words: by / before / due / until / in N weeks. Session words: weekdays, every Monday, tomorrow, on Friday.
-// Time: at 7, 7:30pm, half past six, noon, in the evening. Length: for 45 minutes, for an hour and a half.
+// Time: at 7, 7:30pm, half past six, noon, in the evening; a range sets start and length: from 6 to 7:30pm,
+// 9 till 11. Length: for 45 minutes, for an hour and a half, for 1 hour 30 minutes, for 1h30.
+// Subtasks: "subtasks: research, outline and first draft" (or steps / first … then …) become a checklist.
 
 export type Parsed = {
   title: string;
@@ -11,6 +13,8 @@ export type Parsed = {
   once?: Date; // a single session day
   time?: string; // HH:MM
   minutes?: number;
+  end?: string; // HH:MM when only an end was said ("until 9pm"); the form works out the length from the start
+  steps?: string[]; // subtasks
   found: string[]; // the phrases understood, to show back
 };
 
@@ -58,15 +62,59 @@ function dateFrom(text: string, now: Date): { d: Date; m: string } | null {
 }
 
 export function parseTask(input: string, now = new Date()): Parsed {
-  let text = ` ${input.replace(/[,.;]+(\s|$)/g, ' ').replace(/\s+/g, ' ').trim()} `;
+  // Subtasks first, from the sentence as said (its commas separate them): everything after "subtasks:" /
+  // "steps:" / "checklist", split on commas, "and", "then".
+  let steps: string[] | undefined, said = input;
+  // "step" alone is an ordinary word ("take the next step"), so it needs "with steps", "the steps", or "steps:".
+  const sm = /\b(?:(?:with |the )?sub ?tasks?|checklist|(?:with |the )steps?|steps?(?=:| are | include ))(?::| are| include| of)? (.+)$/i.exec(input);
+  if (sm) {
+    said = input.slice(0, sm.index);
+    steps = sm[1].split(/\s*(?:[,;.]|\band then\b|\bthen\b|\band\b)\s*/i).map(x => x.trim()).filter(x => x.length > 1).slice(0, 20)
+      .map(x => x.charAt(0).toUpperCase() + x.slice(1));
+  }
+  let text = ` ${said.replace(/[,.;:]+(\s|$)/g, ' ').replace(/\s+/g, ' ').trim()} `;
   const found: string[] = [];
   const take = (re: RegExp) => { const m = re.exec(text); if (m) { text = text.replace(m[0], ' '); found.push(m[0].trim()); } return m; };
   const out: Parsed = { title: '', found };
+  if (steps?.length) { out.steps = steps; found.push(`${steps.length} subtask${steps.length === 1 ? '' : 's'}`); }
+  let m: RegExpExecArray | null = null;
 
-  // Length: "for 45 minutes", "for an hour and a half", "for 1.5 hours", "for half an hour".
-  let m = take(/\bfor half an? hour\b/i);
-  if (m) out.minutes = 30;
-  if (!m && (m = take(new RegExp(`\\bfor ${numRe} (hours?|hrs?|h|minutes?|mins?|m)( and a half)?\\b`, 'i')))) {
+  // A time range: "from 6 to 7:30pm", "between 9 and 11", "6pm-7pm", "9 till 11". Read before deadlines,
+  // because "until 9pm" is a time, not a deadline. Part of day words ("morning") settle am/pm.
+  const part = /\b(morning|afternoon|evening|night|tonight)\b/i.exec(text)?.[1].toLowerCase();
+  const T = '(\\d{1,2})(?:[:.](\\d{2}))? ?(am|pm|a\\.m\\.|p\\.m\\.)?';
+  const hour = (h: number, mer?: string) => {
+    if (mer) { const pm = /p/i.test(mer); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; return h; }
+    if (part === 'morning') return h === 12 ? 0 : h;
+    if (part && h < 12) return h + 12;
+    return h >= 1 && h <= 6 ? h + 12 : h;
+  };
+  const notDate = `(?! ?(?:${MONTHS.map(x => x.slice(0, 3)).join('|')})|\\/)`;
+  // Look first, take only once it is clearly a time (so "1 to 2 weeks" is left alone).
+  const peek = (re: RegExp) => re.exec(text);
+  const drop = (mm: RegExpExecArray) => { text = text.replace(mm[0], ' '); found.push(mm[0].trim()); };
+  let ranged = false;
+  m = peek(new RegExp(`\\b(?:from|between) ${T} (?:to|till|til|until|and|-) ${T}\\b${notDate}`, 'i'))
+    ?? peek(new RegExp(`\\b${T} ?(?:to|till|til|until|-|–) ?${T}\\b${notDate}`, 'i'));
+  if (m && (m[3] || m[6] || m[2] || m[5] || /^(?:from|between)/i.test(m[0]) || /till|until/i.test(m[0]))) {
+    // The end's am/pm carries to the start when only the end has one ("6 to 7:30pm").
+    const a = hour(+m[1], m[3] ?? (m[6] && +m[1] <= +m[4] ? m[6] : undefined)) * 60 + (+(m[2] ?? 0));
+    let b = hour(+m[4], m[6] ?? (m[3] && +m[4] >= +m[1] ? m[3] : undefined)) * 60 + (+(m[5] ?? 0));
+    if (b <= a && b + 12 * 60 > a) b += 12 * 60; // "11 till 1"
+    if (b <= a) b += 24 * 60;
+    if (b - a <= 16 * 60) { drop(m); ranged = true; out.time = `${pad(Math.floor(a / 60) % 24)}:${pad(a % 60)}`; out.minutes = b - a; }
+  } else if ((m = peek(new RegExp(`\\b(?:until|till|til) ${T}\\b${notDate}`, 'i'))) && (m[2] || m[3])) {
+    drop(m); out.end = `${pad(hour(+m[1], m[3]) % 24)}:${pad(+(m[2] ?? 0))}`;
+  }
+
+  // Length: "for 45 minutes", "for an hour and a half", "for 1.5 hours", "for half an hour", "for 1 hour 30
+  // minutes", "for 1h30". A range said above already set it.
+  m = null;
+  if (out.minutes) { /* from a range */ }
+  else if ((m = take(/\bfor half an? hour\b/i))) out.minutes = 30;
+  // The minutes after the hours must be digits ("1h30") or say "minutes", so "2 hours a day" stays 2 hours.
+  else if ((m = take(new RegExp(`\\bfor ${numRe} ?(?:hours?|hrs?|h)(?: and)? ?(?:(\\d{1,2})(?: ?(?:minutes?|mins?|m))?|${numRe} (?:minutes?|mins?))\\b`, 'i')))) out.minutes = Math.round(num(m[1]) * 60 + num(m[2] ?? m[3]));
+  if (!m && !out.minutes && (m = take(new RegExp(`\\bfor ${numRe} (hours?|hrs?|h|minutes?|mins?|m)( and a half)?\\b`, 'i')))) {
     const n = num(m[1]), unit = m[2].toLowerCase();
     out.minutes = Math.round(/^h/.test(unit) ? n * 60 + (m[3] ? 30 : 0) : n);
   }
@@ -93,26 +141,23 @@ export function parseTask(input: string, now = new Date()): Parsed {
   // Sessions: weekdays / weekends / every day / every Monday and Wednesday / tomorrow / today / on Friday / a date.
   if (take(/\b(?:on |every )?weekdays\b/i)) out.days = [1, 2, 3, 4, 5];
   else if (take(/\b(?:on |every )?weekends?\b/i)) out.days = [6, 0];
-  else if (take(/\b(?:every ?day|daily|each day)\b/i)) out.days = [0, 1, 2, 3, 4, 5, 6];
+  else if (take(/\b(?:every ?day|daily|each day|(?:a|per) day)\b/i)) out.days = [0, 1, 2, 3, 4, 5, 6];
   else if ((m = take(new RegExp(`\\b(?:every|on|each) (${wdRe}(?:(?: and|,|&)? ${wdRe})*)\\b`, 'i'))) || (m = take(new RegExp(`\\b(${wdRe}s(?:(?: and|,|&)? ${wdRe}s)*)\\b`, 'i')))) {
     const names = m[1].split(/\s*(?:and|,|&)\s*|\s+/).filter(Boolean).map(wdIndex).filter(i => i >= 0);
     // "every Monday" repeats; "on Friday" (one name, no plural) is a single session.
     if (/^on /i.test(m[0]) && names.length === 1 && !/s$/i.test(m[1])) out.once = nextWeekday(names[0], now);
     else out.days = [...new Set(names)];
   } else if (take(/\btomorrow\b/i)) out.once = addUnits(now, 1, 'day');
-  else if (take(/\b(?:today|tonight)\b/i)) { out.once = new Date(now); out.once.setHours(12, 0, 0, 0); if (/tonight/i.test(found[found.length - 1])) out.time = '20:00'; }
+  else if (take(/\b(?:today|tonight)\b/i)) { out.once = new Date(now); out.once.setHours(12, 0, 0, 0); if (/tonight/i.test(found[found.length - 1]) && !out.time) out.time = '20:00'; }
   else if ((m = /\bon (?:the )?/i.exec(text))) {
     const d = dateFrom(text.slice(m.index), now);
     if (d) { text = text.replace(m[0] + d.m, ' ').replace(d.m, ' '); found.push(`on ${d.m}`); out.once = d.d; }
   }
 
   // Time: "at 7", "at 7:30pm", "7am", "half past six", "quarter to eight", noon, midnight, morning/afternoon/evening.
-  const fix = (h: number, mer?: string) => {
-    if (mer) { const pm = /p/i.test(mer); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    else if (h >= 1 && h <= 6) h += 12; // "at 5" means 5 in the evening for most people
-    return h;
-  };
-  if ((m = take(/\b(?:at )?(half past|quarter past|quarter to) (\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)( ?(?:am|pm|a\.m\.|p\.m\.))?\b/i))) {
+  const fix = hour; // "at 5" means 5 in the evening for most people; "morning" and "tonight" settle it
+  if (ranged) { /* set by a range */ }
+  else if ((m = take(/\b(?:at )?(half past|quarter past|quarter to) (\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)( ?(?:am|pm|a\.m\.|p\.m\.))?\b/i))) {
     let h = num(m[2]), min = /half/i.test(m[1]) ? 30 : 15;
     if (/to/i.test(m[1])) { h -= 1; min = 45; }
     out.time = `${pad(fix(h, m[3]))}:${pad(min)}`;
@@ -120,7 +165,8 @@ export function parseTask(input: string, now = new Date()): Parsed {
     out.time = `${pad(fix(+m[1], m[3]))}:${pad(m[2] ? +m[2] : 0)}`;
   } else if (take(/\b(?:at )?noon\b/i)) out.time = '12:00';
   else if (take(/\b(?:at )?midnight\b/i)) out.time = '00:00';
-  else if ((m = take(/\b(?:in the |every |each )?(morning|afternoon|evening|night)s?\b/i))) out.time = { morning: '07:00', afternoon: '14:00', evening: '19:00', night: '21:00' }[m[1].toLowerCase()]!;
+  if (out.time && !/tonight/i.test(found.join(' '))) take(/\b(?:in the |every |each )?(morning|afternoon|evening|night)s?\b/i);
+  else if (!out.time && (m = take(/\b(?:in the |every |each )?(morning|afternoon|evening|night)s?\b/i))) out.time = { morning: '07:00', afternoon: '14:00', evening: '19:00', night: '21:00' }[m[1].toLowerCase()]!;
 
   // What's left is the task, without filler.
   out.title = text.replace(/\b(?:i (?:need|want|have) to|remind me to|i'll|i will|please|task:?)\b/gi, ' ')

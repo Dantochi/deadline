@@ -106,6 +106,7 @@ export default function NewTask() {
   // Voice (or typed) capture: fills the fields below, and shows what it understood so it can be checked.
   const [voiceOpen, setVoiceOpen] = useState(params.voice === '1');
   const [heard, setHeard] = useState<string[]>([]);
+  const [newSteps, setNewSteps] = useState<string[]>([]); // subtasks said by voice, added on save
   const setClock = (hm: string) => { const m = fromHM(hm); const d = new Date(); d.setHours(Math.floor(m / 60), m % 60, 0, 0); setTime(d); };
   const apply = (sentence: string) => {
     const r = parseTask(sentence);
@@ -118,14 +119,24 @@ export default function NewTask() {
       setMode('once'); setOnceDate(r.once);
       if (r.once > dl) { setDeadline(r.once); setQuick(null); }
     }
-    if (r.minutes) setMinutes(r.minutes);
+    let len = r.minutes ?? minutes;
+    let startHM = r.time;
+    if (!startHM && (r.days || r.once)) startHM = suggestTime(state, wd, len);
+    // "until 9pm": the length runs from the start to that end.
+    if (r.end && !r.minutes) {
+      const from = fromHM(startHM ?? `${pad(time.getHours())}:${pad(time.getMinutes())}`), to = fromHM(r.end);
+      if (to > from && to - from <= 16 * 60) len = to - from;
+    }
+    if (len !== minutes) setMinutes(len);
     if (r.time) { setClock(r.time); setTouchedTime(true); }
-    else if (r.days || r.once) setClock(suggestTime(state, wd, r.minutes ?? minutes));
+    else if (startHM) setClock(startHM);
+    if (r.steps?.length) setNewSteps(r.steps);
     setHeard(r.found); setErr('');
   };
 
   const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
+  const stepsFrom = () => newSteps.map(title => ({ id: uid(), title, done: false }));
   const save = () => {
     if (!title.trim()) return setErr('Give the task a name.');
     const dl = endOfDay(+deadline);
@@ -144,11 +155,11 @@ export default function NewTask() {
     };
     if (ed) {
       // Editing keeps history (start, sessions, check-ins, notes, colour); only the plan changes.
-      update(s => ({ ...s, tasks: s.tasks.map(x => (x.id === ed.id ? { ...x, ...fields } : x)) }));
+      update(s => ({ ...s, tasks: s.tasks.map(x => (x.id === ed.id ? { ...x, ...fields, steps: [...(x.steps ?? []), ...stepsFrom()] } : x)) }));
       haptic.ok(); toast('Saved'); router.back();
       return;
     }
-    const t: Task = { id: uid(), start: Date.now(), color: null, ...fields };
+    const t: Task = { id: uid(), start: Date.now(), color: null, ...fields, steps: stepsFrom() };
     update(s => ({ ...s, tasks: [...s.tasks, t] }));
     haptic.ok();
     const n = nextSlot(t);
@@ -179,6 +190,21 @@ export default function NewTask() {
             <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s3 }}>
               <CheckIcon size={16} color={statusColor(p, 'green', true)} />
               <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>Understood · </Txt>{heard.join(' · ')}</Txt>
+            </View>
+          ) : null}
+          {newSteps.length ? (
+            <View style={{ gap: S.s1, marginTop: -S.s2 }}>
+              <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Subtasks to add</Txt>
+              {newSteps.map((st, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, gap: S.s2 }}>
+                  <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: p.dim }} />
+                  <Txt style={{ flex: 1 }} numberOfLines={2}>{st}</Txt>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${st}`} hitSlop={8} onPress={() => setNewSteps(l => l.filter((_, j) => j !== i))}
+                    style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+                    <CloseIcon size={18} color={p.dim} />
+                  </Pressable>
+                </View>
+              ))}
             </View>
           ) : null}
 
