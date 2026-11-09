@@ -40,6 +40,37 @@ Every tester in the `testers` group gets an email. On their phone they:
 2. Download the app (Firebase suggests installing its **App Tester** app, which also shows future updates).
 3. Allow **Install unknown apps** for the browser or App Tester when Android asks, then install.
 
+## Build or update?
+Most changes don't need a build. The app has `expo-updates`, so code changes can go out as an **update** in about
+a minute: no queue, no reinstall.
+
+```bash
+npm run update:preview -- "Time screen and new fonts"   # testers on preview builds
+npm run update:production -- "Fix the digest wording"   # Play Store users
+```
+
+**Send an update** for anything in `src/`: screens, text, layout, logic, and fonts loaded in code.
+
+**Make a new build** (below) only after:
+- adding a package with native code (one that the Expo docs say needs a development build);
+- changing `app.json` plugins, permissions, the icon or splash, or the home-screen widgets and their fonts;
+- upgrading the Expo SDK.
+
+Each build has a *fingerprint* of its native code (`runtimeVersion` policy `fingerprint` in app.json). An update
+only reaches builds with the same fingerprint, so an update can't be sent to a build it would break. If an update
+seems not to arrive after a native change, that build is too old and a new build is needed.
+
+**When testers see it:** the app downloads an update when it opens and uses it from the next launch. Closing the
+app fully and opening it again twice shows it straight away.
+
+**Making builds themselves faster:**
+- Build only the platform you're testing (`npm run build:android:preview`).
+- On the free EAS plan, most of the wait is the queue. A paid plan adds a priority queue and larger machines.
+- `npx eas-cli@latest build --platform android --profile preview --local` builds on your own computer and skips
+  the queue. It needs macOS or Linux (on Windows, use WSL) with the Android SDK and Java installed.
+- Building only for 64-bit phones (arm64-v8a) roughly halves the Android compile, but older 32-bit phones could no
+  longer install the app. That's worth checking against your testers' phones first.
+
 ## Each new test build
 ```bash
 npm run build:android:preview
