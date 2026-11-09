@@ -9,7 +9,7 @@ export const haptic = {
   warn: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}),
 };
 
-type TxtProps = TextProps & { variant?: 'h1' | 'h2' | 'body' | 'label' | 'meta' | 'small'; dim?: boolean; color?: string };
+type TxtProps = TextProps & { variant?: 'h1' | 'h2' | 'body' | 'label' | 'meta' | 'small' | 'num'; dim?: boolean; color?: string };
 export function Txt({ variant = 'body', dim, color, style, ...rest }: TxtProps) {
   const p = usePalette();
   const v: Record<string, TextStyle> = {
@@ -20,8 +20,21 @@ export function Txt({ variant = 'body', dim, color, style, ...rest }: TxtProps) 
     meta: { fontFamily: F.ui, fontSize: T.md, lineHeight: 20, fontVariant: ['tabular-nums'] },
     // Small text gets a touch of extra tracking, as optical sizing does for small sizes.
     small: { fontFamily: F.ui, fontSize: T.sm, lineHeight: 18, letterSpacing: 0.1, fontVariant: ['tabular-nums'] },
+    // Dates and times: the same dot-matrix digits as the big countdown.
+    num: { fontFamily: F.dot, fontSize: T.md, lineHeight: 20 },
   };
   return <Text maxFontSizeMultiplier={2} style={[v[variant], { color: color ?? (dim ? p.dim : p.ink) }, style]} {...rest} />;
+}
+
+/** A date as "9 November 2026" with the numbers in the dot-matrix digits and the month in the UI font. */
+export function DateTitle({ date, size = T.xl, month = 'long', style, color }: { date: Date; size?: number; month?: 'long' | 'short'; style?: StyleProp<TextStyle>; color?: string }) {
+  const m = date.toLocaleDateString('en-GB', { month });
+  const n = { fontFamily: F.dot, fontSize: size + 1, lineHeight: size + 7 };
+  return (
+    <Txt numberOfLines={1} color={color} style={[{ fontFamily: F.uiBold, fontSize: size, lineHeight: size + 7 }, style]}>
+      <Txt color={color} style={n}>{date.getDate()}</Txt> {m} <Txt color={color} style={n}>{date.getFullYear()}</Txt>
+    </Txt>
+  );
 }
 
 type BtnProps = PressableProps & { label: string; icon?: ReactNode; kind?: 'primary' | 'pill' | 'ghost'; style?: StyleProp<ViewStyle> };
@@ -34,13 +47,15 @@ export function Btn({ label, icon, kind = 'pill', style, onPress, ...rest }: Btn
       onPress={e => { haptic.tick(); onPress?.(e); }}
       style={({ pressed }) => [
         styles.btn,
-        { minHeight: primary ? BTN.l : BTN.m, backgroundColor: primary ? p.ink : kind === 'pill' ? p.raise2 : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] },
+        // One button height across the app; secondary buttons are frosted glass.
+        { minHeight: BTN.m, backgroundColor: primary ? p.ink : kind === 'pill' ? p.glass : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] },
+        kind === 'pill' && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi },
         style,
       ]}
       {...rest}
     >
       {icon}
-      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: primary ? T.lg : T.md, lineHeight: primary ? 24 : 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
+      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
   );
 }
@@ -49,7 +64,7 @@ export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPr
   const p = usePalette();
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic.tick(); onPress(); }}
-      style={[styles.chip, { borderColor: on ? p.ink : p.line, backgroundColor: on ? p.ink : 'transparent' }]}>
+      style={[styles.chip, { borderColor: on ? p.ink : p.glassEdge, borderTopColor: on ? p.ink : p.glassHi, backgroundColor: on ? p.ink : p.glass }]}>
       <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={on ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
   );
@@ -122,13 +137,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 export const useToast = () => useContext(ToastCtx);
 
-export function Section({ label, st, count, children }: { label: string; st?: Status; count?: number; children: ReactNode }) {
+export function Section({ label, st, count, children }: { label?: string; st?: Status; count?: number; children: ReactNode }) {
   const p = usePalette();
   return (
-    <View style={{ marginTop: S.s7 }}>
-      <Txt variant="label" color={st ? statusColor(p, st, true) : p.dim} style={{ marginBottom: S.s2 }}>
+    <View style={{ marginTop: label ? S.s7 : S.s5 }}>
+      {label ? <Txt variant="label" color={st ? statusColor(p, st, true) : p.dim} style={{ marginBottom: S.s2 }}>
         {label}{count != null ? <Txt variant="label" dim>{`  ${count}`}</Txt> : null}
-      </Txt>
+      </Txt> : null}
       {children}
     </View>
   );

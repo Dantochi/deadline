@@ -10,7 +10,7 @@ import { ColorSwatches } from '../../components/ColorSwatches';
 import { MicIcon } from '../../components/Voice';
 import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
-import { Txt, haptic } from '../../components/ui';
+import { DateTitle, Txt, haptic } from '../../components/ui';
 import { dayDetail, taskColor } from '../../lib/calendar';
 import { columns, sessionsOn, toHM } from '../../lib/schedule';
 import { useStore, type Task } from '../../lib/store';
@@ -65,7 +65,7 @@ export default function Hours() {
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Txt variant="label" dim>{isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'long' })}</Txt>
-          <Txt variant="h2" numberOfLines={1}>{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Txt>
+          <DateTitle date={date} />
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <ChevronIcon color={p.ink} />
@@ -86,13 +86,7 @@ export default function Hours() {
             <Txt variant="small" style={{ fontFamily: F.uiBold }} color={p.bg} numberOfLines={1}>{ev.title}</Txt>
           </View>
         ))}
-        {detail.steps.map(({ t, st }) => (
-          <Pressable key={st.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })}
-            style={{ height: 32, paddingHorizontal: S.s3, justifyContent: 'center', borderWidth: 1, borderColor: taskColor(p, t) }}>
-            <Txt variant="small" style={{ fontFamily: F.uiSemi, textDecorationLine: st.done ? 'line-through' : 'none' }} numberOfLines={1}>Step · {st.title}</Txt>
-          </Pressable>
-        ))}
-        {!due.length && !detail.events.length && !detail.steps.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
+        {!due.length && !detail.events.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
       </ScrollView>
 
       <ScrollView ref={scroller} contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s2, paddingBottom: S.s8 }}>
@@ -103,7 +97,7 @@ export default function Hours() {
               <Pressable key={h} accessibilityRole="button" accessibilityLabel={`Plan a session at ${pad(h)}:00`} disabled={past}
                 onPress={() => { haptic.tick(); router.push({ pathname: '/new-task', params: { on: key, time: `${pad(h)}:00` } }); }}
                 style={{ position: 'absolute', top: h * HOUR, left: 0, right: 0, height: HOUR, flexDirection: 'row' }}>
-                <Txt variant="small" dim allowFontScaling={false} style={{ width: GUTTER, marginTop: -8, fontVariant: ['tabular-nums'] }}>{h === 0 ? '' : `${pad(h)}:00`}</Txt>
+                <Txt variant="num" dim allowFontScaling={false} style={{ width: GUTTER, marginTop: -9, fontSize: 13, lineHeight: 18 }}>{h === 0 ? '' : `${pad(h)}:00`}</Txt>
                 <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: p.line }} />
               </Pressable>
             ))}
@@ -123,7 +117,7 @@ export default function Hours() {
                   <Txt numberOfLines={h > 44 ? 2 : 1} style={{ fontFamily: F.uiBold, fontSize: 13, lineHeight: 16 }} color={muted ? p.ink : p.bg}>
                     {b.state === 'done' ? '✓ ' : ''}{b.t.title}
                   </Txt>
-                  {h > 44 ? <Txt allowFontScaling={false} style={{ fontSize: 12, lineHeight: 16, fontFamily: F.uiMedium }} color={muted ? p.dim : p.bg}>{toHM(d.getHours() * 60 + d.getMinutes())}–{toHM(d.getHours() * 60 + d.getMinutes() + b.minutes)}</Txt> : null}
+                  {h > 44 ? <Txt allowFontScaling={false} style={{ fontSize: 12, lineHeight: 16, fontFamily: F.dot }} color={muted ? p.dim : p.bg}>{toHM(d.getHours() * 60 + d.getMinutes())}–{toHM(d.getHours() * 60 + d.getMinutes() + b.minutes)}</Txt> : null}
                 </Pressable>
               );
             })}
@@ -160,7 +154,7 @@ export default function Hours() {
             <Txt variant="label" dim>Colour</Txt>
             <Txt variant="h2" numberOfLines={1}>{colorFor?.title}</Txt>
             <ColorSwatches auto value={colorFor?.color} onChange={c => { if (colorFor) updateTask(colorFor.id, x => ({ ...x, color: c })); haptic.ok(); setColorFor(null); }} />
-            <Txt variant="small" dim>The first circle follows the app: light in dark mode, dark in light mode. Used on the Year calendar and here.</Txt>
+            <Txt variant="small" dim>The first circle follows the app: light in dark mode, dark in light mode. Used on this timeline only.</Txt>
           </Pressable>
         </Pressable>
       </Modal>

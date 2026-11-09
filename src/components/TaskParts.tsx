@@ -1,8 +1,9 @@
 // Task building blocks shared by the date screens: the task row (tap to open, swipe to finish or delete), the
 // delete-with-undo hook, and the weekly review and partner cards.
 import { router } from 'expo-router';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, View } from 'react-native';
+import { Glass } from './Glass';
 import { CheckIcon, CloseIcon } from './icons';
 import { StatusDot, Txt, haptic, useToast } from './ui';
 import { mondayOf, otherSide, usePartner } from '../lib/partner';
@@ -60,8 +61,9 @@ export function useDeleteTask() {
   };
 }
 
-/** A task in a list: tap to open its screen; swipe right to mark it done, left to delete (both with Undo). */
-export function TaskRow({ t }: { t: Task }) {
+/** A task in a list: tap to open its screen; swipe right to mark it done, left to delete (both with Undo);
+ *  press and hold for a "View on timeline" button that opens the Day tab on `date` (default today). */
+export function TaskRow({ t, date }: { t: Task; date?: string }) {
   const { state, updateTask } = useStore();
   const toast = useToast();
   const p = usePalette();
@@ -90,6 +92,8 @@ export function TaskRow({ t }: { t: Task }) {
     },
     onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
   })).current;
+  const [menu, setMenu] = useState(false);
+  useEffect(() => { if (!menu) return; const id = setTimeout(() => setMenu(false), 4000); return () => clearTimeout(id); }, [menu]);
   const showDone = x.interpolate({ inputRange: [0, 60], outputRange: [0, 1], extrapolate: 'clamp' });
   const showDel = x.interpolate({ inputRange: [-60, 0], outputRange: [1, 0], extrapolate: 'clamp' });
 
@@ -102,12 +106,22 @@ export function TaskRow({ t }: { t: Task }) {
       </Animated.View>
       <Animated.View {...swipe.panHandlers} style={{ transform: [{ translateX: x }], backgroundColor: p.bg }}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${label}`} accessibilityHint="Opens the task. Swipe right for done, left to delete."
-          onPress={() => { haptic.tick(); router.push({ pathname: '/task', params: { id: t.id } }); }}
+          onPress={() => { if (menu) return setMenu(false); haptic.tick(); router.push({ pathname: '/task', params: { id: t.id } }); }}
+          onLongPress={() => { haptic.ok(); setMenu(true); }} delayLongPress={380}
           style={({ pressed }) => ({ height: 64, flexDirection: 'row', alignItems: 'center', gap: S.s4, opacity: pressed ? 0.7 : 1 })}>
           <View style={{ width: 12, alignItems: 'center' }}><StatusDot st={st} shapes={state.shapes} /></View>
           <Txt numberOfLines={1} style={[{ flex: 1 }, t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
           <Txt variant="meta" dim>{label}</Txt>
         </Pressable>
+        {menu ? (
+          <View style={{ paddingBottom: S.s3, paddingLeft: 12 + S.s4, flexDirection: 'row' }}>
+            <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setMenu(false); router.push({ pathname: '/hours', params: { date: date ?? ymd(new Date()) } }); }}>
+              <Glass radius={22} style={{ height: 44, paddingHorizontal: S.s4, justifyContent: 'center' }}>
+                <Txt style={{ fontFamily: F.uiSemi }}>View on timeline</Txt>
+              </Glass>
+            </Pressable>
+          </View>
+        ) : null}
       </Animated.View>
     </View>
   );

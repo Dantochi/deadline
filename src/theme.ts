@@ -10,6 +10,9 @@ const dark = {
   red: '#FF6B3D', amber: '#FFCB47', green: '#3CCFB0',
   redInk: '#FF7A50', amberInk: '#FFCB47', greenInk: '#3CCFB0',
   scrim: 'rgba(0,0,0,0.62)',
+  // Frosted glass, drawn without blur: a translucent fill, a hairline edge and a brighter top edge.
+  glass: 'rgba(255,255,255,0.06)', glassEdge: 'rgba(255,255,255,0.12)', glassHi: 'rgba(255,255,255,0.22)', glassOn: 'rgba(255,255,255,0.16)',
+  bar: '#121417',
 };
 const light: typeof dark = {
   bg: '#F3F4F5', raise: '#FFFFFF', raise2: '#E8EAEC', line: '#DADDE1',
@@ -17,6 +20,8 @@ const light: typeof dark = {
   red: '#9F1D12', amber: '#A97800', green: '#0E8A7A',
   redInk: '#9F1D12', amberInk: '#845600', greenInk: '#0A6E61',
   scrim: 'rgba(15,17,19,0.38)',
+  glass: 'rgba(255,255,255,0.62)', glassEdge: 'rgba(15,17,19,0.08)', glassHi: 'rgba(255,255,255,0.95)', glassOn: 'rgba(15,17,19,0.08)',
+  bar: '#F8F9FA',
 };
 export type Palette = typeof dark;
 export const palettes = { dark, light };

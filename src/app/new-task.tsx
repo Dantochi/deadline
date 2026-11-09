@@ -7,13 +7,49 @@ import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
 import { parseTask } from '../lib/parse';
-import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
+import { DEFAULT_MINUTES, fromDuration, fromHM, overlaps, suggestTime, toDuration, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
 import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
 import { F, R, S, statusColor, usePalette } from '../theme';
 
-const LENGTHS = [15, 30, 45, 60, 90];
-const lenLabel = (m: number) => (m === 90 ? '1½ h' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60}` : ''}`);
+/** How long each session lasts: a number typed in, and a dropdown for minutes or hours. Shows when it ends. */
+function DurationField({ minutes, onChange, start }: { minutes: number; onChange: (m: number) => void; start: number }) {
+  const p = usePalette();
+  const [d, setD] = useState(() => toDuration(minutes));
+  const [open, setOpen] = useState(false);
+  // Follow changes made elsewhere (voice), unless they match what is typed.
+  const [seen, setSeen] = useState(minutes);
+  if (seen !== minutes) { setSeen(minutes); if (fromDuration(d.value, d.unit) !== minutes) setD(toDuration(minutes)); }
+  const set = (value: string, unit: 'minutes' | 'hours') => { setD({ value, unit }); const m = fromDuration(value, unit); if (m) { setSeen(m); onChange(m); } };
+  const ok = fromDuration(d.value, d.unit) != null;
+  return (
+    <View style={{ gap: S.s2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
+        <TextInput value={d.value} onChangeText={v => set(v.replace(/[^0-9.,]/g, '').slice(0, 5), d.unit)} keyboardType="decimal-pad" maxFontSizeMultiplier={2}
+          accessibilityLabel={`Session length in ${d.unit}`} selectTextOnFocus
+          style={{ width: 88, height: 48, borderRadius: R.md, borderWidth: 1, borderColor: ok ? p.glassEdge : p.redInk, backgroundColor: p.glass, color: p.ink, fontFamily: F.dot, fontSize: 22, textAlign: 'center' }} />
+        <Pressable accessibilityRole="button" accessibilityLabel={`Unit: ${d.unit}. Change`} onPress={() => { haptic.tick(); setOpen(o => !o); }}
+          style={{ height: 48, paddingHorizontal: S.s4, borderRadius: R.md, borderWidth: 1, borderColor: p.glassEdge, borderTopColor: p.glassHi, backgroundColor: p.glass, flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
+          <Txt style={{ fontFamily: F.uiSemi }}>{d.unit}</Txt>
+          <Txt dim style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>▾</Txt>
+        </Pressable>
+        <Txt dim style={{ flex: 1, textAlign: 'right' }}>ends <Txt variant="num" style={{ fontSize: 17, lineHeight: 22 }}>{toHM((start + minutes) % (24 * 60))}</Txt></Txt>
+      </View>
+      {open ? (
+        <View style={{ flexDirection: 'row', gap: S.s1, marginLeft: 88 + S.s2 }}>
+          {(['minutes', 'hours'] as const).map(u => (
+            <Chip key={u} label={u} on={d.unit === u} onPress={() => {
+              setOpen(false);
+              // Keep the same length when switching unit if it converts cleanly; otherwise keep the number.
+              const m = fromDuration(d.value, d.unit);
+              set(m && u !== d.unit ? (u === 'hours' ? String(+(m / 60).toFixed(2)) : String(m)) : d.value, u);
+            }} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 type Unit = 'week' | 'month' | 'year';
 const UNITS: Unit[] = ['week', 'month', 'year'];
 /** `n` weeks, months or years from now (months and years by the calendar, not a fixed number of days). */
@@ -186,9 +222,7 @@ export default function NewTask() {
             <View style={{ flexDirection: 'row', gap: S.s2 }}>
               <View style={{ flex: 1 }}><DateTimeField label="Start time" mode="time" value={time} onChange={d => { setTime(d); setTouchedTime(true); }} /></View>
             </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1 }}>
-              {(LENGTHS.includes(minutes) ? LENGTHS : [...LENGTHS, minutes].sort((a, b) => a - b)).map(m => <Chip key={m} label={lenLabel(m)} on={minutes === m} onPress={() => setMinutes(m)} />)}
-            </View>
+            <DurationField minutes={minutes} onChange={setMinutes} start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} />
             <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
               busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
                 .map(t => [fromHM(t.slot!.time), t.minutes ?? DEFAULT_MINUTES] as [number, number])} />

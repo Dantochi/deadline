@@ -1,8 +1,8 @@
-// The Year view: every day of a year as a box, coloured by the tasks and important dates on it.
+// The Year view: every day of a year, marked by the most urgent task on it, and what one day holds.
 import type { LifeEvent } from './events';
 import { type State, type Task } from './store';
 import { DAY, info, nextSlot, ymd } from './time';
-import type { Palette } from '../theme';
+import type { Palette, Status } from '../theme';
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -13,41 +13,29 @@ export const taskColor = (p: Palette, t: Task) => t.color ?? p.ink;
 const dayStart = (ms: number) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return +d; };
 
 export type DayCell = {
-  fill?: string; // task or event colour
-  strong: boolean; // deadline day or an event: full colour; other task days are tinted
-  session: boolean; // a reserved session falls on this day
+  urgent?: Status; // status of the most urgent task running or due that day
+  event?: string; // colour of an important date, when no task is on the day
 };
 
-/** Colours for every day of `year`, keyed by YYYY-MM-DD. */
-export function yearCells(state: State, p: Palette, year: number) {
+// Overdue and red first, then amber, then green. A task's own colour never reaches the calendar.
+const RANK: Partial<Record<Status, number>> = { red: 3, amber: 2, green: 1 };
+export const urgency = (t: Task): Status => (info(t).left < 0 ? 'red' : info(t).st);
+
+/** For every day of `year` (keyed by YYYY-MM-DD): the most urgent task on it, and important dates. */
+export function yearCells(state: State, year: number) {
   const cells = new Map<string, DayCell>();
   const from = +new Date(year, 0, 1), to = +new Date(year + 1, 0, 1);
-  const get = (k: string) => cells.get(k) ?? (cells.set(k, { strong: false, session: false }), cells.get(k)!);
+  const get = (k: string) => cells.get(k) ?? (cells.set(k, {}), cells.get(k)!);
 
-  // Tasks: their days from start to deadline, most urgent drawn last so it wins overlaps.
-  const tasks = state.tasks.filter(t => !t.letGo && t.deadline >= from && t.start < to)
-    .sort((a, b) => info(b).pct - info(a).pct);
-  for (const t of tasks) {
-    const c = taskColor(p, t);
+  for (const t of state.tasks) {
+    if (t.letGo || t.done || t.pausedAt || t.deadline < from || t.start >= to) continue;
+    const st = urgency(t), r = RANK[st] ?? 0;
     for (let d = dayStart(Math.max(t.start, from)); d < Math.min(t.deadline + 1, to); d += DAY) {
-      const k = ymd(new Date(d)), cell = get(k);
-      cell.fill = c; cell.strong = false;
-    }
-    if (t.deadline >= from && t.deadline < to) { const cell = get(ymd(new Date(t.deadline))); cell.fill = c; cell.strong = true; }
-    // Reserved sessions ahead (a small dot), up to the deadline.
-    if (!t.done && !t.pausedAt) {
-      let s = Math.max(Date.now(), from) - 1;
-      for (let k = 0; k < 400; k++) {
-        const n = nextSlot(t, s + 1);
-        if (!n || n >= to) break;
-        get(ymd(new Date(n))).session = true;
-        s = n + 60 * 1000;
-      }
+      const cell = get(ymd(new Date(d)));
+      if (!cell.urgent || (RANK[cell.urgent] ?? 0) < r) cell.urgent = st;
     }
   }
-
-  // Important dates on top, in their own colour.
-  for (const ev of state.events ?? []) for (const d of eventDays(ev, year)) { const cell = get(d); cell.fill = ev.color; cell.strong = true; }
+  for (const ev of state.events ?? []) for (const d of eventDays(ev, year)) { const cell = get(d); cell.event ??= ev.color; }
   return cells;
 }
 
@@ -62,13 +50,13 @@ export function eventDays(ev: LifeEvent, year: number): string[] {
   return out;
 }
 
-/** What is on one day: tasks running (and due), sessions reserved, important dates. */
+/** What is on one day: tasks running (and due), sessions reserved, important dates. Due tasks come first. */
 export function dayDetail(state: State, ms: number) {
   const s = dayStart(ms), e = s + DAY, key = ymd(new Date(s)), year = new Date(s).getFullYear();
-  const tasks = state.tasks.filter(t => !t.letGo && t.start < e && t.deadline >= s).map(t => ({ t, due: t.deadline >= s && t.deadline < e }));
+  const tasks = state.tasks.filter(t => !t.letGo && t.start < e && t.deadline >= s).map(t => ({ t, due: t.deadline >= s && t.deadline < e }))
+    .sort((a, b) => Number(b.due) - Number(a.due));
   const sessions = state.tasks.filter(t => !t.done && !t.pausedAt).map(t => ({ t, n: nextSlot(t, s) })).filter(x => x.n != null && x.n < e);
   const events = (state.events ?? []).filter(ev => eventDays(ev, year).includes(key));
-  const steps = state.tasks.filter(t => !t.letGo).flatMap(t => (t.steps ?? []).filter(st => st.date != null && st.date >= s && st.date < e).map(st => ({ t, st })));
-  return { tasks, sessions, events, steps };
+  return { tasks, sessions, events };
 }
 

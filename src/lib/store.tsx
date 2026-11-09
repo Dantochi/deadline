@@ -5,6 +5,17 @@ import type { LifeEvent } from './events';
 import { info } from './time';
 
 export type Step = { id: string; title: string; date?: number | null; done: boolean };
+/** A diary entry on a task. `at` is when it was first written, `edited` the last change. */
+export type Note = { id: string; at: number; edited: number; title?: string; text: string; pinned?: boolean };
+
+export type TabName = 'index' | 'year' | 'hours' | 'wisdom';
+export const TABS: TabName[] = ['index', 'year', 'hours', 'wisdom'];
+export const TAB_TITLES: Record<TabName, string> = { index: 'Life', year: 'Year', hours: 'Day', wisdom: 'Wisdom' };
+/** A saved tab order with unknown names dropped and missing ones appended, so it always holds every tab once. */
+export const fixTabOrder = (o?: unknown): TabName[] => {
+  const seen = (Array.isArray(o) ? o : []).filter((x, i, a): x is TabName => TABS.includes(x as TabName) && a.indexOf(x) === i);
+  return [...seen, ...TABS.filter(t => !seen.includes(t))];
+};
 
 export type Task = {
   id: string;
@@ -16,8 +27,9 @@ export type Task = {
   place?: string;
   cue?: string;
   ifthen?: string;
-  notes?: string;
-  steps?: Step[]; // subtasks, each optionally dated
+  notes?: string; // old single note; moved into `log` on load
+  log?: Note[]; // the task's diary
+  steps?: Step[]; // subtasks (a checklist)
   checks?: number[];
   sessions?: number[];
   missedAt?: number | null;
@@ -45,6 +57,7 @@ export type State = {
   shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
   events?: LifeEvent[]; // important dates shown on the life grid
   saved?: string[]; // saved Wisdom quotes (quoteKey)
+  tabOrder?: TabName[]; // order of the bottom tabs, set in Settings
   tasks: Task[];
 };
 
@@ -69,7 +82,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
-      .then(raw => { if (raw) setState({ ...DEFAULT_STATE, ...JSON.parse(raw) }); })
+      .then(raw => { if (raw) setState(migrate({ ...DEFAULT_STATE, ...JSON.parse(raw) })); })
       .catch(() => {})
       .finally(() => { loaded.current = true; setReady(true); });
   }, []);
@@ -101,6 +114,14 @@ export function useStore() {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error('useStore must be used inside StoreProvider');
   return ctx;
+}
+
+/** Brings saved data up to date: the single notes string becomes the first diary entry; the tab order is made whole. */
+export function migrate(s: State): State {
+  const tasks = s.tasks.map(t => (t.notes && t.notes.trim()
+    ? { ...t, notes: undefined, log: [{ id: `n${t.id}`, at: t.start, edited: t.start, text: t.notes.trim() }, ...(t.log ?? [])] }
+    : t));
+  return { ...s, tasks, tabOrder: fixTabOrder(s.tabOrder) };
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10);

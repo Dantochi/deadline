@@ -3,12 +3,12 @@ import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CloseIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, StatusDot, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { usePartner } from '../lib/partner';
-import { DEFAULT_STATE, useStore } from '../lib/store';
+import { ChevronIcon, CloseIcon } from '../components/icons';
+import { DEFAULT_STATE, TAB_TITLES, fixTabOrder, useStore } from '../lib/store';
 import { addYears, pad, parseBirth, slotLabel, ymd } from '../lib/time';
 import { F, R, S, usePalette } from '../theme';
 
@@ -100,6 +100,33 @@ export default function Settings() {
           {row('Important dates', `${(state.events ?? []).length || 'No'} dates on your life grid`, <Btn label="Open" onPress={() => router.push('/events')} />)}
           {row('Widgets', 'Your weeks and deadlines on the home screen', <Btn label="Open" onPress={() => router.push('/widgets')} />)}
           {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn label="Make" onPress={() => router.push('/wallpaper')} />)}
+          {/* Tab order: move a tab up or down; the first one is where the app opens. */}
+          <View style={{ marginTop: S.s4 }}>
+            <Txt style={{ fontFamily: F.uiSemi }}>Tab order</Txt>
+            <Txt variant="small" dim>The first tab is where the app opens</Txt>
+            {fixTabOrder(state.tabOrder).map((name, i, all) => {
+              const move = (d: number) => update(s => {
+                const o = fixTabOrder(s.tabOrder), j = i + d;
+                if (j < 0 || j >= o.length) return s;
+                [o[i], o[j]] = [o[j], o[i]];
+                return { ...s, tabOrder: o };
+              });
+              return (
+                <View key={name} style={{ flexDirection: 'row', alignItems: 'center', height: 48, borderBottomWidth: 1, borderBottomColor: p.line }}>
+                  <Txt variant="num" dim style={{ width: 28 }}>{i + 1}</Txt>
+                  <Txt style={{ flex: 1 }}>{TAB_TITLES[name]}</Txt>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Move ${TAB_TITLES[name]} up`} disabled={i === 0} onPress={() => move(-1)}
+                    style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', opacity: i === 0 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
+                    <ChevronIcon left color={p.ink} />
+                  </Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Move ${TAB_TITLES[name]} down`} disabled={i === all.length - 1} onPress={() => move(1)}
+                    style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12, opacity: i === all.length - 1 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
+                    <ChevronIcon color={p.ink} />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
           {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
 

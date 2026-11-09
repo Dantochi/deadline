@@ -1,6 +1,8 @@
 // Say (or type) a task: "Write chapter three by Friday, weekdays at 7am for 45 minutes". The phone's own speech
 // recogniser turns speech into text, in the phone's language (e.g. English (Nigeria)); lib/parse picks out the
 // deadline, days, time and length; the form shows what was understood so it can be checked before saving.
+// Listening stays on until tapped off (up to a minute): pauses to think don't end it, and if the phone's
+// recogniser stops on its own (older Android ends after a silence), it quietly starts again and keeps the words.
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, TextInput, View } from 'react-native';
@@ -25,32 +27,69 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const pulse = useRef(new Animated.Value(1)).current;
+  const kept = useRef(''); // words already final, across restarts
+  const want = useRef(false); // the person wants it listening
+  const restarts = useRef(0);
+  const limit = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const join = (a: string, b: string) => [a.trim(), b.trim()].filter(Boolean).join(' ');
 
   useSpeechRecognitionEvent('start', () => setListening(true));
-  useSpeechRecognitionEvent('end', () => setListening(false));
-  useSpeechRecognitionEvent('result', e => setText(e.results[0]?.transcript ?? ''));
+  useSpeechRecognitionEvent('end', () => {
+    // Ended by the phone, not by a tap: carry on listening (a few times at most).
+    if (want.current && restarts.current < 4) { restarts.current++; listen(); return; }
+    want.current = false; setListening(false);
+  });
+  useSpeechRecognitionEvent('result', e => {
+    const said = e.results[0]?.transcript ?? '';
+    if (e.isFinal) { kept.current = join(kept.current, said); setText(kept.current); }
+    else setText(join(kept.current, said));
+  });
   useSpeechRecognitionEvent('error', e => {
+    if (want.current && e.error === 'no-speech' && restarts.current < 4) return; // 'end' follows and restarts
+    want.current = false;
     setListening(false);
     setError(e.error === 'not-allowed' ? 'Microphone access is off. You can type it instead.'
       : e.error === 'no-speech' ? "Didn't catch that. Try again, or type it." : 'Speech recognition stopped. You can type it instead.');
   });
 
+  const listen = () => {
+    try {
+      ExpoSpeechRecognitionModule.start({
+        lang: locale(), interimResults: true, continuous: true,
+        // Android: wait longer before deciding the sentence is over (the default is about a second and a half).
+        androidIntentOptions: {
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
+          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
+        },
+      });
+    } catch {
+      want.current = false; setListening(false);
+      setError('Speech recognition is not available on this phone. You can type it instead.');
+    }
+  };
   const start = async () => {
     setError('');
     try {
       const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!perm.granted) { setError('Microphone access is off. You can type it instead.'); return; }
       haptic.tick();
-      ExpoSpeechRecognitionModule.start({ lang: locale(), interimResults: true, continuous: false });
+      want.current = true; restarts.current = 0;
+      clearTimeout(limit.current);
+      limit.current = setTimeout(() => stop(), 60000); // a safety stop after a minute
+      listen();
     } catch {
       setError('Speech recognition is not available on this phone. You can type it instead.');
     }
   };
-  const stop = () => { try { ExpoSpeechRecognitionModule.stop(); } catch { /* already stopped */ } };
+  const stop = () => {
+    want.current = false; clearTimeout(limit.current);
+    try { ExpoSpeechRecognitionModule.stop(); } catch { /* already stopped */ }
+  };
 
   // Start listening as soon as the sheet opens.
   useEffect(() => {
-    if (open) { setText(''); setError(''); start(); } else stop();
+    if (open) { setText(''); kept.current = ''; setError(''); start(); } else stop();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -83,7 +122,7 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
         </View>
 
         <Txt variant="label" dim style={{ marginBottom: S.s2 }}>{error || 'What I heard (you can edit it)'}</Txt>
-        <TextInput value={text} onChangeText={setText} multiline placeholder="Or type it here" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
+        <TextInput value={text} onChangeText={v => { setText(v); kept.current = v; }} multiline placeholder="Or type it here" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
           style={{ height: 120, padding: S.s4, backgroundColor: p.raise, color: p.ink, fontFamily: F.uiMedium, fontSize: 19, lineHeight: 26, textAlignVertical: 'top' }} />
 
         <Pressable accessibilityRole="button" disabled={!text.trim()} onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }}

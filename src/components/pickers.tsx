@@ -3,7 +3,7 @@ import RNDateTimePicker, { DateTimePickerAndroid } from '@react-native-community
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { fdate, pad } from '../lib/time';
 import { F, R, usePalette } from '../theme';
-import { Txt } from './ui';
+import { DateTitle, Txt } from './ui';
 
 type Props = { value: Date; onChange: (d: Date) => void; mode: 'date' | 'time'; minimumDate?: Date; maximumDate?: Date; label: string };
 
@@ -21,8 +21,10 @@ export function DateTimeField({ value, onChange, mode, minimumDate, maximumDate,
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${text}`}
       onPress={() => DateTimePickerAndroid.open({ value, mode, is24Hour: true, minimumDate, maximumDate, onValueChange: (_, d) => onChange(d) })}
-      style={[styles.field, { borderColor: p.line, backgroundColor: p.bg }]}>
-      <Txt style={{ fontFamily: F.uiMedium, fontSize: 17 }}>{text}</Txt>
+      style={[styles.field, { borderColor: p.glassEdge, borderTopColor: p.glassHi, backgroundColor: p.glass }]}>
+      {mode === 'date'
+        ? <DateTitle date={value} month="short" size={17} style={{ fontFamily: F.uiMedium }} />
+        : <Txt style={{ fontFamily: F.dot, fontSize: 20, lineHeight: 24 }}>{text}</Txt>}
     </Pressable>
   );
 }

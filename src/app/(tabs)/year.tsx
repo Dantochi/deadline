@@ -1,65 +1,23 @@
 // Year: focus + context (after DateLens, Bederson et al. 2003). One month is drawn large, with day cells big enough
 // to tap (~50dp; Parhi, Karlson & Bederson 2006 found ~9mm targets needed for thumbs), and the whole year sits
-// below as an overview that stays in place. Tapping a day opens its page (tasks, sessions, important dates).
+// below as an overview that stays in place. Tapping a day opens its page (its tasks); pressing and holding opens
+// that day's timeline. A day carries one mark: a circle in the status colour of its most urgent task.
 // Every block has a fixed size (the month is always six rows), so nothing shifts as months or content change.
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Rect } from 'react-native-svg';
-import { ChevronIcon, CloseIcon } from '../../components/icons';
+import { Glass } from '../../components/Glass';
+import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
 import { Txt, haptic } from '../../components/ui';
-import { MONTHS, yearCells, type DayCell } from '../../lib/calendar';
-import { usePartner } from '../../lib/partner';
-import { reviewDue, weekKey, weekReview } from '../../lib/review';
-import { activeTasks, useStore } from '../../lib/store';
-import { addYears, info, nextSlot, parseBirth, slotLabel, ymd } from '../../lib/time';
-import { F, R, S, usePalette, type Palette } from '../../theme';
+import { MONTHS, yearCells } from '../../lib/calendar';
+import { useStore } from '../../lib/store';
+import { addYears, parseBirth, ymd } from '../../lib/time';
+import { F, R, S, statusColor, usePalette } from '../../theme';
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const STRIP = 72;
-
-/** How a day looks, shared by the large month and the overview. */
-function dayLook(p: Palette, c: DayCell | undefined, past: boolean) {
-  // Days already lived are muted, as on the life grid, so 'now' stays readable inside a long task.
-  if (c?.fill) return { fill: c.strong ? c.fill : `${c.fill}${past ? '3A' : '70'}`, text: c.strong ? p.bg : past ? p.dim : p.ink };
-  return { fill: past ? p.lived : p.ahead, text: past ? p.dim : p.ink };
-}
-
-/** One fixed-height strip under the month title: the weekly review when due, a partner request, or today. */
-function TodayStrip() {
-  const { state, update } = useStore();
-  const P = usePartner();
-  const p = usePalette();
-  const box = { height: STRIP, flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: p.raise, borderRadius: R.lg };
-  const line = (title: string, sub: string, onPress: () => void, onDismiss?: () => void) => (
-    <View style={box}>
-      <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); onPress(); }} style={{ flex: 1, height: STRIP, paddingHorizontal: S.s4, justifyContent: 'center', gap: 2 }}>
-        <Txt numberOfLines={1} style={{ fontFamily: F.uiBold }}>{title}</Txt>
-        <Txt numberOfLines={1} variant="meta" dim>{sub}</Txt>
-      </Pressable>
-      {onDismiss ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={onDismiss} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: S.s1 }}>
-          <CloseIcon color={p.dim} />
-        </Pressable>
-      ) : null}
-    </View>
-  );
-  if (reviewDue(state)) {
-    const r = weekReview(state);
-    return line('Your week is ready', `${r.finished.length} finished · ${r.needYou.length} ${r.needYou.length === 1 ? 'needs' : 'need'} you · ${r.sessions} sessions`,
-      () => router.push('/review'), () => update(s => ({ ...s, reviewSeen: weekKey() })));
-  }
-  const req = P.incoming[0];
-  if (req) return line('Partner request', `${req.fromName || `@${req.fromUsername}`} wants you as their accountability partner`, () => router.push('/partner'));
-  const act = activeTasks(state), need = act.filter(t => info(t).st === 'red' || info(t).left < 0).length;
-  const next = act.map(t => ({ t, n: nextSlot(t) })).filter(x => x.n).sort((a, b) => a.n! - b.n!)[0];
-  return line('Today', act.length
-    ? `${need ? `${need} ${need === 1 ? 'needs' : 'need'} you` : 'All on track'}${next ? ` · ${slotLabel(next.n!)} ${next.t.title}` : ''}`
-    : 'No deadlines yet. Tap to add one.', () => router.push('/day'));
-}
-
 export default function Year() {
   const { state } = useStore();
   const p = usePalette();
@@ -72,9 +30,10 @@ export default function Year() {
   const [dir, setDir] = useState(0); // which way the month moved, so it slides in from that side
 
   const inner = width * 0.91;
-  const cells = useMemo(() => yearCells(state, p, year), [state.tasks, state.events, p, year]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cells = useMemo(() => yearCells(state, year), [state.tasks, state.events, year]); // eslint-disable-line react-hooks/exhaustive-deps
   const todayKey = ymd(now);
   const openDay = (key: string) => { haptic.tick(); router.push({ pathname: '/day', params: { date: key } }); };
+  const openTimeline = (key: string) => { haptic.ok(); router.push({ pathname: '/hours', params: { date: key } }); };
 
   const focus = (y: number, m: number) => {
     let ny = y, nm = m;
@@ -91,33 +50,39 @@ export default function Year() {
     onPanResponderRelease: (_, g) => { if (Math.abs(g.dx) > 50) focusRef.current(yearRef.current, monthRef.current + (g.dx < 0 ? 1 : -1)); },
   })).current;
 
-  // The focused month: 7 columns across the full width, always six rows tall. Square cells, numbers inside.
-  const cell = inner / 7, gap = 3, box = cell - gap;
+  // The focused month: 7 columns inside a glass card, always six rows tall. No boxes: a number, and under it a circle
+  // in the colour of the day's most urgent task. Only today is outlined.
+  const PAD = S.s2, cell = (inner - PAD * 2) / 7;
   const first = new Date(year, month, 1), lead = (first.getDay() + 6) % 7, days = new Date(year, month + 1, 0).getDate();
   const big = [];
   for (let d = 1; d <= days; d++) {
     const k = lead + d - 1, x = (k % 7) * cell, y = Math.floor(k / 7) * cell;
-    const key = ymd(new Date(year, month, d)), c = cells.get(key), look = dayLook(p, c, key < todayKey), today = key === todayKey;
+    const key = ymd(new Date(year, month, d)), c = cells.get(key), today = key === todayKey;
+    const mark = c?.urgent ? statusColor(p, c.urgent) : undefined;
     big.push(
       <Pressable key={d} accessibilityRole="button"
-        accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : ''}${c?.fill ? (c.strong ? ', deadline or important date' : ', task running') : ''}${c?.session ? ', session reserved' : ''}`}
-        onPress={() => openDay(key)}
-        style={({ pressed }) => ({ position: 'absolute', left: x, top: y, width: box, height: box, backgroundColor: look.fill,
-          borderWidth: today ? 2 : 0, borderColor: p.redInk, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-        <Txt allowFontScaling={false} style={{ fontFamily: today || c?.strong ? F.uiBold : F.uiMedium, fontSize: 15, lineHeight: 18 }} color={look.text}>{d}</Txt>
-        <View style={{ width: 5, height: 5, marginTop: 3, backgroundColor: c?.session && key >= todayKey ? look.text : 'transparent' }} />
+        accessibilityLabel={`${d} ${MONTHS[month]}${today ? ', today' : ''}${c?.urgent ? `, ${c.urgent === 'red' ? 'act now' : c.urgent === 'amber' ? 'pay attention' : 'on track'}` : ''}${c?.event ? ', important date' : ''}`}
+        accessibilityHint="Opens the day. Press and hold for its timeline."
+        onPress={() => openDay(key)} onLongPress={() => openTimeline(key)} delayLongPress={380}
+        style={({ pressed }) => ({ position: 'absolute', left: x + 2, top: y + 2, width: cell - 4, height: cell - 4, alignItems: 'center', justifyContent: 'center',
+          borderWidth: today ? 1.5 : 0, borderColor: p.ink, borderRadius: R.sm - 4, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+        <Txt allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: 17, lineHeight: 20 }}>{d}</Txt>
+        <View style={{ width: 6, height: 6, borderRadius: 3, marginTop: 4, backgroundColor: mark ?? 'transparent', borderWidth: !mark && c?.event ? 1.5 : 0, borderColor: c?.event }} />
       </Pressable>,
     );
   }
 
   // The year at a glance: 12 small months, 6 across. Tap one to focus it.
-  const COLS = 6, mg = 8, mw = (inner - mg * (COLS - 1)) / COLS, u = mw / 7, mbox = u - 1;
+  const COLS = 6, mg = 8, mw = (inner - PAD * 2 - 1 - mg * (COLS - 1)) / COLS, u = mw / 7, mbox = u - 1;
   const mini = (m: number) => {
     const f = new Date(year, m, 1), ld = (f.getDay() + 6) % 7, n = new Date(year, m + 1, 0).getDate(), items = [];
     for (let d = 1; d <= n; d++) {
-      const k = ld + d - 1, key = ymd(new Date(year, m, d)), look = dayLook(p, cells.get(key), key < todayKey);
-      items.push(<Rect key={d} x={(k % 7) * u} y={Math.floor(k / 7) * u} width={mbox} height={mbox} fill={key === todayKey ? p.redInk : look.fill} />);
-      if (cells.get(key)?.session && key > todayKey) items.push(<Circle key={`s${d}`} cx={(k % 7) * u + mbox / 2} cy={Math.floor(k / 7) * u + mbox / 2} r={Math.max(0.8, mbox * 0.16)} fill={cells.get(key)?.strong ? p.bg : p.ink} />);
+      const k = ld + d - 1, key = ymd(new Date(year, m, d)), c = cells.get(key), cx = (k % 7) * u + mbox / 2, cy = Math.floor(k / 7) * u + mbox / 2;
+      // Every day the same faint dot; a day with a task gets a larger one in its most urgent status colour.
+      items.push(c?.urgent
+        ? <Circle key={d} cx={cx} cy={cy} r={mbox * 0.42} fill={statusColor(p, c.urgent)} />
+        : <Circle key={d} cx={cx} cy={cy} r={mbox * 0.2} fill={c?.event ?? p.dim} opacity={c?.event ? 1 : 0.5} />);
+      if (key === todayKey) items.push(<Rect key="today" x={(k % 7) * u - 0.5} y={Math.floor(k / 7) * u - 0.5} width={mbox + 1} height={mbox + 1} fill="none" stroke={p.ink} strokeWidth={1} />);
     }
     const on = m === month;
     return (
@@ -154,32 +119,19 @@ export default function Year() {
           {arrow(1)}
         </View>
 
-        <View style={{ marginTop: S.s2, marginBottom: S.s4 }}><TodayStrip /></View>
-
-        {/* Focus: the month, large, always six rows. Swipe sideways to change month. */}
-        <View {...swipe.panHandlers}>
+        {/* Focus: the month, large, always six rows, on glass. Swipe sideways to change month. */}
+        <Glass style={{ marginTop: S.s2, padding: PAD }} {...swipe.panHandlers}>
           <View style={{ height: 24, flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => <Txt key={i} variant="small" dim allowFontScaling={false} style={{ width: cell, textAlign: 'center', fontFamily: F.uiSemi }}>{w}</Txt>)}
           </View>
           <Enter id={`${year}-${month}`} from={{ x: dir * 24 }} duration={220} style={{ height: 6 * cell }}>{big}</Enter>
-        </View>
+        </Glass>
 
         {/* Context: the whole year, fixed size (every small month is six rows). */}
         <Txt variant="label" dim style={{ marginTop: S.s5, marginBottom: S.s2 }}>{year} at a glance</Txt>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s3 }}>
+        <Glass style={{ padding: PAD, flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s3 }}>
           {Array.from({ length: 12 }, (_, m) => mini(m))}
-        </View>
-        <View style={{ height: 44, flexDirection: 'row', alignItems: 'center', columnGap: S.s4, marginTop: S.s4 }}>
-          {[['Running', `${p.ink}70`], ['Due or date', p.ink]].map(([l, c]) => (
-            <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 12, height: 12, backgroundColor: c }} /><Txt variant="small" dim>{l}</Txt>
-            </View>
-          ))}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 12, height: 12, backgroundColor: p.ahead, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 4, height: 4, backgroundColor: p.ink }} /></View>
-            <Txt variant="small" dim>Session</Txt>
-          </View>
-        </View>
+        </Glass>
       </ScrollView>
 
     </SafeAreaView>

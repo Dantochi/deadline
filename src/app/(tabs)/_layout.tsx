@@ -1,29 +1,37 @@
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
 import { CalendarIcon, ClockIcon, GridIcon, QuoteIcon } from '../../components/icons';
-import { useStore } from '../../lib/store';
+import { StyleSheet } from 'react-native';
+import { TAB_TITLES, fixTabOrder, useStore } from '../../lib/store';
 import { F, usePalette } from '../../theme';
+
+const ICONS = { index: GridIcon, year: CalendarIcon, hours: ClockIcon, wisdom: QuoteIcon };
 
 export default function TabsLayout() {
   const { state } = useStore();
   const p = usePalette();
   if (!state.onboarded) return <Redirect href="/onboarding" />;
+  const order = fixTabOrder(state.tabOrder);
   return (
     <Tabs
+      // Screens are declared in the saved order, so the first one is where the app opens. Changing the order
+      // remounts the navigator so it takes effect at once.
+      key={order.join()}
       screenOptions={{
         headerShown: false,
         animation: 'fade',
         tabBarActiveTintColor: p.ink,
         tabBarInactiveTintColor: p.dim,
-        tabBarStyle: { backgroundColor: p.bg, borderTopColor: p.line, height: 72, paddingTop: 6 },
+        // Frosted bar: a lifted glass tint, a bright hairline on top, no shadow.
+        tabBarStyle: { backgroundColor: p.bar, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: p.glassHi, elevation: 0, shadowOpacity: 0, height: 72, paddingTop: 6 },
         tabBarLabelStyle: { fontFamily: F.uiSemi, fontSize: 13 },
         sceneStyle: { backgroundColor: p.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Life', tabBarIcon: ({ color }) => <GridIcon color={String(color ?? p.dim)} /> }} />
-      <Tabs.Screen name="year" options={{ title: 'Year', tabBarIcon: ({ color }) => <CalendarIcon color={String(color ?? p.dim)} /> }} />
-      <Tabs.Screen name="hours" options={{ title: 'Day', tabBarIcon: ({ color }) => <ClockIcon color={String(color ?? p.dim)} /> }} />
-      <Tabs.Screen name="wisdom" options={{ title: 'Wisdom', tabBarIcon: ({ color }) => <QuoteIcon color={String(color ?? p.dim)} /> }} />
+      {order.map(name => {
+        const Icon = ICONS[name];
+        return <Tabs.Screen key={name} name={name} options={{ title: TAB_TITLES[name], tabBarIcon: ({ color }) => <Icon color={String(color ?? p.dim)} /> }} />;
+      })}
     </Tabs>
   );
 }

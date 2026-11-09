@@ -10,7 +10,7 @@ import { Btn, Txt, haptic, useToast } from '../components/ui';
 import { EVENT_COLORS, type LifeEvent } from '../lib/events';
 import { uid, useStore } from '../lib/store';
 import { addYears, ageYears, fdate, parseBirth, weekStart, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, S, usePalette } from '../theme';
 
 const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 
@@ -35,7 +35,8 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
   };
 
   return (
-    <View style={{ gap: S.s4, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+    // Part of the page: no panel of its own, only hairlines between the fields.
+    <View style={{ gap: S.s4, paddingBottom: S.s4, borderBottomWidth: 1, borderBottomColor: p.line }}>
       <TextInput value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated, Met Ada, Mum's birthday"
         placeholderTextColor={p.dim} maxLength={60} maxFontSizeMultiplier={2} autoFocus={!exists}
         style={{ fontFamily: F.uiSemi, fontSize: 21, color: p.ink, borderBottomWidth: 1, borderBottomColor: p.line, paddingVertical: S.s3 }} />
@@ -121,7 +122,7 @@ export default function Events() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Important dates</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
@@ -129,13 +130,11 @@ export default function Events() {
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
-        <Txt dim>Mark the weeks that matter, lived or still ahead. They show in your colour on the life grid and the wallpaper.</Txt>
-
         {editing ? <Editor key={editing.id} initial={editing} onDone={() => setEditing(null)} />
-          : <Btn kind="primary" label="Add a date" icon={<PlusIcon color={p.bg} />} onPress={() => setEditing(fresh(today))} />}
+          : <Btn label="Add a date" icon={<PlusIcon color={p.ink} size={18} />} style={{ alignSelf: 'flex-start' }} onPress={() => setEditing(fresh(today))} />}
 
         {!state.showLived && past.length ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 56 }}>
             <Txt variant="meta" style={{ flex: 1 }}>Past dates show on the grid when lived weeks are shown.</Txt>
             <Switch value={false} onValueChange={v => update(s => ({ ...s, showLived: v }))} />
           </View>

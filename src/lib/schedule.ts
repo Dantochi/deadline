@@ -77,3 +77,16 @@ export function columns(blocks: Block[]) {
   if (group.length) flush();
   return placed;
 }
+
+/** Duration typed by the person: how a length in minutes is shown (hours when it is whole or half hours of 1 h+). */
+export function toDuration(minutes: number): { value: string; unit: 'minutes' | 'hours' } {
+  if (minutes >= 60 && minutes % 30 === 0) return { value: String(minutes / 60), unit: 'hours' };
+  return { value: String(minutes), unit: 'minutes' };
+}
+/** The typed value and unit back to whole minutes (1 to 16 hours), or null when it isn't a usable number. */
+export function fromDuration(value: string, unit: 'minutes' | 'hours'): number | null {
+  const n = parseFloat(value.replace(',', '.'));
+  if (!isFinite(n) || n <= 0) return null;
+  const m = Math.round(unit === 'hours' ? n * 60 : n);
+  return m >= 1 && m <= 16 * 60 ? m : null;
+}

@@ -1,14 +1,16 @@
 // One task, on its own screen: how much time is left, the check-in for its last session, recovery when the
-// deadline has passed, its plan (reserved time, backup, cue) and notes. Actions sit in a fixed bar at the bottom.
+// deadline has passed, its plan (reserved time, backup, cue), subtasks and a diary of notes. Actions sit in a
+// fixed bar at the bottom.
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, UndoIcon } from '../components/icons';
-import { Steps } from '../components/Steps';
+import { Diary } from '../components/Diary';
+import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
 import { BoxStrip, Chip, StatusDot, Txt, haptic, useToast } from '../components/ui';
-import { useStore, type Task } from '../lib/store';
+import { useStore } from '../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../lib/time';
 import { F, R, S, statusColor, usePalette } from '../theme';
 import Svg, { Path } from 'react-native-svg';
@@ -31,7 +33,7 @@ export default function TaskScreen() {
   const del = useDeleteTask();
   const t = state.tasks.find(x => x.id === id);
   const [rescheduling, setRescheduling] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
+  const [write, setWrite] = useState(0); // bumped by the Notes button: open a new diary note
 
   if (!t) {
     return (
@@ -112,7 +114,7 @@ export default function TaskScreen() {
         {!t.done && !paused && !over ? (
           <View style={{ gap: S.s2 }}>
             <BoxStrip n={sb.n} gone={sb.gone} st={st} />
-            <Txt variant="meta" dim>{unitsLeft} {sb.unit}{unitsLeft === 1 ? '' : 's'} left · due {fdate(t.deadline)}</Txt>
+            <Txt variant="meta" dim><Txt variant="num" dim>{unitsLeft}</Txt> {sb.unit}{unitsLeft === 1 ? '' : 's'} left</Txt>
           </View>
         ) : null}
 
@@ -148,16 +150,10 @@ export default function TaskScreen() {
           {t.done && t.doneAt ? line('Finished', fshort(t.doneAt)) : null}
         </View>
 
-        {/* Breaking work into steps is one of the best-supported ways to start (and to plan time realistically). */}
-        <Steps t={t} />
+        {/* Breaking work into small parts is one of the best-supported ways to start (and to plan time realistically). */}
+        <Subtasks t={t} />
 
-        {t.notes ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Open notes" onPress={() => setNotesOpen(true)}
-            style={{ padding: S.s4, backgroundColor: p.raise, borderRadius: R.lg, gap: S.s1 }}>
-            <Txt variant="label" dim>Notes</Txt>
-            <Txt variant="meta" numberOfLines={4}>{t.notes}</Txt>
-          </Pressable>
-        ) : null}
+        <Diary t={t} writeSignal={write} />
       </ScrollView>
 
       {/* Fixed action bar. */}
@@ -172,42 +168,11 @@ export default function TaskScreen() {
             toast(`Welcome back. Deadline moved to ${fdate(t.deadline + away)}.`);
           })
           : act('pause', 'Pause', <PauseIcon color={p.ink} />, () => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); })) : null}
-        {act('notes', 'Notes', <NotesIcon color={p.ink} />, () => setNotesOpen(true))}
+        {act('notes', 'Note', <NotesIcon color={p.ink} />, () => setWrite(w => w + 1))}
         {act('edit', 'Edit', <EditIcon color={p.ink} />, () => router.push({ pathname: '/new-task', params: { edit: t.id } }))}
         {act('delete', 'Delete', <TrashIcon color={p.redInk} />, () => { router.back(); del(t); }, true)}
       </View>
 
-      <NotesSheet t={t} open={notesOpen} onClose={() => setNotesOpen(false)} />
     </SafeAreaView>
-  );
-}
-
-/** Notes, full screen: saves as you type, with a visible Saved. */
-function NotesSheet({ t, open, onClose }: { t: Task; open: boolean; onClose: () => void }) {
-  const { updateTask } = useStore();
-  const p = usePalette();
-  const [text, setText] = useState(t.notes ?? '');
-  const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => { if (open) { setText(t.notes ?? ''); setSaved('idle'); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  const flush = (v: string) => { clearTimeout(timer.current); updateTask(t.id, x => ({ ...x, notes: v })); setSaved('saved'); };
-  const edit = (v: string) => { setText(v); setSaved('saving'); clearTimeout(timer.current); timer.current = setTimeout(() => flush(v), 600); };
-  return (
-    <Modal visible={open} animationType="slide" onRequestClose={() => { flush(text); onClose(); }}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', gap: S.s3 }}>
-            <View style={{ flex: 1 }}>
-              <Txt variant="h2" numberOfLines={1}>Notes</Txt>
-              <Txt variant="small" dim numberOfLines={1}>{saved === 'saved' ? 'Saved' : saved === 'saving' ? 'Saving…' : t.title}</Txt>
-            </View>
-            <Chip label="Done" onPress={() => { flush(text); onClose(); }} />
-          </View>
-          <TextInput value={text} onChangeText={edit} multiline autoFocus textAlignVertical="top"
-            placeholder="Progress, links, what is in the way" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-            style={{ flex: 1, marginHorizontal: '4.5%', marginBottom: S.s4, padding: S.s4, backgroundColor: p.raise, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24 }} />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
   );
 }

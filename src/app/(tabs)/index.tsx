@@ -6,13 +6,16 @@ import { SlidersIcon } from '../../components/icons';
 import { LifeGrid } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
 import { RollingNumber } from '../../components/RollingNumber';
-import { Chip, StatusDot, Txt } from '../../components/ui';
+import { GlassSegment } from '../../components/Glass';
+import { StatusDot, Txt } from '../../components/ui';
 import { eventsInWeek } from '../../lib/events';
 import { activeTasks, useStore } from '../../lib/store';
 import { DAY, YEAR, addYears, ageYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
 import { F, S, usePalette } from '../../theme';
 
 type Unit = 'weeks' | 'months' | 'years';
+const SHORT = { W: 'weeks', M: 'months', Y: 'years' } as const;
+type Short = keyof typeof SHORT;
 
 export default function Life() {
   const { state } = useStore();
@@ -58,11 +61,14 @@ export default function Life() {
 
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         {bday ? <Txt variant="label" dim>Happy birthday. A new row begins.</Txt> : null}
-        <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: S.s3, marginTop: S.s2, marginBottom: S.s5 }}>
+        {/* What the number counts, above it at the top left; the unit switch sits under the digits. */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: S.s3 }}>
           <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{unit} left</Txt> until {state.life}</Txt>
           <Txt dim><Txt style={{ fontFamily: F.uiSemi }}>{fmt(lived)} {unit}</Txt> lived</Txt>
         </View>
+        <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
+        <GlassSegment<Short> options={['W', 'M', 'Y']} value={(unit[0].toUpperCase() as Short)} onChange={k => setUnit(SHORT[k])}
+          labels={{ W: 'Weeks', M: 'Months', Y: 'Years' }} style={{ width: 150, marginTop: S.s2, marginBottom: S.s5 }} />
         {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} /> : null}
       </View>
 
@@ -88,11 +94,6 @@ export default function Life() {
         ) : null}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: S.s1, marginBottom: S.s3 }}>
-        {(['weeks', 'months', 'years'] as Unit[]).map(u => (
-          <View key={u} style={{ flex: 1 }}><Chip label={u[0].toUpperCase() + u.slice(1)} on={unit === u} onPress={() => setUnit(u)} /></View>
-        ))}
-      </View>
       </View>
     </SafeAreaView>
   );

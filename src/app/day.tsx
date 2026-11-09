@@ -1,19 +1,19 @@
-// A day: opened by tapping a date on the Year screen (or from a reminder). Today shows every task that needs
-// handling: overdue, running, paused and done. Other days show the tasks running then, what is due, sessions
-// and important dates. Rows expand for check-ins, recovery, notes, colour and done/pause.
+// A day: opened by tapping a date on the Year screen (or from a reminder). Only tasks: today shows every task
+// that needs handling (overdue, running, paused, done); other days list the tasks due or running then, due first.
+// Press and hold a task for "View on timeline".
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CalendarIcon, ChevronIcon, CloseIcon, PlusIcon } from '../components/icons';
+import { ChevronIcon, CloseIcon } from '../components/icons';
 import { TaskFabs } from '../components/Fabs';
 import { Enter } from '../components/Motion';
-import { PartnerCard, TaskRow } from '../components/TaskParts';
-import { Section, Txt, haptic } from '../components/ui';
+import { PartnerCard, ReviewCard, TaskRow } from '../components/TaskParts';
+import { DateTitle, Section, Txt, haptic } from '../components/ui';
 import { dayDetail } from '../lib/calendar';
 import { activeTasks, useStore, type Task } from '../lib/store';
-import { DAY, addYears, info, pad, parseBirth, ymd } from '../lib/time';
-import { BTN, F, R, S, usePalette, type Status } from '../theme';
+import { DAY, addYears, info, parseBirth, ymd } from '../lib/time';
+import { S, usePalette, type Status } from '../theme';
 
 const GROUP: Record<'red' | 'amber' | 'green', string> = { red: 'Act now', amber: 'Pay attention', green: 'On track' };
 const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
@@ -35,8 +35,8 @@ export default function Day() {
     haptic.tick(); setDir(n); setKey(next);
   };
 
-  const row = (t: Task) => <TaskRow key={t.id} t={t} />;
-  const group = (label: string, st: Status, list: Task[]) => (list.length ? <Section key={label} label={label} st={st} count={list.length}>{list.map(row)}</Section> : null);
+  const row = (t: Task) => <TaskRow key={t.id} t={t} date={key} />;
+  const group = (label: string | undefined, st: Status, list: Task[]) => (list.length ? <Section key={label ?? 'all'} label={label} st={st} count={list.length}>{list.map(row)}</Section> : null);
 
   // Today: everything that can be acted on. Other days: what that day holds.
   let body: React.ReactNode;
@@ -52,8 +52,8 @@ export default function Day() {
       </>
     );
   } else {
-    const due = d.tasks.filter(x => x.due).map(x => x.t), running = d.tasks.filter(x => !x.due).map(x => x.t);
-    body = <>{group('Due this day', 'red', due)}{group(past ? 'Was running' : 'Running', 'green', running)}</>;
+    // One plain list, due first (dayDetail already orders it that way).
+    body = group(undefined, 'green', d.tasks.map(x => x.t));
   }
   const empty = isToday ? !state.tasks.length : !d.tasks.length;
 
@@ -66,7 +66,7 @@ export default function Day() {
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Txt variant="label" dim>{isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'long' })}</Txt>
-          <Txt variant="h2" numberOfLines={1}>{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Txt>
+          <DateTitle date={date} />
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
           <ChevronIcon color={p.ink} />
@@ -79,35 +79,8 @@ export default function Day() {
       {/* Fixed row: the same day as hours. */}
       <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: 140 }}>
         <Enter id={key} from={{ x: dir * 20 }} duration={200}>
-        {/* The weekly review lives in the Year screen's strip; the partner's week shows here, on today. */}
-        {isToday ? <PartnerCard /> : null}
-
-        {d.events.length || d.sessions.length || d.steps.length ? (
-          <View style={{ marginTop: S.s5, gap: S.s2 }}>
-            {d.events.map(ev => (
-              <View key={ev.id} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, height: 44, paddingHorizontal: S.s4, backgroundColor: p.raise, borderRadius: R.md }}>
-                <View style={{ width: 12, height: 12, backgroundColor: ev.color }} />
-                <Txt numberOfLines={1} style={{ flex: 1, fontFamily: F.uiSemi }}>{ev.title}</Txt>
-              </View>
-            ))}
-            {d.steps.map(({ t, st }) => (
-              <Pressable key={st.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, height: 44, paddingHorizontal: S.s4, backgroundColor: p.raise, borderRadius: R.md }}>
-                <View style={{ width: 12, height: 12, borderWidth: 2, borderColor: p.dim, backgroundColor: st.done ? p.dim : 'transparent' }} />
-                <Txt numberOfLines={1} variant="meta" style={{ flex: 1, textDecorationLine: st.done ? 'line-through' : 'none' }}>Step · {st.title} <Txt variant="meta" dim>({t.title})</Txt></Txt>
-              </Pressable>
-            ))}
-            {d.sessions.map(({ t, n }) => {
-              const s = new Date(n!);
-              return (
-                <View key={`s${t.id}`} style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, height: 44, paddingHorizontal: S.s4, backgroundColor: p.raise, borderRadius: R.md }}>
-                  <Txt style={{ fontFamily: F.dot, fontSize: 17, lineHeight: 20 }}>{pad(s.getHours())}:{pad(s.getMinutes())}</Txt>
-                  <Txt numberOfLines={1} variant="meta" style={{ flex: 1 }}>reserved for {t.title}</Txt>
-                </View>
-              );
-            })}
-          </View>
-        ) : null}
+        {/* The weekly review (Sunday and Monday) and the partner's week show here, on today. */}
+        {isToday ? <><ReviewCard /><PartnerCard /></> : null}
 
         {body}
 
