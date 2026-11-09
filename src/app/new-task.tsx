@@ -26,6 +26,8 @@ const fromNow = (u: Unit, n: number) => {
 const DAYS: [string, number, string][] = [['M', 1, 'Monday'], ['T', 2, 'Tuesday'], ['W', 3, 'Wednesday'], ['T', 4, 'Thursday'], ['F', 5, 'Friday'], ['S', 6, 'Saturday'], ['S', 0, 'Sunday']];
 /** Where / "Make the plan stronger" (backup plan and cue) on the form. Off for now; set true to bring them back. */
 const PLAN_EXTRAS = false;
+/** The day bar and the "held for you" line under the time button. Off for now; set true to bring them back. */
+const DAY_PREVIEW = false;
 
 const HINTS: Record<string, string> = {
   career: 'Apply for three senior roles', health: 'Run a 10K', money: 'Save three months of rent', learning: 'Finish the data course',
@@ -247,6 +249,9 @@ export default function NewTask() {
                 </Pressable>
               );
             })()}
+            {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The time button above
+                opens the time screen, which shows the length and any clash. */}
+            {DAY_PREVIEW ? <>
             <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
               busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
                 .map(t => [fromHM(t.slot!.time), t.minutes ?? DEFAULT_MINUTES] as [number, number])} />
@@ -269,6 +274,7 @@ export default function NewTask() {
                 </Txt>
               );
             })()}
+            </> : null}
           </View>
 
           {/* Where, backup plan and cue: switched off for now (PLAN_EXTRAS). Saved values are kept on edit. */}
