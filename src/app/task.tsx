@@ -7,12 +7,13 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, UndoIcon } from '../components/icons';
 import { Diary } from '../components/Diary';
+import { Glass } from '../components/Glass';
 import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
 import { BoxStrip, Chip, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel, whenLine } from '../lib/time';
-import { F, R, S, statusColor, usePalette } from '../theme';
+import { F, S, statusColor, usePalette } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 
 const NotesIcon = ({ color }: { color: string }) => (
@@ -81,7 +82,7 @@ export default function TaskScreen() {
   const at = (dayOff: number, h: number, m: number) => { const d = new Date(); d.setDate(d.getDate() + dayOff); d.setHours(h, m, 0, 0); return +d; };
   const [uh, um] = (t.slot?.time ?? '07:00').split(':').map(Number);
 
-  const card = (children: ReactNode) => <View style={{ backgroundColor: p.raise, borderRadius: R.lg, padding: S.s4, gap: S.s3 }}>{children}</View>;
+  const card = (children: ReactNode) => <Glass style={{ padding: S.s5, gap: S.s3 }}>{children}</Glass>;
   const line = (k: string, v: string) => <Txt variant="meta" numberOfLines={2}><Txt variant="meta" dim>{k} · </Txt>{v}</Txt>;
 
   // Bottom bar: small, equal buttons (icon over a short label), fixed height.
@@ -95,28 +96,28 @@ export default function TaskScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%' }}>
+      <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
         <View style={{ flex: 1 }} />
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: S.s7, gap: S.s5 }}>
+      {/* The title block, then groups set apart by 48: the space between groups is well over the space inside them. */}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s7 }}>
         <View style={{ gap: S.s2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
             <StatusDot st={st} shapes={state.shapes} />
             <Txt variant="label" color={statusColor(p, st, true)}>{label}</Txt>
           </View>
           <Txt variant="h1" style={[t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
+          {!t.done && !paused && !over ? (
+            <View style={{ gap: S.s2, marginTop: S.s4 }}>
+              <BoxStrip n={sb.n} gone={sb.gone} st={st} />
+              <Txt variant="meta" dim>{unitsLeft} {sb.unit}{unitsLeft === 1 ? '' : 's'} left</Txt>
+            </View>
+          ) : null}
         </View>
-
-        {!t.done && !paused && !over ? (
-          <View style={{ gap: S.s2 }}>
-            <BoxStrip n={sb.n} gone={sb.gone} st={st} />
-            <Txt variant="meta" dim><Txt variant="num" dim>{unitsLeft}</Txt> {sb.unit}{unitsLeft === 1 ? '' : 's'} left</Txt>
-          </View>
-        ) : null}
 
         {over ? card(<>
           <Txt style={{ fontFamily: F.uiSemi }}>The deadline passed {leftShort(left).replace(' over', '')} ago.</Txt>

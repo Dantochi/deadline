@@ -123,13 +123,13 @@ export default function Events() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Important dates</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s6 }} keyboardShouldPersistTaps="handled">
         {editing ? <Editor key={editing.id} initial={editing} onDone={() => setEditing(null)} />
           : <Btn label="Add a date" icon={<PlusIcon color={p.ink} size={18} />} style={{ alignSelf: 'flex-start' }} onPress={() => setEditing(fresh(today))} />}
 

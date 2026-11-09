@@ -212,13 +212,13 @@ export default function PartnerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Accountability partner</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
         <Txt dim>Pick one person. Every Sunday you both see how the week went: sessions kept, missed, finished and what is coming up.</Txt>
         {!P.configured ? <Txt>Partners are not switched on in this test build yet.</Txt>
           : !P.ready ? <Txt dim>Loading…</Txt>

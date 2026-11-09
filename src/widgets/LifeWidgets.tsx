@@ -10,7 +10,7 @@ import { palettes, statusColor, type Palette } from '../theme';
 
 type Hex = `#${string}`;
 const hex = (c: string) => c as Hex;
-const FONT_UI = 'SchibstedGrotesk_600SemiBold', FONT_NUM = 'Doto_800ExtraBold';
+const FONT_UI = 'Inter_600SemiBold', FONT_NUM = 'Doto_800ExtraBold';
 
 /** Week colours for a range, by the same rules as the life grid (this week, important dates, tasks, lived,
  *  ahead). Everything that doesn't depend on the week (this week, task overlays) is worked out once. */

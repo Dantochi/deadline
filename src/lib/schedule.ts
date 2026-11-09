@@ -90,3 +90,26 @@ export function fromDuration(value: string, unit: 'minutes' | 'hours'): number |
   const m = Math.round(unit === 'hours' ? n * 60 : n);
   return m >= 1 && m <= 16 * 60 ? m : null;
 }
+
+// Typing a time on the keypad, like a microwave: digits fill HH:MM from the left. A first digit of 3–9 can only
+// be an hour, so it becomes 0X at once ("730" is 07:30). Digits that can't make a valid time are refused.
+/** The buffer after pressing digit `d`, or null when that digit can't come next. */
+export function keyTime(buf: string, d: string): string | null {
+  if (!/^\d$/.test(d) || buf.length >= 4) return null;
+  if (buf.length === 0) return +d >= 3 ? `0${d}` : d;
+  if (buf.length === 1) return +(buf + d) <= 23 ? buf + d : null;
+  if (buf.length === 2) return +d <= 5 ? buf + d : null;
+  return buf + d;
+}
+/** The time a buffer stands for, as HH:MM ("07" → 07:00, "073" → 07:30), or null when nothing is typed. */
+export function bufTime(buf: string): string | null {
+  if (!buf) return null;
+  const h = buf.length === 1 ? `0${buf}` : buf.slice(0, 2), m = (buf.slice(2) + '00').slice(0, 2);
+  return `${h}:${m}`;
+}
+/** Minutes from start to end; an end before the start is the next day. Null when 0 or over 16 hours. */
+export function lengthBetween(start: string, end: string): number | null {
+  let n = fromHM(end) - fromHM(start);
+  if (n <= 0) n += 24 * 60;
+  return n > 0 && n <= 16 * 60 && n !== 24 * 60 ? n : null;
+}

@@ -74,7 +74,7 @@ export default function Wisdom() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s6, paddingBottom: S.s7 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s6, paddingBottom: S.s7 }}>
         <Txt variant="h1">Wisdom</Txt>
         <Txt dim style={{ marginTop: S.s2 }}>From people who spent their time well.</Txt>
 

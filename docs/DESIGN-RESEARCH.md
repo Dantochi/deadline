@@ -237,3 +237,57 @@ and cue. There is no way to save without a time.
 fixed strip for deadlines and important dates; a now line; tap a block to open the task, or an empty hour to plan
 a session there. IBM's expired day-calendar patents (US 5,023,851; US 5,129,057) show time-slot day views are
 long-established.
+
+## Inter, and where the dot digits go (November 2026)
+- **Inter** is now the text font, at the person's request. It suits the findings above: open apertures, a tall
+  x-height, and distinct I/l/1 shapes. It also has tabular figures, which keep columns of times aligned.
+- **Tuning:**
+  - Body text is 17/26, a line height of about 1.5, because Inter sets taller than the previous face.
+  - Headings get slightly negative tracking (h1 −0.8, h2 −0.3), as Inter's display guidance suggests.
+  - Body text keeps the default tracking, since default spacing reads fastest (see Letter spacing).
+- **Dot digits (Doto) only for a number standing on its own:** the countdown, calendar day numbers, timeline
+  hours, and the start/end times. A number inside a phrase ("3 weeks left", "9 November 2026") uses Inter, so
+  one line never mixes two typefaces.
+
+## Whitespace and a premium feel
+Pinterest could not be reached from the build environment (the host is blocked, and it needs a login). This pass
+therefore rests on the peer-reviewed findings below rather than on mood boards.
+
+**What the evidence says**
+- **More empty space reads as higher quality and more luxurious.**
+  - In packaging with 1,193 people, a large white space raised perceived luxury (Iseki et al., 2025).
+  - Shoppers judge items as more valuable, and the store as more prestigious, when more space surrounds each
+    one (Sevilla & Kahn, 2016).
+  - Too little space makes a layout feel confined (Liu et al., 2024).
+- **Space between related things should be smaller than the space around the group.** Holding total white space
+  constant, a tighter group with more space around it (low interspace/circumspace) was judged more coherent and
+  performed better (Yu et al., 2023).
+- **Order matters as much as emptiness.** Alignment and a clear layout order cut visual search effort (Zhang et
+  al., 2024: "order is more"). Few distinct sizes and spacings, at moderate density, rate best (Ngo et al.,
+  2003; Gu et al., 2025).
+- **Black-and-white reads as more luxurious than colour** (Wang et al., 2022). This supports the monochrome UI,
+  with colour kept for meaning (status) only.
+- **Looks are not only looks.** A meta-analysis of 31 studies found a small to medium gain in measured
+  performance with more attractive interfaces (g = 0.29; Schlamann et al., 2026). *(abstract)*
+
+**What changed**
+- **Page gutter:** a fixed 24 on every screen (previously 4.5%, about 18 on a typical phone).
+- **Group rhythm:** 8–12 inside a group, and 48 between groups, which is at least 3× the inside space. This
+  applies to the task screen, the new-task form, Settings and section headers (label 12 above its content).
+- **Lines:** hairlines under every settings row are gone; space separates the rows. Task rows keep theirs,
+  because they are swipeable.
+- **Containers:** cards on the task screen are frosted glass with 24 padding, not filled panels.
+- **Buttons:** the two buttons on a day page are the same size (56).
+- **Session time:** it now has its own screen. There are only two large numbers on it (start and end), with a
+  number pad below, and nothing else competes for attention.
+
+**Sources**
+- Iseki, S. et al. (2025). Perception of luxury and product quality in package design: white space, typeface and visual texture. *Journal of Sensory Studies*. https://consensus.app/papers/details/b1bffcd860905712945e0bd20fcd9d1d/
+- Sevilla, J. & Kahn, B. (2016). The space-to-product ratio effect. *Journal of Marketing Research*. https://consensus.app/papers/details/a861b122599d57d4ac486cb018b717a2/
+- Liu, P. et al. (2024). Where less is more? White space and product image dynamism. *SAGE Open*. https://consensus.app/papers/details/68ce0c450bef5624a9dfb8bae84a1969/
+- Yu, Z.-H. et al. (2023). How to allocate white space in ad design? *Journal of Advertising*. https://consensus.app/papers/details/ea0127c2167f557c990d3dfd603aff66/
+- Zhang, N. et al. (2024). The effects of layout order on interface complexity. *Sensors*. https://consensus.app/papers/details/e07a951c1aaa59c9b1ae79ae1216ac7a/
+- Ngo, D. et al. (2003). Modelling interface aesthetics. *Information Sciences*. https://consensus.app/papers/details/ef3490bec0b657eb89d9c3ee85cbcb6f/
+- Gu, B. et al. (2025). Evaluation of digital twin interface layout based on aesthetics and AHP. *M2VIP*. https://consensus.app/papers/details/7ab50d38b1a551bfad4dbd8b760afb32/
+- Wang, Y. et al. (2022). What is the glamor of black-and-white? *Journal of Consumer Behaviour*. https://consensus.app/papers/details/7323a2910a215873aa1fb91cd05ece9d/
+- Schlamann, M. et al. (2026). Attractive things do work better: a meta-analysis. *IJHCI*. https://consensus.app/papers/details/5f6c4dac5ae45e9d9d4e86b82dbf92fb/

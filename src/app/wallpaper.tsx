@@ -47,13 +47,13 @@ export default function Wallpaper() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Wallpaper</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: S.s7, gap: S.s5, alignItems: 'center' }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5, alignItems: 'center' }}>
         <View accessible accessibilityRole="image" accessibilityLabel="Wallpaper preview"
           style={{ width: W * scale, height: H * scale, borderRadius: R.xl, overflow: 'hidden', borderWidth: 1, borderColor: p.line, marginTop: S.s4 }}>
           <View style={{ width: W, height: H, transform: [{ scale }], transformOrigin: 'top left' }}>

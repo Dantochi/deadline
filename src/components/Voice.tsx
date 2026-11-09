@@ -109,7 +109,7 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
 
   return (
     <Modal visible={open} animationType="slide" onRequestClose={() => { stop(); onClose(); }}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: p.bg, paddingHorizontal: '4.5%' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: p.bg, paddingHorizontal: S.page }}>
         <View style={{ height: 64, flexDirection: 'row', alignItems: 'center' }}>
           <Txt variant="h2" style={{ flex: 1 }}>Say the task</Txt>
           <Chip label="Cancel" onPress={() => { stop(); onClose(); }} />

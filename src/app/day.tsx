@@ -60,7 +60,7 @@ export default function Day() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Fixed header: day and arrows to the days either side. */}
-      <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%' }}>
+      <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -12 }}>
           <ChevronIcon left color={p.ink} />
         </Pressable>
@@ -77,7 +77,7 @@ export default function Day() {
       </View>
 
       {/* Fixed row: the same day as hours. */}
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: 140 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: 140 }}>
         <Enter id={key} from={{ x: dir * 20 }} duration={200}>
         {/* The weekly review (Sunday and Monday) and the partner's week show here, on today. */}
         {isToday ? <><ReviewCard /><PartnerCard /></> : null}

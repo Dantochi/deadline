@@ -24,7 +24,7 @@ export default function Widgets() {
   const { width } = useWindowDimensions();
   const [pick, setPick] = useState<WidgetName>('LifeMedium');
   const s = SIZES.find(x => x.name === pick)!;
-  const cell = Math.min(84, (width * 0.91 - 24) / 4);
+  const cell = Math.min(84, ((width - S.page * 2) - 24) / 4);
   const w = s.cells[0] * cell, h = s.cells[1] * cell;
 
   const pin = async () => {
@@ -47,13 +47,13 @@ export default function Widgets() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Widgets</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: S.s7, gap: S.s5 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1, marginTop: S.s3 }}>
           {SIZES.map(x => <Chip key={x.name} label={x.label} on={pick === x.name} onPress={() => setPick(x.name)} />)}
         </View>

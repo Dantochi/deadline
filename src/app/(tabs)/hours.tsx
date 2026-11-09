@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ColorSwatches } from '../../components/ColorSwatches';
-import { MicIcon } from '../../components/Voice';
 import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
 import { DateTitle, Txt, haptic } from '../../components/ui';
@@ -53,13 +52,13 @@ export default function Hours() {
     haptic.tick(); setDir(n); setKey(next);
   };
 
-  const inner = width * 0.91, laneW = inner - GUTTER;
+  const inner = (width - S.page * 2), laneW = inner - GUTTER;
   const nowMin = isToday ? new Date().getHours() * 60 + new Date().getMinutes() : -1;
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Fixed header: day and arrows to the days either side. */}
-      <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%' }}>
+      <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -12 }}>
           <ChevronIcon left color={p.ink} />
         </Pressable>
@@ -74,7 +73,7 @@ export default function Hours() {
 
       {/* All-day strip, fixed height: deadlines due and important dates. */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: 44, flexGrow: 0 }}
-        contentContainerStyle={{ paddingHorizontal: '4.5%', gap: S.s2, alignItems: 'center' }}>
+        contentContainerStyle={{ paddingHorizontal: S.page, gap: S.s2, alignItems: 'center' }}>
         {due.map(t => (
           <Pressable key={t.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })} onLongPress={() => setColorFor(t)}
             style={{ height: 32, paddingHorizontal: S.s3, flexDirection: 'row', alignItems: 'center', gap: S.s2, backgroundColor: taskColor(p, t) }}>
@@ -89,7 +88,7 @@ export default function Hours() {
         {!due.length && !detail.events.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
       </ScrollView>
 
-      <ScrollView ref={scroller} contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s2, paddingBottom: S.s8 }}>
+      <ScrollView ref={scroller} contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s2, paddingBottom: S.s8 }}>
         <Enter id={key} from={{ x: dir * 20 }} duration={200}>
           <View style={{ height: 24 * HOUR }}>
             {/* Hours: a label and a hairline each; tapping an empty hour plans a session there. */}
@@ -132,14 +131,6 @@ export default function Hours() {
         </Enter>
       </ScrollView>
 
-      {/* Say a task: it lands on this day's timeline at the time you say. */}
-      {!past ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Say a task"
-          onPress={() => { haptic.tick(); router.push({ pathname: '/new-task', params: isToday ? { voice: '1' } : { voice: '1', on: key } }); }}
-          style={({ pressed }) => ({ position: 'absolute', left: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: p.ink, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-          <MicIcon color={p.bg} />
-        </Pressable>
-      ) : null}
       {!isToday ? (
         <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setDir(key > today ? -1 : 1); setKey(today); }}
           style={{ position: 'absolute', right: 20, bottom: 24, height: 44, paddingHorizontal: S.s4, justifyContent: 'center', backgroundColor: p.ink }}>

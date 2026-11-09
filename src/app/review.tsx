@@ -29,7 +29,7 @@ export default function Review() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <View style={{ flex: 1 }}>
           <Txt variant="h2">Your week</Txt>
           <Txt variant="small" dim>{fshort(r.from)} – {fdate(Date.now())}</Txt>
@@ -38,7 +38,7 @@ export default function Review() {
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s4, paddingBottom: S.s8, gap: S.s4 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s4 }}>
         <View style={{ flexDirection: 'row', gap: S.s2 }}>
           {stat(r.finished.length, 'finished', statusColor(p, 'green', true))}
           {stat(r.needYou.length, r.needYou.length === 1 ? 'needs you' : 'need you', r.needYou.length ? statusColor(p, 'red', true) : undefined)}

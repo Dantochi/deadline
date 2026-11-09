@@ -55,25 +55,26 @@ export default function Settings() {
   useEffect(() => { permissionStatus().then(setPerm).catch(() => setPerm('unknown')); }, []);
 
   const row = (title: string, sub: string | undefined, right: ReactNode) => (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: S.s3, minHeight: 64, paddingVertical: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: S.s3, minHeight: 64, paddingVertical: S.s3 }}>
       <View style={{ flex: 1, minWidth: 160 }}><Txt style={{ fontFamily: F.uiSemi }}>{title}</Txt>{sub ? <Txt variant="small" dim>{sub}</Txt> : null}</View>
       {right}
     </View>
   );
   const group = (label: string, children: ReactNode) => (
-    <View style={{ marginTop: S.s5 }}><Txt variant="label" dim style={{ marginBottom: S.s1 }}>{label}</Txt>{children}</View>
+    // Groups set apart by space (48), rows inside them close together, no rule under every row.
+    <View style={{ marginTop: S.s7 }}><Txt variant="label" dim style={{ marginBottom: S.s2 }}>{label}</Txt>{children}</View>
   );
   const toDate = (hm: string) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%', paddingTop: S.s3 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Settings</Txt>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingBottom: S.s8 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s8 }}>
         {group('You', <>
           {row('Date of birth', undefined, <View style={{ minWidth: 160 }}><DateTimeField label="Date of birth" mode="date" value={parseBirth(state.birth)} maximumDate={new Date()}
             onChange={d => { if (+addYears(d, state.life) <= Date.now()) return toast('Check the year of birth'); update(s => ({ ...s, birth: ymd(d) })); }} /></View>)}
@@ -113,8 +114,8 @@ export default function Settings() {
                 return { ...s, tabOrder: o };
               });
               return (
-                <View key={name} style={{ flexDirection: 'row', alignItems: 'center', height: 48, borderBottomWidth: 1, borderBottomColor: p.line }}>
-                  <Txt variant="num" dim style={{ width: 28 }}>{i + 1}</Txt>
+                <View key={name} style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
+                  <Txt variant="meta" dim style={{ width: 28 }}>{i + 1}</Txt>
                   <Txt style={{ flex: 1 }}>{TAB_TITLES[name]}</Txt>
                   <Pressable accessibilityRole="button" accessibilityLabel={`Move ${TAB_TITLES[name]} up`} disabled={i === 0} onPress={() => move(-1)}
                     style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', opacity: i === 0 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>

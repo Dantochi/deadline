@@ -72,7 +72,7 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
       <Glass radius={R.sm - 2} style={{ padding: S.s3, gap: S.s1 }}>
         {n.title ? <Txt numberOfLines={2} style={{ fontFamily: F.uiBold, fontSize: 16, lineHeight: 22 }}>{n.title}</Txt> : null}
         {n.text ? <Txt variant="meta" numberOfLines={10}>{n.text}</Txt> : null}
-        <Txt variant="num" dim style={{ fontSize: 12, lineHeight: 16, marginTop: S.s1 }}>{stamp(n.at)}</Txt>
+        <Txt variant="small" dim style={{ marginTop: S.s1 }}>{stamp(n.at)}</Txt>
       </Glass>
     </Pressable>
   );
@@ -169,7 +169,7 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
     <Modal visible={!!note} animationType="slide" onRequestClose={close}>
       <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: '4.5%' }}>
+          <View style={{ height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={close} style={{ width: 48, height: 48, justifyContent: 'center', marginLeft: -12, alignItems: 'center' }}>
               <ChevronIcon left color={p.ink} />
             </Pressable>
@@ -189,7 +189,7 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
               <TrashIcon color={p.dim} />
             </Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: '4.5%' }}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: S.page }}>
             <TextInput value={title} onChangeText={v => { setTitle(v); later({ title: v, text, pinned }); }} placeholder="Title" placeholderTextColor={p.dim}
               maxFontSizeMultiplier={2} style={{ color: p.ink, fontFamily: F.uiBold, fontSize: 22, lineHeight: 28, paddingVertical: S.s2 }} />
             <TextInput value={text} onChangeText={v => { setText(v); later({ title, text: v, pinned }); }} placeholder="Note" placeholderTextColor={p.dim}
@@ -197,7 +197,7 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
               style={{ flex: 1, minHeight: 240, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24, paddingVertical: S.s2 }} />
           </ScrollView>
           <View style={{ height: 44, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: p.line }}>
-            <Txt variant="small" dim>Edited <Txt variant="num" dim style={{ fontSize: 13, lineHeight: 18 }}>{pad(e.getHours())}:{pad(e.getMinutes())}</Txt> · {t.title}</Txt>
+            <Txt variant="small" dim>Edited {pad(e.getHours())}:{pad(e.getMinutes())} · {t.title}</Txt>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

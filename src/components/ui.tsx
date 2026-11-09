@@ -13,26 +13,26 @@ type TxtProps = TextProps & { variant?: 'h1' | 'h2' | 'body' | 'label' | 'meta' 
 export function Txt({ variant = 'body', dim, color, style, ...rest }: TxtProps) {
   const p = usePalette();
   const v: Record<string, TextStyle> = {
-    h1: { fontFamily: F.uiHeavy, fontSize: T.x5, lineHeight: 40, letterSpacing: -1 },
-    h2: { fontFamily: F.uiBold, fontSize: T.xl, lineHeight: 28 },
-    body: { fontFamily: F.uiMedium, fontSize: T.base, lineHeight: 24 },
-    label: { fontFamily: F.uiBold, fontSize: T.xs, lineHeight: 16, letterSpacing: 1.6, textTransform: 'uppercase', fontVariant: ['tabular-nums'] },
+    // Inter: tighter tracking on headings (as its own guidance suggests for display sizes), default on body text.
+    h1: { fontFamily: F.uiBold, fontSize: T.x5, lineHeight: 40, letterSpacing: -0.8 },
+    h2: { fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, letterSpacing: -0.3 },
+    body: { fontFamily: F.ui, fontSize: T.base, lineHeight: 26 },
+    label: { fontFamily: F.uiSemi, fontSize: T.xs, lineHeight: 16, letterSpacing: 1.2, textTransform: 'uppercase', fontVariant: ['tabular-nums'] },
     meta: { fontFamily: F.ui, fontSize: T.md, lineHeight: 20, fontVariant: ['tabular-nums'] },
     // Small text gets a touch of extra tracking, as optical sizing does for small sizes.
     small: { fontFamily: F.ui, fontSize: T.sm, lineHeight: 18, letterSpacing: 0.1, fontVariant: ['tabular-nums'] },
-    // Dates and times: the same dot-matrix digits as the big countdown.
+    // Dot-matrix digits, only for a number standing on its own (a time, a day number, a count). When a number
+    // sits in a phrase with words ("3 weeks left", "9 November"), it stays in the text font.
     num: { fontFamily: F.dot, fontSize: T.md, lineHeight: 20 },
   };
   return <Text maxFontSizeMultiplier={2} style={[v[variant], { color: color ?? (dim ? p.dim : p.ink) }, style]} {...rest} />;
 }
 
-/** A date as "9 November 2026" with the numbers in the dot-matrix digits and the month in the UI font. */
+/** A date as "9 November 2026", in the text font (numbers among words are not set in the dot digits). */
 export function DateTitle({ date, size = T.xl, month = 'long', style, color }: { date: Date; size?: number; month?: 'long' | 'short'; style?: StyleProp<TextStyle>; color?: string }) {
-  const m = date.toLocaleDateString('en-GB', { month });
-  const n = { fontFamily: F.dot, fontSize: size + 1, lineHeight: size + 7 };
   return (
-    <Txt numberOfLines={1} color={color} style={[{ fontFamily: F.uiBold, fontSize: size, lineHeight: size + 7 }, style]}>
-      <Txt color={color} style={n}>{date.getDate()}</Txt> {m} <Txt color={color} style={n}>{date.getFullYear()}</Txt>
+    <Txt numberOfLines={1} color={color} style={[{ fontFamily: F.uiSemi, fontSize: size, lineHeight: size + 7, letterSpacing: size >= 20 ? -0.3 : 0, fontVariant: ['tabular-nums'] }, style]}>
+      {date.toLocaleDateString('en-GB', { day: 'numeric', month, year: 'numeric' })}
     </Txt>
   );
 }
@@ -141,7 +141,7 @@ export function Section({ label, st, count, children }: { label?: string; st?: S
   const p = usePalette();
   return (
     <View style={{ marginTop: label ? S.s7 : S.s5 }}>
-      {label ? <Txt variant="label" color={st ? statusColor(p, st, true) : p.dim} style={{ marginBottom: S.s2 }}>
+      {label ? <Txt variant="label" color={st ? statusColor(p, st, true) : p.dim} style={{ marginBottom: S.s3 }}>
         {label}{count != null ? <Txt variant="label" dim>{`  ${count}`}</Txt> : null}
       </Txt> : null}
       {children}

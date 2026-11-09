@@ -36,7 +36,8 @@ export function statusColor(p: Palette, st: Status, ink = false) {
 }
 
 // 8-point spacing, radius scale, button sizes (icon = label line height, 8px gap).
-export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64 };
+// Spacing: inside a group 8–12, between groups 48 (at least 3× the inside space), page gutter 24.
+export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64, page: 24 };
 export const R = { sm: 10, md: 14, lg: 20, xl: 28 };
 export const BTN = { m: 48, l: 56 };
 
@@ -46,10 +47,11 @@ export const BTN = { m: 48, l: 56 };
 export const T = { xs: 12, sm: 13, md: 15, base: 17, lg: 19, xl: 21, x2: 24, x5: 34, x6: 43 };
 
 export const F = {
-  ui: 'SchibstedGrotesk_400Regular',
-  uiMedium: 'SchibstedGrotesk_500Medium',
-  uiSemi: 'SchibstedGrotesk_600SemiBold',
-  uiBold: 'SchibstedGrotesk_700Bold',
-  uiHeavy: 'SchibstedGrotesk_800ExtraBold',
+  // Inter for all text; Doto only for numbers that stand alone (see Txt's `num` variant).
+  ui: 'Inter_400Regular',
+  uiMedium: 'Inter_500Medium',
+  uiSemi: 'Inter_600SemiBold',
+  uiBold: 'Inter_700Bold',
+  uiHeavy: 'Inter_800ExtraBold',
   dot: 'Doto_800ExtraBold',
 };

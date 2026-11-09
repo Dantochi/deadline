@@ -1,8 +1,11 @@
-import { Doto_800ExtraBold } from '@expo-google-fonts/doto';
-import {
-  SchibstedGrotesk_400Regular, SchibstedGrotesk_500Medium, SchibstedGrotesk_600SemiBold,
-  SchibstedGrotesk_700Bold, SchibstedGrotesk_800ExtraBold, useFonts,
-} from '@expo-google-fonts/schibsted-grotesk';
+import { Doto_800ExtraBold } from '@expo-google-fonts/doto/800ExtraBold';
+import { useFonts } from '@expo-google-fonts/inter/useFonts';
+// Each weight by its own path, so only these five Inter files are bundled (the package index pulls in all 18).
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
 import * as Notifications from 'expo-notifications';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -90,8 +93,7 @@ function Shell() {
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    SchibstedGrotesk_400Regular, SchibstedGrotesk_500Medium, SchibstedGrotesk_600SemiBold,
-    SchibstedGrotesk_700Bold, SchibstedGrotesk_800ExtraBold, Doto_800ExtraBold,
+    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Doto_800ExtraBold,
   });
   const p = usePalette();
   if (!loaded) return <View style={{ flex: 1, backgroundColor: p.bg }} />;

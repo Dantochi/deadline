@@ -51,7 +51,7 @@ export default function Life() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       {/* The gutter sits on an inner View: percentage padding on SafeAreaView is dropped on Android. */}
-      <View style={{ flex: 1, paddingHorizontal: '4.5%' }}>
+      <View style={{ flex: 1, paddingHorizontal: S.page }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')}
           style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>

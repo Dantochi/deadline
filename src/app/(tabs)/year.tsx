@@ -29,7 +29,7 @@ export default function Year() {
   const [month, setMonth] = useState(now.getMonth());
   const [dir, setDir] = useState(0); // which way the month moved, so it slides in from that side
 
-  const inner = width * 0.91;
+  const inner = (width - S.page * 2);
   const cells = useMemo(() => yearCells(state, year), [state.tasks, state.events, year]); // eslint-disable-line react-hooks/exhaustive-deps
   const todayKey = ymd(now);
   const openDay = (key: string) => { haptic.tick(); router.push({ pathname: '/day', params: { date: key } }); };
@@ -108,7 +108,7 @@ export default function Year() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: '4.5%', paddingTop: S.s4, paddingBottom: 120 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: 120 }}>
         {/* Month and year, fixed height; the year in the app's dot numerals. */}
         <View style={{ height: 64, flexDirection: 'row', alignItems: 'center' }}>
           {arrow(-1)}
@@ -128,7 +128,7 @@ export default function Year() {
         </Glass>
 
         {/* Context: the whole year, fixed size (every small month is six rows). */}
-        <Txt variant="label" dim style={{ marginTop: S.s5, marginBottom: S.s2 }}>{year} at a glance</Txt>
+        <Txt variant="label" dim style={{ marginTop: S.s6, marginBottom: S.s3 }}>{year} at a glance</Txt>
         <Glass style={{ padding: PAD, flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s3 }}>
           {Array.from({ length: 12 }, (_, m) => mini(m))}
         </Glass>
