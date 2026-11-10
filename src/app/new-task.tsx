@@ -3,7 +3,6 @@ import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon } from '../components/icons';
-import { Glass } from '../components/Glass';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
@@ -216,7 +215,6 @@ export default function NewTask() {
           </View>
 
           <View style={{ gap: S.s3 }}>
-            <Txt variant="label">When will you work on it?</Txt>
             <View style={{ flexDirection: 'row', gap: S.s1 }}>
               <View style={{ flex: 1 }}><Chip label="Repeat" on={mode === 'repeat'} onPress={() => setMode('repeat')} /></View>
               <View style={{ flex: 1 }}><Chip label="Once" on={mode === 'once'} onPress={() => setMode('once')} /></View>
@@ -234,23 +232,8 @@ export default function NewTask() {
             ) : (
               <DateTimeField label="Day" mode="date" value={onceDate} minimumDate={new Date()} maximumDate={deadline} onChange={setOnceDate} />
             )}
-            {/* One button for when the session runs; it opens the start/end screen. */}
-            {(() => {
-              const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
-              return (
-                <Pressable accessibilityRole="button" accessibilityLabel={`Session time ${hm} to ${toHM(fromHM(hm) + minutes)}, ${lenText(minutes)}. Change`}
-                  onPress={() => { haptic.tick(); setTimeOpen(true); }}>
-                  {({ pressed }) => (
-                    <Glass radius={R.md} style={{ height: 64, paddingHorizontal: S.s4, flexDirection: 'row', alignItems: 'center', gap: S.s3, opacity: pressed ? 0.7 : 1 }}>
-                      <Txt allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: 26, lineHeight: 32, flex: 1 }}>{hm} – {toHM(fromHM(hm) + minutes)}</Txt>
-                      <Txt dim>{lenText(minutes)}</Txt>
-                    </Glass>
-                  )}
-                </Pressable>
-              );
-            })()}
-            {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The time button above
-                opens the time screen, which shows the length and any clash. */}
+            {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The bottom button opens
+                the time screen, which shows the length and any clash. */}
             {DAY_PREVIEW ? <>
             <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
               busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
@@ -303,10 +286,19 @@ export default function NewTask() {
           </> : null}
 
           {err ? <Txt variant="meta" color={p.redInk} style={{ fontFamily: F.uiSemi }}>{err}</Txt> : null}
-          {/* Saving needs a time: with "Repeat", at least one day. The button says what is missing, no error popup. */}
+          {/* The button says what is missing (no error popup). Before a time is set it opens the time screen; after
+              Done it becomes Save, with the chosen time beside it to change. */}
           {(() => {
             const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
-            return <Btn kind="primary" label={missing ?? (ed ? 'Save changes' : 'Reserve the time and start')} disabled={!!missing} style={missing ? { opacity: 0.45 } : undefined} onPress={save} />;
+            if (missing) return <Btn kind="primary" label={missing} disabled style={{ opacity: 0.45 }} />;
+            if (!touchedTime) return <Btn kind="primary" label="Set time" onPress={() => setTimeOpen(true)} />;
+            const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hm} – ${toHM(fromHM(hm) + minutes)}`;
+            return (
+              <View style={{ flexDirection: 'row', gap: S.s2 }}>
+                <Btn label={range} accessibilityLabel={`Session ${range}, ${lenText(minutes)}. Change time`} onPress={() => setTimeOpen(true)} />
+                <Btn kind="primary" label={ed ? 'Save changes' : 'Save'} style={{ flex: 1 }} onPress={save} />
+              </View>
+            );
           })()}
         </ScrollView>
       </KeyboardAvoidingView>
