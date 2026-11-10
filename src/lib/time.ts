@@ -104,3 +104,11 @@ export function whenLine(t: Task) {
   const when = n ? slotLabel(n) : t.slot ? `${daysLabel(t.slot.days)} ${t.slot.time}` : '';
   return [when, t.place].filter(Boolean).join(' · ');
 }
+
+/** Whole seconds from `now` until the next midnight (23:59:59 just after midnight, 0 at the last second). */
+export const secondsLeftToday = (now: Date) => {
+  const end = new Date(now); end.setHours(24, 0, 0, 0);
+  return Math.max(0, Math.floor((+end - +now) / 1000));
+};
+/** Seconds as HH:MM:SS. */
+export const hms = (s: number) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
