@@ -59,6 +59,11 @@ export const CalendarIcon = ({ size = 24, color }: P) => (
     <Rect x={7} y={13} width={3} height={3} rx={0.6} fill={color} stroke="none" /><Rect x={14} y={13} width={3} height={3} rx={0.6} fill={color} stroke="none" opacity={0.4} />
   </Svg>
 );
+export const RotateIcon = ({ size = 22, color }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x={3} y={10} width={18} height={10.5} rx={2} /><Path d="M7.5 6.5a7 7 0 0 1 9 0M16.5 3.5v3h-3" />
+  </Svg>
+);
 export const HourglassIcon = ({ size = 24, color }: P) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M6.5 3.5h11M6.5 20.5h11M7.5 3.5c0 4.5 4.5 6 4.5 8.5S7.5 16 7.5 20.5M16.5 3.5c0 4.5-4.5 6-4.5 8.5s4.5 4 4.5 8.5" />
