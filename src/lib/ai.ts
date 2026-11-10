@@ -8,7 +8,7 @@ import { firebaseConfig, firebaseReady } from './firebase';
 import type { Parsed } from './parse';
 
 /** The model to ask. Check Firebase console → AI Logic for the current Flash-Lite model ID before release. */
-export const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+export const GEMINI_MODEL = 'gemini-3.5-flash-lite'; // 2.5 Flash-Lite was retired for new projects (checked 10 Nov 2026)
 const TIMEOUT = 6000;
 
 export const aiAvailable = firebaseReady;
@@ -61,7 +61,7 @@ export function fromAnswer(a: Record<string, unknown>, now = new Date()): Parsed
   out.time = hm(a.time);
   if (typeof a.minutes === 'number' && a.minutes >= 5 && a.minutes <= 16 * 60) out.minutes = Math.round(a.minutes);
   if (!out.minutes) out.end = hm(a.end);
-  const steps = Array.isArray(a.steps) ? a.steps.filter((x): x is string => typeof x === 'string' && x.trim().length > 1).map(x => x.trim().slice(0, 120)).slice(0, 20) : [];
+  const steps = Array.isArray(a.steps) ? a.steps.filter((x): x is string => typeof x === 'string' && x.trim().length > 1).map(x => x.trim().slice(0, 120)).map(x => x.charAt(0).toUpperCase() + x.slice(1)).slice(0, 20) : [];
   if (steps.length) out.steps = steps;
   if (!out.title && !out.deadline && !out.days && !out.once && !out.time && !out.minutes && !out.steps) return null;
 

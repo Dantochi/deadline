@@ -8,12 +8,12 @@ import { getReactNativePersistence, initializeAuth, type Auth } from '@firebase/
 import { initializeFirestore, type Firestore } from 'firebase/firestore';
 
 export const firebaseConfig = {
-  apiKey: '',
+  apiKey: 'AIzaSyCso9CUElv7bwKgXPlGGOM7RI9pzNBfqyc',
   authDomain: 'deadline-c21d9.firebaseapp.com',
   projectId: 'deadline-c21d9',
   storageBucket: 'deadline-c21d9.firebasestorage.app',
   messagingSenderId: '134720562004',
-  appId: '',
+  appId: '1:134720562004:web:e8c42f1d8fc8d1e6185ec1',
 };
 
 /** Firebase App Distribution invite link (App Distribution → Invite links), so invited partners can install. */

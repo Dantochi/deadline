@@ -9,10 +9,10 @@ Gemini fails, is slow (more than 6 s) or is offline, the phone's reading stays. 
 1. Go to Firebase console → project **deadline-c21d9** → **AI Logic** (Build menu) → **Get started**.
 2. Choose the **Gemini Developer API**. It works on the free Spark plan; Firebase creates the key and keeps it
    on Google's side, so no key ships in the app.
-3. Check that the model in `src/lib/ai.ts` (`GEMINI_MODEL`) is still offered. AI Logic lists the current models.
+3. Check that the model in `src/lib/ai.ts` (`GEMINI_MODEL`, now `gemini-3.5-flash-lite`) is still offered; Google retires older ones (2.5 Flash-Lite went in late 2026). AI Logic lists the current models.
    Prefer a Flash-Lite model, because it is fast and cheap.
-4. Make sure `apiKey` and `appId` are filled in `src/lib/firebase.ts`. The switch in Settings stays greyed out
-   until they are.
+4. `apiKey` and `appId` in `src/lib/firebase.ts` come from the project's **Web app** (Project settings → Your
+   apps); they are filled in. The JavaScript Firebase library needs a Web app's ID, not the Android app's.
 5. Before a public release, turn on **App Check** (Play Integrity) for AI Logic, so that only your app can use
    the quota.
 
