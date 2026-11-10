@@ -17,6 +17,8 @@ export default function TabsLayout() {
       // Screens are declared in the saved order, so the first one is where the app opens. Changing the order
       // remounts the navigator so it takes effect at once.
       key={order.join()}
+      // Back returns to the tab you were on before, step by step, not straight to the first tab.
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         animation: 'fade',

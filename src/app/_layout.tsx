@@ -7,12 +7,12 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
 import * as Notifications from 'expo-notifications';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { AppState, Appearance, View, useColorScheme } from 'react-native';
+import { AppState, Appearance, BackHandler, Platform, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ToastProvider } from '../components/ui';
+import { ToastProvider, useToast } from '../components/ui';
 import { reschedule } from '../lib/notifications';
 import { PartnerProvider } from '../lib/partner';
 import { refreshWidgets } from '../widgets/sync';
@@ -59,6 +59,26 @@ function NotificationLinks() {
   return null;
 }
 
+// Android back button: while there is somewhere to go back to, the navigator handles it (one screen or tab at a
+// time). At the start, the first press only shows a hint; a second press within 2 s closes the app.
+function BackToExit() {
+  const nav = useNavigationContainerRef();
+  const toast = useToast();
+  const armed = useRef(0);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (nav.isReady() && nav.canGoBack()) return false;
+      if (Date.now() - armed.current < 2000) { BackHandler.exitApp(); return true; }
+      armed.current = Date.now();
+      toast('Press back again to exit', 2000);
+      return true;
+    });
+    return () => sub.remove();
+  }, [nav, toast]);
+  return null;
+}
+
 function Shell() {
   const { ready, state } = useStore();
   // Light text on dark costs legibility in bright light, especially for older eyes, while dark helps at night,
@@ -74,6 +94,7 @@ function Shell() {
       <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
       <ReminderSync />
       <NotificationLinks />
+      <BackToExit />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: p.bg } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
