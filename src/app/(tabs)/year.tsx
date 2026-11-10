@@ -97,7 +97,7 @@ export default function Year() {
     return (
       <Pressable key={m} accessibilityRole="button" accessibilityLabel={`${MONTHS[m]} ${year}`} accessibilityState={{ selected: on }}
         onPress={() => focus(year, m)} hitSlop={4} style={{ width: mw }}>
-        <Txt variant="label" style={{ fontSize: 11, letterSpacing: 1, marginBottom: 3 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
+        <Txt variant="label" allowFontScaling={false} style={{ fontSize: 11, letterSpacing: 1, marginBottom: 3 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
         <Svg width={mw} height={6 * v}>{items}</Svg>
         <View style={{ height: 2, marginTop: 3, backgroundColor: on ? p.ink : 'transparent' }} />
       </Pressable>
@@ -140,7 +140,7 @@ export default function Year() {
         </View>
 
         {/* Context: the whole year, straight on the page (every small month is six rows), `mid` below the month. */}
-        <Txt variant="label" dim style={{ marginTop: fit.mid, marginBottom: S.s3 }}>{year} at a glance</Txt>
+        <Txt variant="label" dim allowFontScaling={false} style={{ marginTop: fit.mid, marginBottom: S.s3 }}>{year} at a glance</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: mg, rowGap: S.s4 }}>
           {Array.from({ length: 12 }, (_, m) => mini(m))}
         </View>
