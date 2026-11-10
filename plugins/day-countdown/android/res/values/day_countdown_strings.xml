@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="day_countdown_label">Deadline · Left today</string>
+    <string name="day_countdown_description">Time left today, counting down</string>
+    <string name="day_countdown_caption">Left today</string>
+</resources>

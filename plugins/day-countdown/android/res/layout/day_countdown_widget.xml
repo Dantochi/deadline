@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Left today" widget: a label and the time to midnight, ticking (Chronometer, counting down). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/day_countdown_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/day_countdown_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/day_countdown_inter"
+        android:letterSpacing="0.1"
+        android:text="@string/day_countdown_caption"
+        android:textAllCaps="true"
+        android:textColor="#8C9097"
+        android:textSize="11sp" />
+
+    <Chronometer
+        android:id="@+id/day_countdown_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:countDown="true"
+        android:fontFamily="@font/day_countdown_doto"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:singleLine="true"
+        android:textColor="#F1F1EC"
+        android:textSize="34sp" />
+</LinearLayout>

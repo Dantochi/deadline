@@ -34,6 +34,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/day-countdown",
       "expo-font",
       [
         "expo-notifications",
