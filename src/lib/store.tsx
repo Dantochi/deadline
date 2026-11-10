@@ -8,13 +8,15 @@ export type Step = { id: string; title: string; date?: number | null; done: bool
 /** A diary entry on a task. `at` is when it was first written, `edited` the last change. */
 export type Note = { id: string; at: number; edited: number; title?: string; text: string; pinned?: boolean };
 
-export type TabName = 'index' | 'year' | 'hours' | 'wisdom';
-export const TABS: TabName[] = ['index', 'year', 'hours', 'wisdom'];
-export const TAB_TITLES: Record<TabName, string> = { index: 'Life', year: 'Year', hours: 'Day', wisdom: 'Wisdom' };
+export type TabName = 'index' | 'year' | 'hours' | 'timer' | 'wisdom';
+export const TABS: TabName[] = ['index', 'year', 'hours', 'timer', 'wisdom'];
+export const TAB_TITLES: Record<TabName, string> = { index: 'Life', year: 'Year', hours: 'Day', timer: 'Today', wisdom: 'Wisdom' };
 /** A saved tab order with unknown names dropped and missing ones appended, so it always holds every tab once. */
 export const fixTabOrder = (o?: unknown): TabName[] => {
-  const seen = (Array.isArray(o) ? o : []).filter((x, i, a): x is TabName => TABS.includes(x as TabName) && a.indexOf(x) === i);
-  return [...seen, ...TABS.filter(t => !seen.includes(t))];
+  const out = (Array.isArray(o) ? o : []).filter((x, i, a): x is TabName => TABS.includes(x as TabName) && a.indexOf(x) === i);
+  // A tab added in a later version goes right after the tab it follows by default (e.g. Today after Day).
+  TABS.forEach((t, i) => { if (!out.includes(t)) { const after = i ? out.indexOf(TABS[i - 1]) : -1; out.splice(after + 1, 0, t); } });
+  return out;
 };
 
 export type Task = {

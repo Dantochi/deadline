@@ -1,12 +1,12 @@
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
-import { CalendarIcon, ClockIcon, GridIcon, QuoteIcon } from '../../components/icons';
+import { CalendarIcon, ClockIcon, GridIcon, HourglassIcon, QuoteIcon } from '../../components/icons';
 import { TabBar } from '../../components/TabBar';
 import { useState } from 'react';
 import { TAB_TITLES, fixTabOrder, useStore } from '../../lib/store';
 import { usePalette } from '../../theme';
 
-const ICONS = { index: GridIcon, year: CalendarIcon, hours: ClockIcon, wisdom: QuoteIcon };
+const ICONS = { index: GridIcon, year: CalendarIcon, hours: ClockIcon, timer: HourglassIcon, wisdom: QuoteIcon };
 
 export default function TabsLayout() {
   const { state } = useStore();
