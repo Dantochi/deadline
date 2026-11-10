@@ -295,8 +295,8 @@ export default function NewTask() {
             const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hm} – ${toHM(fromHM(hm) + minutes)}`;
             return (
               <View style={{ flexDirection: 'row', gap: S.s2 }}>
-                <Btn label={range} accessibilityLabel={`Session ${range}, ${lenText(minutes)}. Change time`} onPress={() => setTimeOpen(true)} />
                 <Btn kind="primary" label={ed ? 'Save changes' : 'Save'} style={{ flex: 1 }} onPress={save} />
+                <Btn label={range} accessibilityLabel={`Session ${range}, ${lenText(minutes)}. Change time`} onPress={() => setTimeOpen(true)} />
               </View>
             );
           })()}
