@@ -39,10 +39,13 @@ function Column({ d, w, h, style, reduce, delay }: { d: number; w: number; h: nu
   );
 }
 
-export function RollingNumber({ value, fontSize, color, accessibilityLabel }: {
+export function RollingNumber({ value, text: given, fontSize, color, accessibilityLabel }: {
   value: number; fontSize: number; color: string; accessibilityLabel?: string;
+  /** Show this instead of the formatted number, e.g. "02:15:30"; its separators are measured like the comma. */
+  text?: string;
 }) {
-  const text = fmt(value), chars = text.split('');
+  const text = given ?? fmt(value), chars = text.split('');
+  const sep = chars.find(c => !/\d/.test(c)) ?? ',';
   const [avail, setAvail] = useState(0);
   const [digitW, setDigitW] = useState<number[]>([]);
   const [sepW, setSepW] = useState(0);
@@ -70,7 +73,7 @@ export function RollingNumber({ value, fontSize, color, accessibilityLabel }: {
             <Text key={n} allowFontScaling={false} style={baseStyle}
               onLayout={e => { const v = e.nativeEvent.layout.width; setDigitW(ws => { const c = ws.slice(); c[i] = v; return c; }); }}>{n}</Text>
           ))}
-          <Text allowFontScaling={false} style={baseStyle} onLayout={e => setSepW(e.nativeEvent.layout.width)}>,</Text>
+          <Text allowFontScaling={false} style={baseStyle} onLayout={e => setSepW(e.nativeEvent.layout.width)}>{sep}</Text>
         </View>
       ) : (
         <View style={{ flexDirection: 'row' }} importantForAccessibility="no-hide-descendants">

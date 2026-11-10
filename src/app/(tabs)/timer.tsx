@@ -4,9 +4,10 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { RollingNumber } from '../../components/RollingNumber';
 import { Txt } from '../../components/ui';
 import { hms, secondsLeftToday } from '../../lib/time';
-import { F, S, T, usePalette } from '../../theme';
+import { S, T, usePalette } from '../../theme';
 
 export default function Today() {
   const p = usePalette();
@@ -32,11 +33,9 @@ export default function Today() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flex: 1, paddingHorizontal: S.page, justifyContent: 'center' }}>
         <Txt variant="label" dim style={{ marginBottom: S.s3 }}>Left today</Txt>
-        <Txt allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit
-          accessibilityLabel={`${hrs} ${hrs === 1 ? 'hour' : 'hours'} ${mins} ${mins === 1 ? 'minute' : 'minutes'} left today`}
-          style={{ fontFamily: F.dot, fontSize: size, lineHeight: Math.round(size * 1.12), fontVariant: ['tabular-nums'] }}>
-          {hms(left)}
-        </Txt>
+        {/* The digits roll into place each second, like the life countdown. */}
+        <RollingNumber value={left} text={hms(left)} fontSize={size} color={p.ink}
+          accessibilityLabel={`${hrs} ${hrs === 1 ? 'hour' : 'hours'} ${mins} ${mins === 1 ? 'minute' : 'minutes'} left today`} />
 
         {/* The day in hours: lived ones grey, this hour outlined, the rest still ahead. */}
         <View style={{ flexDirection: 'row', gap: S.s1, marginTop: S.s6 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
