@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LifeGrid } from '../components/LifeGrid';
 import { DateTimeField } from '../components/pickers';
+import { CareerSetup } from '../components/CareerSetup';
 import { Btn, Chip, Txt, haptic } from '../components/ui';
 import { askPermission } from '../lib/notifications';
 import { useStore } from '../lib/store';
@@ -39,7 +40,7 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', padding: '6%', gap: S.s5 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', padding: '6%', gap: S.s5 }} keyboardShouldPersistTaps="handled">
         {step === 0 ? (
           <>
             {heading('How do you want to see your time?', 'You can change this later in Settings.')}
@@ -91,7 +92,16 @@ export default function Onboarding() {
           </>
         ) : null}
 
+        {/* Optional: Wisdom for your work (or the career a student is heading towards). */}
         {step === 4 ? (
+          <>
+            {heading('Wisdom for your work?', 'Articles and videos from people in your field. Students: pick the career you’re studying for.')}
+            <CareerSetup doneLabel="Continue" onDone={c => { update(s => ({ ...s, career: c })); haptic.ok(); setStep(5); }} />
+            <Btn kind="ghost" label="Skip" onPress={() => { update(s => ({ ...s, career: null })); setStep(5); }} />
+          </>
+        ) : null}
+
+        {step === 5 ? (
           <>
             {heading('Reminders that respect you.', 'Three short digests a day, plus a nudge before each time you reserve. Nothing else.')}
             <Btn kind="primary" label="Allow reminders" onPress={async () => { await askPermission().catch(() => false); finish(); }} />

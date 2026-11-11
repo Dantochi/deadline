@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { Animated, Linking, PanResponder, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowOutIcon, BookIcon, ChevronIcon, HeartIcon, PlayIcon } from '../../components/icons';
 import { Chip, Txt, haptic, useToast } from '../../components/ui';
+import { creatorLink, workLink } from '../../lib/career';
 import { useStore } from '../../lib/store';
 import { QUOTES, READ, WATCH, quoteKey, quoteOfTheDay, type Link } from '../../lib/wisdom';
 import { F, R, S, usePalette } from '../../theme';
@@ -52,6 +54,15 @@ export default function Wisdom() {
       {icon}
     </Pressable>
   );
+
+  // Wisdom for your work: the picked creators, each with up to two of their best-known works. Every link is a
+  // search for a real name or title (YouTube for videos and talks, the web otherwise).
+  const career = state.career;
+  const field = career ? career.title.replace(/^studying\s+/i, '') : '';
+  const work: Link[] = career ? career.creators.flatMap(c => [
+    { title: c.name, by: c.why ?? (c.kind === 'youtube' ? 'YouTube' : c.kind === 'podcast' ? 'Podcast' : c.kind === 'blog' ? 'Writing' : 'Books and talks'), url: creatorLink(c, field) },
+    ...c.works.slice(0, 2).map(w => ({ title: w.title, by: `${c.name} · ${w.type}`, url: workLink(w, c) })),
+  ]).slice(0, 12) : [];
 
   const shelf = (title: string, links: Link[], video: boolean) => (
     <View style={{ marginTop: S.s7 }}>
@@ -107,6 +118,14 @@ export default function Wisdom() {
           </View>
         ) : null}
 
+        {career && work.length ? (
+          <>
+            {shelf('For your work', work, false)}
+            <Pressable accessibilityRole="button" onPress={() => router.push('/career')} style={{ minHeight: 44, justifyContent: 'center' }}>
+              <Txt variant="small" dim>{career.student ? 'Studying for' : 'Based on'} {career.title} · <Txt variant="small" style={{ fontFamily: F.uiSemi }}>Edit</Txt></Txt>
+            </Pressable>
+          </>
+        ) : null}
         {shelf('Read', READ, false)}
         {shelf('Watch', WATCH, true)}
       </ScrollView>

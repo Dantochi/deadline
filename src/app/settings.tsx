@@ -132,6 +132,12 @@ export default function Settings() {
           {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
 
+        {group('Wisdom', <>
+          {row('Wisdom for your work', state.career ? `${state.career.student ? 'Studying for' : 'Based on'} ${state.career.title} · ${state.career.creators.length} ${state.career.creators.length === 1 ? 'creator' : 'creators'}` : 'Articles and videos from people in your field', (
+            <Btn label={state.career ? 'Edit' : 'Set up'} onPress={() => router.push('/career')} />
+          ))}
+        </>)}
+
         {group('Voice', <>
           {row('Understand with Gemini', aiAvailable
             ? 'Better at long sentences and spoken lists. Sends what you say or type for a task (not your other data) to Google. Off: everything is read on your phone.'

@@ -82,6 +82,7 @@ without a manual click.
 | **Personal info → Name** (display name) and **User IDs** (username) | Collected; **shared** with the one partner the user chooses. Purpose: App functionality, Account management |
 | **App activity → Other user-generated content** (weekly summary, optional task titles) | Collected; shared with the chosen partner. Purpose: App functionality |
 | Photos, location, contacts, health, financial info | Not collected. Photos are saved only, never read |
+| **App activity → Other user-generated content** (career title and chosen creator names, only with "Wisdom for your work" set up) | Collected, **processed ephemerally**, not stored. Sent to Google (Gemini via Firebase AI Logic). Purpose: App functionality. Optional |
 | Audio | Not collected by Deadline. Voice entry uses the phone's speech service (Google/Apple), which returns text |
 | **App activity → Other user-generated content** (task sentence, only with "Understand with Gemini" on) | Collected, **processed ephemerally**, not stored. Sent to Google (Gemini via Firebase AI Logic) as a service provider. Purpose: App functionality. Optional |
 | Data processed only on device (tasks, notes, birth date) | Not "collected" under Play's definition, since it never leaves the phone |

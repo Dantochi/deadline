@@ -105,6 +105,7 @@ function Shell() {
         <Stack.Screen name="events" options={{ presentation: 'modal' }} />
         <Stack.Screen name="widgets" options={{ presentation: 'modal' }} />
         <Stack.Screen name="review" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="career" options={{ presentation: 'modal' }} />
         <Stack.Screen name="day" />
         <Stack.Screen name="task" />
       </Stack>

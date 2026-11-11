@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
+import type { Career } from './career';
 import type { LifeEvent } from './events';
 import { info } from './time';
 
@@ -61,6 +62,7 @@ export type State = {
   saved?: string[]; // saved Wisdom quotes (quoteKey)
   tabOrder?: TabName[]; // order of the bottom tabs, set in Settings
   aiParse?: boolean; // let Gemini read spoken/typed tasks (sends the sentence to Google); off by default
+  career?: Career | null; // Wisdom for your work (or the career a student is heading towards); null = said no
   tasks: Task[];
 };
 

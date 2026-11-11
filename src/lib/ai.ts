@@ -3,7 +3,7 @@
 // Settings. Only the sentence and today's date are sent. Whatever comes back is checked field by field, and the
 // on-phone parser (lib/parse) has already filled the form, so a slow, failed or odd answer changes nothing.
 import { getApps, initializeApp } from 'firebase/app';
-import { GoogleAIBackend, Schema, getAI, getGenerativeModel, type GenerativeModel } from 'firebase/ai';
+import { GoogleAIBackend, Schema, getAI, getGenerativeModel, type GenerativeModel, type ObjectSchema } from 'firebase/ai';
 import { firebaseConfig, firebaseReady } from './firebase';
 import type { Parsed } from './parse';
 
@@ -90,6 +90,27 @@ export async function aiParse(sentence: string, now = new Date()): Promise<Parse
     ]);
     if (!res) return null;
     return fromAnswer(JSON.parse(res.response.text()), now);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One JSON answer from Gemini for another feature (e.g. career suggestions), with the same setup as above.
+ * Null when Firebase isn't set up, offline, slow, refused (including App Check failures) or not valid JSON.
+ */
+export async function geminiJSON(system: string, prompt: string, responseSchema: ObjectSchema, ms = 12000): Promise<Record<string, unknown> | null> {
+  if (!firebaseReady) return null;
+  try {
+    const app = getApps()[0] ?? initializeApp(firebaseConfig);
+    const m = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), {
+      model: GEMINI_MODEL, systemInstruction: system,
+      generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.3 },
+    });
+    const res = await Promise.race([m.generateContent(prompt), new Promise<null>(r => setTimeout(() => r(null), ms))]);
+    if (!res) return null;
+    const v = JSON.parse(res.response.text());
+    return v && typeof v === 'object' ? v : null;
   } catch {
     return null;
   }
