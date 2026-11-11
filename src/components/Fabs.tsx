@@ -3,6 +3,7 @@
 // Their labels appear as a tooltip while pressed and held, so the screen itself carries no instruction text.
 import { useRef, useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { PlusIcon } from './icons';
 import { Txt, haptic } from './ui';
@@ -38,8 +39,10 @@ function Fab({ size, label, icon, onPress, solid }: { size: number; label: strin
 
 export function TaskFabs({ onTask, onDate }: { onTask?: () => void; onDate: () => void }) {
   const p = usePalette();
+  // Above the phone's navigation bar: with 3-button navigation it is ~48 tall and the screen reaches under it.
+  const insets = useSafeAreaInsets();
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', right: 20, bottom: 28, alignItems: 'flex-end', gap: S.s3 }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', right: 20, bottom: 28 + insets.bottom, alignItems: 'flex-end', gap: S.s3 }}>
       <Fab size={56} label="Mark as an important date" icon={<FlagIcon color={p.ink} />} onPress={onDate} />
       {onTask ? <Fab size={56} solid label="New task" icon={<PlusIcon color={p.bg} />} onPress={onTask} /> : null}
     </View>
