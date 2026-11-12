@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateTimeField } from '../components/pickers';
 import { GlassSegment } from '../components/Glass';
@@ -22,7 +22,7 @@ function DigestPreview() {
   return (
     <View style={{ marginTop: S.s3, gap: S.s2 }}>
       <Txt variant="small" dim>Arrives {slotLabel(at)}. One notification, most urgent first.</Txt>
-      <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise2, gap: S.s1 }}>
+      <View style={{ padding: S.s4, borderRadius: R.sm, backgroundColor: p.raise2, gap: S.s1 }}>
         <Txt variant="small" dim><Txt variant="small" style={{ fontFamily: F.uiSemi }}>Deadline</Txt> · {pad(d.getHours())}:{pad(d.getMinutes())}</Txt>
         <Txt style={{ fontFamily: F.uiBold }}>{c.title}</Txt>
         {/* Fixed rows (two reserved times, four tasks) so the preview keeps one size whatever it holds. */}
@@ -119,14 +119,12 @@ export default function Settings() {
                 <View key={name} style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
                   <Txt variant="meta" dim style={{ width: 28 }}>{i + 1}</Txt>
                   <Txt style={{ flex: 1 }}>{TAB_TITLES[name]}</Txt>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Move ${TAB_TITLES[name]} up`} disabled={i === 0} onPress={() => move(-1)}
-                    style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', opacity: i === 0 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
+                  <IconButton accessibilityLabel={`Move ${TAB_TITLES[name]} up`} disabled={i === 0} onPress={() => move(-1)} style={{ opacity: i === 0 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
                     <ChevronIcon left color={p.ink} />
-                  </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Move ${TAB_TITLES[name]} down`} disabled={i === all.length - 1} onPress={() => move(1)}
-                    style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12, opacity: i === all.length - 1 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
+                  </IconButton>
+                  <IconButton accessibilityLabel={`Move ${TAB_TITLES[name]} down`} disabled={i === all.length - 1} onPress={() => move(1)} style={{ marginRight: -8, opacity: i === all.length - 1 ? 0.25 : 1, transform: [{ rotate: '90deg' }] }}>
                     <ChevronIcon color={p.ink} />
-                  </Pressable>
+                  </IconButton>
                 </View>
               );
             })}

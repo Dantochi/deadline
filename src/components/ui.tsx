@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, StyleSheet, Switch, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
-import { F, H, R, S, T, slop, statusColor, usePalette, type Status } from '../theme';
+import { F, H, R, S, T, slop, statusColor, tint, usePalette, type Status } from '../theme';
 
 export const haptic = {
   tick: () => Haptics.selectionAsync().catch(() => {}),
@@ -146,6 +146,26 @@ export function Field({ bare, error, helper, big, wrap, trailing, style, onFocus
         {trailing}
       </View>
       {error ? <Txt variant="small" color={p.redInk}>{error}</Txt> : helper ? <Txt variant="small" dim>{helper}</Txt> : null}
+    </View>
+  );
+}
+
+/** The one card: a raised surface on the page, 20 radius, 1px hairline, 16 padding. Shapes inside use a smaller
+ *  radius (concentric corners). */
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const p = usePalette();
+  return <View style={[{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: p.hairline, padding: S.s4 }, style]}>{children}</View>;
+}
+
+/** A small tinted pill for a status or time left ("2d", "Due", "Paused"): the colour as a soft wash with its text on
+ *  top, so urgency is easy to scan without shouting. Neutral when no status is given. */
+export function StatusPill({ label, st }: { label: string; st?: Status }) {
+  const p = usePalette();
+  const live = st === 'red' || st === 'amber' || st === 'green';
+  const c = live ? statusColor(p, st, true) : p.dim;
+  return (
+    <View style={{ height: 24, paddingHorizontal: S.s2, borderRadius: R.full, justifyContent: 'center', backgroundColor: live ? tint(statusColor(p, st)) : p.raise2 }}>
+      <Txt numberOfLines={1} style={{ fontFamily: F.uiSemi, fontSize: T.xs, lineHeight: 16, fontVariant: ['tabular-nums'] }} color={c}>{label}</Txt>
     </View>
   );
 }

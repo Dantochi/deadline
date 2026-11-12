@@ -33,6 +33,9 @@ export function usePalette(): Palette {
   return useColorScheme() === 'light' ? light : dark;
 }
 
+/** A colour as a soft wash (e.g. a status at 14% behind its own text), for pills that should read calm, not loud. */
+export const tint = (hex: string, alpha = 0.14) => `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+
 export function statusColor(p: Palette, st: Status, ink = false) {
   if (st === 'paused' || st === 'done') return p.dim;
   return ink ? p[`${st}Ink`] : p[st];
@@ -41,7 +44,11 @@ export function statusColor(p: Palette, st: Status, ink = false) {
 // 8-point spacing, radius scale, control heights.
 // Spacing: inside a group 8–12, between groups 48 (at least 3× the inside space), page gutter 24.
 export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64, page: 24 };
-// Five radii only: xs for tiny marks, sm for small controls, md for buttons and fields, lg for cards, full for pills.
+// Five radii only: xs for tiny marks, sm for small controls, md for buttons and fields, lg for cards and sheets, full
+// for pills. Checked against the field (Nov 2026): Material 3 uses 4/8/12/16/28/full, Airbnb's extracted tokens
+// 8/14/20/pill, so 6/10/14/20/full sits inside the range the best apps use. Two rules keep it looking right:
+// a control's radius stays near a third of its height (32→10, 40/48→14) unless it is a full pill; and a shape
+// nested in another uses the outer radius minus the gap between them (concentric corners), never the same radius.
 export const R = { xs: 6, sm: 10, md: 14, lg: 20, full: 999 };
 // Control heights, sized to importance: sm for inline and row actions and pills, md for ordinary buttons and fields,
 // lg for the one bottom action on a screen. Whatever the look, the touch area is at least `hit` (Apple HIG 44pt;

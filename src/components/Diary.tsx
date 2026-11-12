@@ -6,12 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { Glass } from './Glass';
 import { ChevronIcon } from './icons';
-import { Txt, haptic, useToast } from './ui';
+import { IconButton, Txt, haptic, useToast } from './ui';
 import { uid, useStore, type Note, type Task } from '../lib/store';
 import { pad } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, H, R, S, usePalette } from '../theme';
 
 const PinIcon = ({ color, on }: { color: string; on?: boolean }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill={on ? color : 'none'} stroke={color} strokeWidth={1.9} strokeLinejoin="round" strokeLinecap="round">
@@ -69,11 +68,11 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
       accessibilityHint="Opens the note. Press and hold to pin or delete."
       onPress={() => { haptic.tick(); setOpen(n); }} onLongPress={() => { haptic.ok(); setMenuFor(n); }} delayLongPress={380}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Glass radius={R.sm - 2} style={{ padding: S.s3, gap: S.s1 }}>
+      <View style={{ padding: S.s3, gap: S.s1, borderRadius: R.md, backgroundColor: p.raise, borderWidth: 1, borderColor: p.hairline }}>
         {n.title ? <Txt numberOfLines={2} style={{ fontFamily: F.uiBold, fontSize: 16, lineHeight: 22 }}>{n.title}</Txt> : null}
         {n.text ? <Txt variant="meta" numberOfLines={10}>{n.text}</Txt> : null}
         <Txt variant="small" dim style={{ marginTop: S.s1 }}>{stamp(n.at)}</Txt>
-      </Glass>
+      </View>
     </Pressable>
   );
   const grid = (notes: Note[]) => {
@@ -90,9 +89,9 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
     <View>
       <Txt variant="label" dim style={{ marginBottom: S.s2 }}>Diary</Txt>
       <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setOpen('new'); }}>
-        <Glass radius={R.sm - 2} style={{ height: 48, paddingHorizontal: S.s4, justifyContent: 'center' }}>
+        <View style={{ height: H.lg, paddingHorizontal: S.s4, justifyContent: 'center', borderRadius: R.md, backgroundColor: p.raise, borderWidth: 1, borderColor: p.hairline }}>
           <Txt dim>Take a note…</Txt>
-        </Glass>
+        </View>
       </Pressable>
 
       {pinned.length ? <><Txt variant="small" dim style={{ marginTop: S.s4, marginBottom: S.s2, fontFamily: F.uiSemi }}>Pinned</Txt>{grid(pinned)}</> : null}
@@ -170,14 +169,13 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
       <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={{ height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={close} style={{ width: 48, height: 48, justifyContent: 'center', marginLeft: -12, alignItems: 'center' }}>
+            <IconButton accessibilityLabel="Back" onPress={close} style={{ marginLeft: -8 }}>
               <ChevronIcon left color={p.ink} />
-            </Pressable>
+            </IconButton>
             <View style={{ flex: 1 }} />
-            <Pressable accessibilityRole="button" accessibilityLabel={pinned ? 'Unpin' : 'Pin'} onPress={() => { haptic.tick(); const v = !pinned; setPinned(v); save({ title, text, pinned: v }); }}
-              style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+            <IconButton accessibilityLabel={pinned ? 'Unpin' : 'Pin'} onPress={() => { const v = !pinned; setPinned(v); save({ title, text, pinned: v }); }}>
               <PinIcon color={p.ink} on={pinned} />
-            </Pressable>
+            </IconButton>
             <Pressable accessibilityRole="button" accessibilityLabel="Delete note" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}
               onPress={() => {
                 clearTimeout(timer.current);

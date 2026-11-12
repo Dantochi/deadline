@@ -7,7 +7,7 @@ import { LifeGrid } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
 import { RollingNumber } from '../../components/RollingNumber';
 import { GlassSegment } from '../../components/Glass';
-import { StatusDot, Txt } from '../../components/ui';
+import { IconButton, StatusDot, Txt } from '../../components/ui';
 import { eventsInWeek } from '../../lib/events';
 import { activeTasks, useStore } from '../../lib/store';
 import { DAY, YEAR, addYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
@@ -50,10 +50,9 @@ export default function Life() {
       {/* The gutter sits on an inner View: percentage padding on SafeAreaView is dropped on Android. */}
       <View style={{ flex: 1, paddingHorizontal: S.page }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')}
-          style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Settings" onPress={() => router.push('/settings')} style={{ marginRight: -8 }}>
           <SlidersIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
 
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>

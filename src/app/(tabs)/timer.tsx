@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RotateIcon } from '../../components/icons';
 import { RollingNumber } from '../../components/RollingNumber';
 import { SandGlass } from '../../components/SandGlass';
-import { Txt, haptic } from '../../components/ui';
+import { IconButton, Txt } from '../../components/ui';
 import { hms, secondsLeftToday } from '../../lib/time';
 import { S, T, palettes, usePalette } from '../../theme';
 
@@ -79,10 +79,9 @@ export default function Today() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: S.page }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Show the countdown in landscape" onPress={() => { haptic.tick(); setWide(true); }}
-          style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Show the countdown in landscape" onPress={() => { setWide(true); }} style={{ marginRight: -8 }}>
           <RotateIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <View style={{ flex: 1, paddingHorizontal: S.page, justifyContent: 'center' }}>
         <Txt variant="label" dim style={{ marginBottom: S.s3 }}>Left today</Txt>

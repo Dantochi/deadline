@@ -3,7 +3,7 @@
 // Press and hold a task for "View on timeline".
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronIcon, CloseIcon } from '../components/icons';
 import { TaskFabs } from '../components/Fabs';
@@ -61,16 +61,16 @@ export default function Day() {
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Fixed header: day and arrows to the days either side. */}
       <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -12 }}>
+        <IconButton accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ marginLeft: -8 }}>
           <ChevronIcon left color={p.ink} />
-        </Pressable>
+        </IconButton>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Txt variant="label" dim>{isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'long' })}</Txt>
           <DateTitle date={date} />
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+        <IconButton accessibilityLabel="Next day" onPress={() => move(1)}>
           <ChevronIcon color={p.ink} />
-        </Pressable>
+        </IconButton>
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>

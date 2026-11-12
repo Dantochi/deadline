@@ -7,10 +7,9 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, UndoIcon } from '../components/icons';
 import { Diary } from '../components/Diary';
-import { Glass } from '../components/Glass';
 import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
-import { BoxStrip, Btn, Chip, IconButton, StatusDot, Txt, haptic, useToast } from '../components/ui';
+import { BoxStrip, Btn, Card, Chip, IconButton, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel } from '../lib/time';
 import { F, S, statusColor, usePalette } from '../theme';
@@ -82,7 +81,7 @@ export default function TaskScreen() {
   const at = (dayOff: number, h: number, m: number) => { const d = new Date(); d.setDate(d.getDate() + dayOff); d.setHours(h, m, 0, 0); return +d; };
   const [uh, um] = (t.slot?.time ?? '07:00').split(':').map(Number);
 
-  const card = (children: ReactNode) => <Glass style={{ padding: S.s5, gap: S.s3 }}>{children}</Glass>;
+  const card = (children: ReactNode) => <Card style={{ gap: S.s3 }}>{children}</Card>;
   const line = (k: string, v: string) => <Txt variant="meta" numberOfLines={2}><Txt variant="meta" dim>{k} · </Txt>{v}</Txt>;
 
   // Bottom bar: small, equal buttons (icon over a short label), fixed height.

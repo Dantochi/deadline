@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ColorSwatches } from '../../components/ColorSwatches';
 import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
-import { DateTitle, Txt, haptic } from '../../components/ui';
+import { DateTitle, IconButton, Txt, haptic } from '../../components/ui';
 import { dayDetail, taskColor } from '../../lib/calendar';
 import { columns, sessionsOn, toHM } from '../../lib/schedule';
 import { useStore, type Task } from '../../lib/store';
@@ -59,16 +59,16 @@ export default function Hours() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Fixed header: day and arrows to the days either side. */}
       <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -12 }}>
+        <IconButton accessibilityLabel="Previous day" onPress={() => move(-1)} style={{ marginLeft: -8 }}>
           <ChevronIcon left color={p.ink} />
-        </Pressable>
+        </IconButton>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Txt variant="label" dim>{isToday ? 'Today' : date.toLocaleDateString('en-GB', { weekday: 'long' })}</Txt>
           <DateTitle date={date} />
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Next day" onPress={() => move(1)} style={{ marginRight: -8 }}>
           <ChevronIcon color={p.ink} />
-        </Pressable>
+        </IconButton>
       </View>
 
       {/* All-day strip, fixed height: deadlines due and important dates. */}

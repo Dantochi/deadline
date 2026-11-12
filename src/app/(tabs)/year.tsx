@@ -11,7 +11,7 @@ import Svg, { Rect } from 'react-native-svg';
 import { ChevronIcon } from '../../components/icons';
 import { GAP } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
-import { Txt, haptic } from '../../components/ui';
+import { IconButton, Txt, haptic } from '../../components/ui';
 import { MONTHS, fitYear, yearCells } from '../../lib/calendar';
 import { useStore } from '../../lib/store';
 import { addYears, parseBirth, ymd } from '../../lib/time';
@@ -107,11 +107,10 @@ export default function Year() {
   const arrow = (dir: -1 | 1) => {
     const disabled = dir < 0 ? year <= minY && month === 0 : year >= maxY && month === 11;
     return (
-      <Pressable accessibilityRole="button" accessibilityLabel={dir < 0 ? 'Previous month' : 'Next month'} disabled={disabled}
-        onPress={() => focus(year, month + dir)}
-        style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.3 : 1, marginHorizontal: -12 }}>
+      <IconButton accessibilityLabel={dir < 0 ? 'Previous month' : 'Next month'} disabled={disabled}
+        onPress={() => focus(year, month + dir)} style={{ opacity: disabled ? 0.3 : 1, marginHorizontal: -8 }}>
         <ChevronIcon left={dir < 0} color={p.ink} />
-      </Pressable>
+      </IconButton>
     );
   };
 
