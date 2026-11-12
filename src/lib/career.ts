@@ -3,7 +3,7 @@
 // by Gemini. Gemini suggests well-known creators in the field and their best-known works; every link it leads to
 // is a search (YouTube or the web) for a real name or title, so nothing is invented.
 import { Schema } from 'firebase/ai';
-import { geminiJSON } from './ai';
+import { GEMINI_FALLBACK, GEMINI_MODEL, geminiJSON, type Tries } from './ai';
 
 export type Work = { title: string; type: 'book' | 'video' | 'podcast' | 'article' | 'talk' };
 export type Creator = { name: string; kind: 'author' | 'youtube' | 'podcast' | 'blog' | 'speaker'; why?: string; works: Work[] };
@@ -31,30 +31,38 @@ const PROTECT = [
 const norm = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 /** True when the phone's own list refuses this career. */
 export const blockedCareer = (title: string) => { const t = norm(title); return BLOCK.some(re => re.test(t)) && !PROTECT.some(re => re.test(t)); };
+/** True for work that guards against harm (investigators, police, prosecutors, counter-terrorism…). Gemini has been
+ *  seen refusing these ("fraud investigator"), so its refusal is not taken as final for them. */
+export const protectiveCareer = (title: string) => PROTECT.some(re => re.test(norm(title)));
 
 const SYSTEM = `You help a planner app suggest learning material for a person's career, or the career a student is
-studying towards. First decide "allowed": false if the career is mainly about violence against people, terrorism or
-militancy, organised crime, trafficking, fraud or scams, or otherwise harming society; true for ordinary lawful work,
-including soldiers in national armed forces, police, security, law, medicine and nursing. If allowed, give "field"
-(the field in two or three words) and 8 to 12 well-known, real, currently findable authors and creators in that field.
-For students include people who teach or explain the field well. Never invent people or titles. For each, give 1 to 3
-of their best-known works (book, talk, video series, podcast or essay) with the title exactly as published.`;
+studying towards. Answer in English only.
+First decide "allowed": false only if the career itself is committing violence against people, terrorism or militancy,
+organised crime, trafficking, fraud or scams, or otherwise harming society. Set true for ordinary lawful work, including
+soldiers in national armed forces, police, security, law, medicine and nursing, and for every role that investigates,
+prevents, prosecutes or defends against crime, terrorism or fraud (for example a fraud investigator or a
+counter-terrorism analyst).
+If allowed, give 8 to 12 well-known, real, currently findable authors and creators in that field; for students
+include people who teach or explain the field well. Never invent people or titles. For each, give 1 to 3 of their
+best-known works (book, talk, video series, podcast or essay) with the title exactly as published. Keep every string
+short.`;
 
+// No free-text fields beyond names and titles, and the list first: in live tests (12 Nov 2026) a free "field" label
+// made the small model ramble inside it and never reach the list.
 const schema = Schema.object({
   properties: {
     allowed: Schema.boolean(),
-    field: Schema.string(),
     creators: Schema.array({
       items: Schema.object({
         properties: {
-          name: Schema.string(), kind: Schema.enumString({ enum: ['author', 'youtube', 'podcast', 'blog', 'speaker'] }), why: Schema.string(),
+          name: Schema.string(), kind: Schema.enumString({ enum: ['author', 'youtube', 'podcast', 'blog', 'speaker'] }),
           works: Schema.array({ items: Schema.object({ properties: { title: Schema.string(), type: Schema.enumString({ enum: ['book', 'video', 'podcast', 'article', 'talk'] }) } }) }),
         },
-        optionalProperties: ['why', 'works'],
+        propertyOrdering: ['name', 'kind', 'works'],
       }),
     }),
   },
-  optionalProperties: ['field', 'creators'],
+  propertyOrdering: ['allowed', 'creators'],
 });
 
 const KINDS = ['author', 'youtube', 'podcast', 'blog', 'speaker'] as const;
@@ -77,8 +85,15 @@ export function fromSuggestion(a: Record<string, unknown> | null): { allowed: bo
     }).slice(0, 3);
     return [{ name, kind, why: str(c?.why, 140) || undefined, works }];
   }).slice(0, 12);
-  return { allowed: true, field: str(a.field, 40), creators };
+  // The field is shown as a label: two to four plain words, or nothing (a runaway or non-English answer is dropped).
+  const f = str(a.field, 40);
+  const field = /^[A-Za-z][A-Za-z&'\- ]*$/.test(f) && f.split(' ').length <= 4 ? f : '';
+  return { allowed: true, field, creators };
 }
+
+// A long answer (8 to 12 creators with works). Measured 12 Nov 2026: Flash answers in 5.5 to 8 s; Flash-Lite was
+// taking 14 to 20 s or reporting high demand. So Flash first, Flash-Lite as the fallback: about 25 s at most.
+const TRIES: Tries = [[GEMINI_FALLBACK, 12000, 0], [GEMINI_MODEL, 10000, 1000]];
 
 export type Suggestion =
   | { status: 'ok'; field: string; creators: Creator[] }
@@ -88,9 +103,12 @@ export type Suggestion =
 /** Checks the career and asks Gemini for creators. The phone's list runs first and never sends a refused career. */
 export async function suggestCreators(title: string, student: boolean): Promise<Suggestion> {
   if (blockedCareer(title)) return { status: 'refused' };
-  const r = fromSuggestion(await geminiJSON(SYSTEM, `${student ? 'Student heading towards' : 'Career'}: ${title.slice(0, 80)}`, schema));
+  const r = fromSuggestion(await geminiJSON(SYSTEM, `${student ? 'Student heading towards' : 'Career'}: ${title.slice(0, 80)}`, schema, undefined, TRIES));
   if (!r) return { status: 'offline' };
-  return r.allowed ? { status: 'ok', field: r.field, creators: r.creators } : { status: 'refused' };
+  // Gemini refusing a protective job is a mistake, not a verdict: offer the manual way instead of refusing.
+  if (!r.allowed) return protectiveCareer(title) ? { status: 'offline' } : { status: 'refused' };
+  // An answer with nobody usable in it is no answer: let the person add names instead of showing an empty list.
+  return r.creators.length ? { status: 'ok', field: r.field, creators: r.creators } : { status: 'offline' };
 }
 
 const yt = (q: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;

@@ -31,7 +31,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
     const r = await suggestCreators(t, student);
     if (r.status === 'refused') { haptic.warn(); setStage('refused'); return; }
     if (r.status === 'offline') { setOffline(true); setStage('pick'); return; }
-    setField(r.field);
+    setField(t.replace(/^studying\s+/i, '').toLowerCase());
     // Keep anyone already picked or typed in, then the new suggestions.
     setOptions(o => [...o.filter(c => picked.includes(c.name)), ...r.creators.filter(c => !o.some(x => x.name === c.name && picked.includes(x.name)))]);
     setStage('pick');
@@ -76,7 +76,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
 
       {stage === 'pick' ? (
         <View style={{ gap: S.s3 }}>
-          <Txt variant="label" dim>Creators{field ? ` in ${field.toLowerCase()}` : ''}</Txt>
+          <Txt variant="label" dim>Creators{field ? ` in ${field}` : ''}</Txt>
           {offline ? <Txt variant="small" dim>Suggestions aren't available right now. Add the people you follow by name, or try again later.</Txt> : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
             {options.map(c => <Chip key={c.name} label={c.name} on={picked.includes(c.name)} onPress={() => toggle(c.name)} />)}

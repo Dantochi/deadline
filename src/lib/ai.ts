@@ -99,19 +99,44 @@ export async function aiParse(sentence: string, now = new Date()): Promise<Parse
  * One JSON answer from Gemini for another feature (e.g. career suggestions), with the same setup as above.
  * Null when Firebase isn't set up, offline, slow, refused (including App Check failures) or not valid JSON.
  */
-export async function geminiJSON(system: string, prompt: string, responseSchema: ObjectSchema, ms = 12000): Promise<Record<string, unknown> | null> {
-  if (!firebaseReady) return null;
+/** The larger model, tried once when Flash-Lite is busy (both confirmed available to the project, 12 Nov 2026). */
+export const GEMINI_FALLBACK = 'gemini-3.5-flash';
+
+/** One attempt: the parsed answer, 'busy' for a timeout or an overloaded model (worth retrying), or null. */
+async function askOnce(model: string, system: string, prompt: string, responseSchema: ObjectSchema, ms: number):
+  Promise<Record<string, unknown> | 'busy' | null> {
   try {
     const app = getApps()[0] ?? initializeApp(firebaseConfig);
     const m = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), {
-      model: GEMINI_MODEL, systemInstruction: system,
-      generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.3 },
+      model, systemInstruction: system,
+      generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.2, maxOutputTokens: 2048 },
     });
     const res = await Promise.race([m.generateContent(prompt), new Promise<null>(r => setTimeout(() => r(null), ms))]);
-    if (!res) return null;
+    if (!res) return 'busy';
     const v = JSON.parse(res.response.text());
     return v && typeof v === 'object' ? v : null;
-  } catch {
-    return null;
+  } catch (e) {
+    // "High demand" comes back as a 500 or 503 (and sometimes 429); everything else (App Check, bad JSON) is final.
+    return /\b(429|500|503)\b|overloaded|high demand|unavailable|exhausted/i.test(String((e as Error)?.message ?? e)) ? 'busy' : null;
   }
+}
+
+export type Ask = (model: string, system: string, prompt: string, schema: ObjectSchema, ms: number) => ReturnType<typeof askOnce>;
+
+/** [model, time limit in ms, wait before the try in ms]. The default: Flash-Lite, again after 1.5 s, then Flash. */
+export type Tries = [string, number, number][];
+const DEFAULT_TRIES: Tries = [[GEMINI_MODEL, 6000, 0], [GEMINI_MODEL, 4000, 1500], [GEMINI_FALLBACK, 4000, 0]];
+
+/**
+ * One JSON answer from Gemini, retried when the model is busy, in the order `tries` gives. Null when Firebase isn't
+ * set up, offline, refused (including App Check failures) or still busy after the last try.
+ */
+export async function geminiJSON(system: string, prompt: string, responseSchema: ObjectSchema, ask: Ask = askOnce, tries: Tries = DEFAULT_TRIES): Promise<Record<string, unknown> | null> {
+  if (!firebaseReady) return null;
+  for (const [model, ms, wait] of tries) {
+    if (wait) await new Promise(r => setTimeout(r, wait));
+    const r = await ask(model, system, prompt, responseSchema, ms);
+    if (r !== 'busy') return r;
+  }
+  return null;
 }
