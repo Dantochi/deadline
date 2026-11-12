@@ -1,11 +1,14 @@
 // Setting up Wisdom for your work: the career (or, for a student, the career they're heading towards), then a pick
 // of well-known creators in that field, plus any names typed in. Used in onboarding and in Settings → Wisdom.
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { GlassSegment } from './Glass';
 import { CloseIcon } from './icons';
-import { Btn, Chip, Txt, haptic } from './ui';
+import { Btn, Chip, Field, IconButton, Txt, haptic } from './ui';
 import { suggestCreators, type Career, type Creator } from '../lib/career';
-import { F, R, S, usePalette } from '../theme';
+import { H, S, T, usePalette } from '../theme';
+
+const WHO = ['I work in it', 'I’m studying for it'] as const;
 
 type Stage = 'ask' | 'loading' | 'pick' | 'refused';
 
@@ -21,8 +24,6 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
   const [options, setOptions] = useState<Creator[]>(initial?.suggested ?? initial?.creators ?? []);
   const [picked, setPicked] = useState<string[]>((initial?.creators ?? []).map(c => c.name));
   const [extra, setExtra] = useState('');
-
-  const input = { minHeight: 52, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s4, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
   const find = async () => {
     const t = title.trim();
@@ -55,15 +56,12 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
     <View style={{ gap: S.s5 }}>
       <View style={{ gap: S.s3 }}>
         <Txt variant="label" dim>{student ? 'The career you’re studying for' : 'Your career'}</Txt>
-        <TextInput value={title} onChangeText={t => { setTitle(t); if (stage === 'refused') setStage('ask'); }} onSubmitEditing={find}
-          placeholder={student ? 'e.g. Medicine, Law, Software engineering' : 'e.g. Nurse, Designer, Teacher'} placeholderTextColor={p.dim}
-          maxLength={80} returnKeyType="search" maxFontSizeMultiplier={2} style={input} />
-        <View style={{ flexDirection: 'row', gap: S.s1 }}>
-          <View style={{ flex: 1 }}><Chip label="I work in it" on={!student} onPress={() => setStudent(false)} /></View>
-          <View style={{ flex: 1 }}><Chip label="I'm studying for it" on={student} onPress={() => setStudent(true)} /></View>
-        </View>
+        <Field value={title} onChangeText={t => { setTitle(t); if (stage === 'refused') setStage('ask'); }} onSubmitEditing={find}
+          placeholder={student ? 'e.g. Medicine, Law, Software engineering' : 'e.g. Nurse, Designer, Teacher'}
+          maxLength={80} returnKeyType="search" />
+        <GlassSegment options={WHO} height={H.md} fontSize={T.sm} value={student ? WHO[1] : WHO[0]} onChange={v => setStudent(v === WHO[1])} />
         <Btn label={stage === 'pick' ? 'Suggest again' : 'Find creators'} disabled={title.trim().length < 2 || stage === 'loading'}
-          style={title.trim().length < 2 ? { opacity: 0.45 } : undefined} onPress={find} />
+          style={{ alignSelf: 'flex-start' }} onPress={find} />
       </View>
 
       {stage === 'loading' ? (
@@ -82,14 +80,10 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
             {options.map(c => <Chip key={c.name} label={c.name} on={picked.includes(c.name)} onPress={() => toggle(c.name)} />)}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
-            <TextInput value={extra} onChangeText={setExtra} onSubmitEditing={add} placeholder="Add someone not listed" placeholderTextColor={p.dim}
-              maxLength={60} returnKeyType="done" maxFontSizeMultiplier={2} style={[input, { flex: 1 }]} />
-            {extra ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={() => setExtra('')} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                <CloseIcon color={p.dim} />
-              </Pressable>
-            ) : null}
-            <Btn label="Add" onPress={add} />
+            <Field wrap={{ flex: 1 }} value={extra} onChangeText={setExtra} onSubmitEditing={add} placeholder="Add someone not listed"
+              maxLength={60} returnKeyType="done"
+              trailing={extra ? <IconButton accessibilityLabel="Clear" size={H.sm} onPress={() => setExtra('')}><CloseIcon color={p.dim} size={16} /></IconButton> : null} />
+            <Btn label="Add" disabled={extra.trim().length < 2} onPress={add} />
           </View>
         </View>
       ) : null}

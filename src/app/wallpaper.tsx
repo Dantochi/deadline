@@ -3,15 +3,16 @@
 import { Asset, requestPermissionsAsync } from 'expo-media-library';
 import { router } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
-import { Dimensions, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Dimensions, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { CloseIcon } from '../components/icons';
 import { LifeGrid } from '../components/LifeGrid';
-import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
+import { GlassSegment } from '../components/Glass';
+import { Btn, IconButton, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { ageYears, fmt, parseBirth, weekNow } from '../lib/time';
-import { F, R, S, palettes, usePalette } from '../theme';
+import { F, H as CH, R, S, T, palettes, usePalette } from '../theme';
 
 export default function Wallpaper() {
   const { state } = useStore();
@@ -46,16 +47,16 @@ export default function Wallpaper() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Wallpaper</Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5, alignItems: 'center' }}>
         <View accessible accessibilityRole="image" accessibilityLabel="Wallpaper preview"
-          style={{ width: W * scale, height: H * scale, borderRadius: R.xl, overflow: 'hidden', borderWidth: 1, borderColor: p.line, marginTop: S.s4 }}>
+          style={{ width: W * scale, height: H * scale, borderRadius: R.lg, overflow: 'hidden', borderWidth: 1, borderColor: p.line, marginTop: S.s4 }}>
           <View style={{ width: W, height: H, transform: [{ scale }], transformOrigin: 'top left' }}>
             {/* Captured at full size: the scale above only affects the preview. */}
             <View ref={shot} collapsable={false} style={{ width: W, height: H, backgroundColor: w.bg, alignItems: 'center' }}>
@@ -73,14 +74,10 @@ export default function Wallpaper() {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: S.s1, alignSelf: 'stretch' }}>
-          <View style={{ flex: 1 }}><Chip label="Weeks ahead" on={!withLived} onPress={() => setWithLived(false)} /></View>
-          <View style={{ flex: 1 }}><Chip label="With lived weeks" on={withLived} onPress={() => setWithLived(true)} /></View>
-        </View>
-        <View style={{ flexDirection: 'row', gap: S.s1, alignSelf: 'stretch' }}>
-          <View style={{ flex: 1 }}><Chip label="Dark" on={look === 'dark'} onPress={() => setLook('dark')} /></View>
-          <View style={{ flex: 1 }}><Chip label="Light" on={look === 'light'} onPress={() => setLook('light')} /></View>
-        </View>
+        <GlassSegment options={['Weeks ahead', 'With lived weeks'] as const} height={CH.md} fontSize={T.sm} style={{ alignSelf: 'stretch' }}
+          value={withLived ? 'With lived weeks' : 'Weeks ahead'} onChange={v => setWithLived(v === 'With lived weeks')} />
+        <GlassSegment options={['Dark', 'Light'] as const} height={CH.md} fontSize={T.sm} style={{ alignSelf: 'stretch' }}
+          value={look === 'light' ? 'Light' : 'Dark'} onChange={v => setLook(v === 'Light' ? 'light' : 'dark')} />
 
         <Btn kind="primary" label={saving ? 'Saving…' : 'Save to photos'} onPress={save} style={{ alignSelf: 'stretch' }} />
         <Txt variant="meta" dim style={{ alignSelf: 'stretch' }}>

@@ -10,7 +10,7 @@ import { Diary } from '../components/Diary';
 import { Glass } from '../components/Glass';
 import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
-import { BoxStrip, Chip, StatusDot, Txt, haptic, useToast } from '../components/ui';
+import { BoxStrip, Btn, Chip, IconButton, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel } from '../lib/time';
 import { F, S, statusColor, usePalette } from '../theme';
@@ -40,7 +40,7 @@ export default function TaskScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: p.bg, alignItems: 'center', justifyContent: 'center', gap: S.s3 }}>
         <Txt dim>This task no longer exists.</Txt>
-        <Chip label="Back" onPress={() => router.back()} />
+        <Btn size="sm" label="Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
@@ -98,9 +98,9 @@ export default function TaskScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
         <View style={{ flex: 1 }} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
 
       {/* The title block, then groups set apart by 48: the space between groups is well over the space inside them. */}

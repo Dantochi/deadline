@@ -2,10 +2,10 @@
 // and see each other's week. Invites are sent from the phone's own email app or share sheet.
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Share, Switch, TextInput, View, type TextInputProps } from 'react-native';
+import { Linking, ScrollView, Share, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
-import { Btn, StatusDot, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Field as UiField, IconButton, StatusDot, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { INSTALL_LINK } from '../lib/firebase';
 import { cleanUsername, friendlyError, mondayOf, otherSide, usePartner, type Progress } from '../lib/partner';
 import { useStore } from '../lib/store';
@@ -14,13 +14,11 @@ import { F, R, S, usePalette } from '../theme';
 
 type Run = (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
 
-function Field(props: TextInputProps & { label: string }) {
-  const p = usePalette();
+function Field({ label, ...props }: TextInputProps & { label: string }) {
   return (
     <View style={{ gap: S.s1 }}>
-      <Txt variant="small" dim>{props.label}</Txt>
-      <TextInput placeholderTextColor={p.dim} maxFontSizeMultiplier={2} autoCorrect={false} {...props}
-        style={{ minHeight: 52, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 }} />
+      <Txt variant="small" dim>{label}</Txt>
+      <UiField autoCorrect={false} accessibilityLabel={label} {...props} />
     </View>
   );
 }
@@ -28,7 +26,7 @@ function Field(props: TextInputProps & { label: string }) {
 function Block({ title, children }: { title?: string; children: ReactNode }) {
   const p = usePalette();
   return (
-    <View style={{ gap: S.s3, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+    <View style={{ gap: S.s3, padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise, borderWidth: 1, borderColor: p.hairline }}>
       {title ? <Txt variant="label" dim>{title}</Txt> : null}
       {children}
     </View>
@@ -133,9 +131,9 @@ function Connected({ run }: { run: Run }) {
               <Txt style={{ fontFamily: F.uiSemi }}>Task titles</Txt>
               <Txt variant="small" dim>Off: {name} only sees counts. Notes are never shared.</Txt>
             </View>
-            <Switch value={state.shareTitles !== false} onValueChange={v => update(s => ({ ...s, shareTitles: v }))} />
+            <Toggle value={state.shareTitles !== false} onValueChange={v => update(s => ({ ...s, shareTitles: v }))} />
           </View>
-          <Btn label={armStop ? 'Tap again to stop' : 'Stop being partners'} onPress={() => {
+          <Btn danger label={armStop ? 'Tap again to stop' : 'Stop being partners'} onPress={() => {
             if (!armStop) { setArmStop(true); haptic.warn(); return; }
             run(() => P.remove(P.active!), 'Partnership ended');
           }} />
@@ -186,13 +184,13 @@ function Account({ run }: { run: Run }) {
       </Txt>
       <View style={{ flexDirection: 'row', gap: S.s2 }}>
         <Btn style={{ flex: 1 }} label="Sign out" onPress={() => run(() => P.signOut())} />
-        <Btn style={{ flex: 1 }} label="Delete account" onPress={() => setArmDelete(!armDelete)} />
+        <Btn danger style={{ flex: 1 }} label="Delete account" onPress={() => setArmDelete(!armDelete)} />
       </View>
       {armDelete ? (
         <Block title="Delete account">
           <Txt variant="small" dim>Removes your account, username, partnership and shared summary. Your tasks on this phone stay.</Txt>
           <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" />
-          <Btn label="Delete for good" onPress={() => run(() => P.deleteAccount(password), 'Account deleted')} />
+          <Btn danger label="Delete for good" onPress={() => run(() => P.deleteAccount(password), 'Account deleted')} />
         </Block>
       ) : null}
     </View>
@@ -211,12 +209,12 @@ export default function PartnerScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Accountability partner</Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
         <Txt dim>Pick one person. Every Sunday you both see how the week went: sessions kept, missed, finished and what is coming up.</Txt>

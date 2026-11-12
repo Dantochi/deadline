@@ -13,6 +13,8 @@ const dark = {
   // Frosted glass, drawn without blur: a translucent fill, a hairline edge and a brighter top edge.
   glass: 'rgba(255,255,255,0.06)', glassEdge: 'rgba(255,255,255,0.12)', glassHi: 'rgba(255,255,255,0.22)', glassOn: 'rgba(255,255,255,0.16)',
   bar: '#121417',
+  // Surface layers: page (bg) → card (raise) → element in a card (raise2). Hairline = the low-contrast 1px edge.
+  hairline: 'rgba(255,255,255,0.10)',
 };
 const light: typeof dark = {
   bg: '#F3F4F5', raise: '#FFFFFF', raise2: '#E8EAEC', line: '#DADDE1',
@@ -22,6 +24,7 @@ const light: typeof dark = {
   scrim: 'rgba(15,17,19,0.38)',
   glass: 'rgba(255,255,255,0.62)', glassEdge: 'rgba(15,17,19,0.08)', glassHi: 'rgba(255,255,255,0.95)', glassOn: 'rgba(15,17,19,0.08)',
   bar: '#F8F9FA',
+  hairline: 'rgba(15,17,19,0.08)',
 };
 export type Palette = typeof dark;
 export const palettes = { dark, light };
@@ -35,11 +38,17 @@ export function statusColor(p: Palette, st: Status, ink = false) {
   return ink ? p[`${st}Ink`] : p[st];
 }
 
-// 8-point spacing, radius scale, button sizes (icon = label line height, 8px gap).
+// 8-point spacing, radius scale, control heights.
 // Spacing: inside a group 8–12, between groups 48 (at least 3× the inside space), page gutter 24.
 export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64, page: 24 };
-export const R = { sm: 10, md: 14, lg: 20, xl: 28 };
-export const BTN = { m: 48, l: 56 };
+// Five radii only: xs for tiny marks, sm for small controls, md for buttons and fields, lg for cards, full for pills.
+export const R = { xs: 6, sm: 10, md: 14, lg: 20, full: 999 };
+// Control heights, sized to importance: sm for inline and row actions and pills, md for ordinary buttons and fields,
+// lg for the one bottom action on a screen. Whatever the look, the touch area is at least `hit` (Apple HIG 44pt;
+// hitSlop adds the rest), so smaller controls stay as easy to tap.
+export const H = { sm: 32, md: 40, lg: 48, hit: 44 };
+/** hitSlop that grows a control of height h to at least the minimum touch area. */
+export const slop = (h: number) => { const v = Math.max(0, Math.ceil((H.hit + 4 - h) / 2)); return { top: v, bottom: v, left: 4, right: 4 }; };
 
 // Type scale: one ratio (x1.125, a "major second") from the 17pt body size, so every size relates to every other.
 // Line heights sit on the 4pt grid (13 uses 18 for readable small text). Ratio consistency, not any "magic" ratio,

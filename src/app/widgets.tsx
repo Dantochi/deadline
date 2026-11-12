@@ -1,10 +1,10 @@
 // Widgets: previews of each home-screen widget, with "Add to home screen" (Android launchers that support pinning).
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
-import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Chip, IconButton, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { hms, secondsLeftToday } from '../lib/time';
 import { F, palettes, R, S, usePalette } from '../theme';
@@ -66,12 +66,12 @@ export default function Widgets() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Widgets</Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1, marginTop: S.s3 }}>
@@ -79,7 +79,7 @@ export default function Widgets() {
         </View>
         {Platform.OS === 'android' ? (
           <>
-            <View style={{ alignItems: 'center', justifyContent: 'center', padding: S.s5, borderRadius: R.xl, backgroundColor: p.bg, height: 2 * cell + 48 }}>
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: S.s5, borderRadius: R.lg, backgroundColor: p.raise, borderWidth: 1, borderColor: p.hairline, height: 2 * cell + 48 }}>
               <Preview />
             </View>
             {pick === 'Today' ? <>

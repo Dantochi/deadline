@@ -1,18 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckIcon, CloseIcon } from '../components/icons';
+import { GlassSegment } from '../components/Glass';
+import { CalendarIcon, CheckIcon, ClockIcon, CloseIcon, RepeatIcon } from '../components/icons';
+import { Sheet } from '../components/Sheet';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Chip, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Chip, Field, IconButton, Txt, haptic, useToast } from '../components/ui';
 import { aiAvailable, aiParse } from '../lib/ai';
 import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
 import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
-import { F, R, S, statusColor, usePalette } from '../theme';
+import { F, H, R, S, T, statusColor, usePalette } from '../theme';
 
 type Unit = 'week' | 'month' | 'year';
 const UNITS: Unit[] = ['week', 'month', 'year'];
@@ -64,15 +66,16 @@ export default function NewTask() {
   const [onceDate, setOnceDate] = useState<Date>(ed?.oneOff ? new Date(ed.oneOff) : onDate ?? new Date(Date.now() + DAY));
   const [minutes, setMinutes] = useState(ed?.minutes ?? DEFAULT_MINUTES);
   const edTime = ed ? (ed.slot?.time ?? (ed.oneOff ? `${pad(new Date(ed.oneOff).getHours())}:${pad(new Date(ed.oneOff).getMinutes())}` : undefined)) : undefined;
-  const [suggested, setSuggested] = useState(() => edTime ?? params.time ?? suggestTime(state, onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5], DEFAULT_MINUTES));
+  const [suggested] = useState(() => edTime ?? params.time ?? suggestTime(state, onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5], DEFAULT_MINUTES));
   const [time, setTime] = useState(() => { const d = new Date(); const m = fromHM(params.time ?? suggested); d.setHours(Math.floor(m / 60), m % 60, 0, 0); return d; });
   const [touchedTime, setTouchedTime] = useState(!!params.time || !!ed);
   const [timeOpen, setTimeOpen] = useState(false);
   const [place, setPlace] = useState(ed?.place ?? '');
-  const [more, setMore] = useState(!!(ed?.ifthen || ed?.cue));
   const [ifthen, setIfthen] = useState(ed?.ifthen ?? '');
   const [cue, setCue] = useState(ed?.cue ?? '');
   const [err, setErr] = useState('');
+  const [sheet, setSheet] = useState<'deadline' | 'schedule' | null>(null);
+  const [focus, setFocus] = useState(false);
   // Voice (or typed) capture: fills the fields below, and shows what it understood so it can be checked.
   const [voiceOpen, setVoiceOpen] = useState(params.voice === '1');
   const [heard, setHeard] = useState<string[]>([]);
@@ -121,8 +124,6 @@ export default function NewTask() {
   };
   const [by, setBy] = useState<'phone' | 'gemini'>('phone');
 
-  const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
-
   const stepsFrom = () => newSteps.map(title => ({ id: uid(), title, done: false }));
   const save = () => {
     if (!title.trim()) return setErr('Give the task a name.');
@@ -154,154 +155,130 @@ export default function NewTask() {
     router.back();
   };
 
+  const hmNow = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hmNow}–${toHM(fromHM(hmNow) + minutes)}`;
+  const short = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const deadlineText = quick ? `In ${quick.n} ${quick.u}${quick.n === 1 ? '' : 's'}` : `Due ${short(deadline)}`;
+  const scheduleText = mode === 'once' ? `Once, ${short(onceDate)}`
+    : !days.length ? 'Pick days' : days.length === 7 ? 'Every day'
+    : days.length === 5 && [1, 2, 3, 4, 5].every(d => days.includes(d)) ? 'Weekdays'
+    : days.length === 2 && days.includes(0) && days.includes(6) ? 'Weekends'
+    : DAYS.filter(([, n]) => days.includes(n)).map(([, , name]) => name.slice(0, 3)).join(' ');
+  const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
           <Txt variant="h2" style={{ flex: 1 }}>{ed ? 'Edit task' : 'New task'}</Txt>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+          <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
             <CloseIcon color={p.dim} />
-          </Pressable>
+          </IconButton>
         </View>
-        {/* Each question is its own group, 48 apart; inside a group, 12. */}
-        <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s7 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }}>
-            <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
-              placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-              style={{ flex: 1, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: p.raise2 }}>
-              <MicIcon color={p.ink} />
-            </Pressable>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s6, gap: S.s3 }} keyboardShouldPersistTaps="handled">
+          {/* The whole task in one card: the name, then its properties as pills that open a sheet each. */}
+          <View style={{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: focus ? p.dim : p.hairline }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: S.s2, paddingLeft: S.s4, paddingRight: S.s2, paddingTop: S.s2 }}>
+              <Field bare big wrap={{ flex: 1 }} value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed}
+                placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'} multiline blurOnSubmit returnKeyType="done"
+                onFocus={() => setFocus(true)} onBlur={() => setFocus(false)} accessibilityLabel="Task name" />
+              <IconButton kind="secondary" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} style={{ marginTop: S.s1 }}>
+                <MicIcon color={p.ink} />
+              </IconButton>
+            </View>
+            <View style={{ height: 1, backgroundColor: p.hairline, marginTop: S.s2 }} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2, padding: S.s3 }}>
+              <Chip icon={<CalendarIcon size={16} color={p.dim} />} label={deadlineText} onPress={() => setSheet('deadline')} />
+              <Chip icon={<RepeatIcon size={16} color={p.dim} />} label={scheduleText} onPress={() => setSheet('schedule')} />
+              <Chip icon={<ClockIcon size={16} color={touchedTime ? p.dim : p.ink} />} label={touchedTime ? range : 'Set time'}
+                onPress={() => setTimeOpen(true)} />
+            </View>
           </View>
+
+          {err ? <Txt variant="small" color={p.redInk}>{err}</Txt> : null}
           {heard.length ? (
-            <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s6 }}>
+            <View style={{ minHeight: H.md, flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
               <CheckIcon size={16} color={statusColor(p, 'green', true)} />
               <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… · ' : by === 'gemini' ? 'Understood by Gemini · ' : 'Understood · '}</Txt>{heard.join(' · ')}</Txt>
             </View>
           ) : null}
           {newSteps.length ? (
-            <View style={{ gap: S.s1, marginTop: -S.s6 }}>
-              <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Subtasks to add</Txt>
+            <View style={{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: p.hairline, paddingVertical: S.s2, paddingLeft: S.s4, paddingRight: S.s2 }}>
+              <Txt variant="small" dim style={{ fontFamily: F.uiSemi, paddingVertical: S.s1 }}>Subtasks to add</Txt>
               {newSteps.map((st, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, gap: S.s2 }}>
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', minHeight: H.md, gap: S.s2 }}>
                   <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: p.dim }} />
                   <Txt style={{ flex: 1 }} numberOfLines={2}>{st}</Txt>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${st}`} hitSlop={8} onPress={() => setNewSteps(l => l.filter((_, j) => j !== i))}
-                    style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-                    <CloseIcon size={18} color={p.dim} />
-                  </Pressable>
+                  <IconButton size={H.sm} accessibilityLabel={`Remove ${st}`} onPress={() => setNewSteps(l => l.filter((_, j) => j !== i))}>
+                    <CloseIcon size={16} color={p.dim} />
+                  </IconButton>
                 </View>
               ))}
             </View>
           ) : null}
 
-          <View style={{ gap: S.s3 }}>
-            <Txt variant="label" dim>Deadline</Txt>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-              {UNITS.map(u => quick?.u === u ? (
-                <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderColor: p.ink, backgroundColor: p.ink }}>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>−</Txt>
-                  </Pressable>
-                  <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }} color={p.bg}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>+</Txt>
-                  </Pressable>
-                </View>
-              ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
-            </View>
-            <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); }} />
-          </View>
-
-          <View style={{ gap: S.s3 }}>
-            <View style={{ flexDirection: 'row', gap: S.s1 }}>
-              <View style={{ flex: 1 }}><Chip label="Repeat" on={mode === 'repeat'} onPress={() => setMode('repeat')} /></View>
-              <View style={{ flex: 1 }}><Chip label="Once" on={mode === 'once'} onPress={() => setMode('once')} /></View>
-            </View>
-            {mode === 'repeat' ? (
-              <View style={{ flexDirection: 'row', gap: S.s1 }}>
-                {DAYS.map(([l, n, name]) => (
-                  <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ selected: days.includes(n) }}
-                    onPress={() => { haptic.tick(); setDays(d => (d.includes(n) ? d.filter(x => x !== n) : [...d, n])); }}
-                    style={{ flex: 1, height: 44, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: days.includes(n) ? p.ink : p.line, backgroundColor: days.includes(n) ? p.ink : 'transparent' }}>
-                    <Txt style={{ fontFamily: F.uiSemi, fontSize: 15 }} color={days.includes(n) ? p.bg : p.dim}>{l}</Txt>
-                  </Pressable>
-                ))}
-              </View>
-            ) : (
-              <DateTimeField label="Day" mode="date" value={onceDate} minimumDate={new Date()} maximumDate={deadline} onChange={setOnceDate} />
-            )}
-            {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The bottom button opens
-                the time screen, which shows the length and any clash. */}
-            {DAY_PREVIEW ? <>
-            <DayBar start={fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`)} minutes={minutes} color={ed?.color ?? p.ink}
-              busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
-                .map(t => [fromHM(t.slot!.time), t.minutes ?? DEFAULT_MINUTES] as [number, number])} />
-            {(() => {
-              const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
-              const clash = overlaps(state, mode === 'repeat' ? days : [onceDate.getDay()], hm, minutes, ed?.id);
-              const end = toHM(fromHM(hm) + minutes);
-              if (clash.length) {
-                const alt = suggestTime(state, mode === 'repeat' ? days : [onceDate.getDay()], minutes, hm);
-                return (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, height: 44 }}>
-                    <Txt variant="small" style={{ flex: 1 }} numberOfLines={2}>Overlaps “{clash[0].title}”. {alt} is free.</Txt>
-                    <Chip label={`Use ${alt}`} onPress={() => { const m = fromHM(alt); const d = new Date(time); d.setHours(Math.floor(m / 60), m % 60, 0, 0); setTime(d); setSuggested(alt); setTouchedTime(true); }} />
-                  </View>
-                );
-              }
-              return (
-                <Txt variant="small" dim style={{ height: 44 }} numberOfLines={2}>
-                  {touchedTime ? `${hm}–${end} is held for you.` : `${hm}–${end} is free, so we've suggested it. Change it to whatever suits you.`} You get a reminder the evening before and 15 minutes before.
-                </Txt>
-              );
-            })()}
-            </> : null}
-          </View>
-
           {/* Where, backup plan and cue: switched off for now (PLAN_EXTRAS). Saved values are kept on edit. */}
-          {PLAN_EXTRAS ? <>
-          <View style={{ gap: S.s3 }}>
-            <Txt variant="label" dim>Where?</Txt>
-            <TextInput value={place} onChangeText={setPlace} placeholder="At my desk" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
-          </View>
-
-          <Pressable accessibilityRole="button" accessibilityState={{ expanded: more }} onPress={() => setMore(m => !m)} style={{ minHeight: 48, justifyContent: 'center' }}>
-            <Txt style={{ fontFamily: F.uiSemi }} dim>{more ? '−' : '+'}  Make the plan stronger</Txt>
-          </Pressable>
-          {more ? (
-            <View style={{ gap: S.s5, marginTop: -S.s3 }}>
-              <View style={{ gap: S.s3 }}>
-                <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>If something gets in the way, I will…</Txt>
-                <TextInput value={ifthen} onChangeText={setIfthen} placeholder="If I'm too tired, I'll do just 10 minutes" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
-                <Txt variant="small" dim>Deciding now what you will do when an obstacle shows up helps the plan hold.</Txt>
-              </View>
-              <View style={{ gap: S.s3 }}>
-                <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>What will you see that reminds you?</Txt>
-                <TextInput value={cue} onChangeText={setCue} placeholder="Running shoes by the door" placeholderTextColor={p.dim} style={input} maxFontSizeMultiplier={2} />
-              </View>
+          {PLAN_EXTRAS ? (
+            <View style={{ gap: S.s3, marginTop: S.s5 }}>
+              <Field value={place} onChangeText={setPlace} placeholder="Where? At my desk" />
+              <Field value={ifthen} onChangeText={setIfthen} placeholder="If I'm too tired, I'll do just 10 minutes" helper="Deciding now what you'll do when an obstacle shows up helps the plan hold." />
+              <Field value={cue} onChangeText={setCue} placeholder="Reminder cue: running shoes by the door" />
             </View>
           ) : null}
-          </> : null}
 
-          {err ? <Txt variant="meta" color={p.redInk} style={{ fontFamily: F.uiSemi }}>{err}</Txt> : null}
-          {/* The button says what is missing (no error popup). Before a time is set it opens the time screen; after
-              Done it becomes Save, with the chosen time beside it to change. */}
-          {(() => {
-            const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
-            if (missing) return <Btn kind="primary" label={missing} disabled style={{ opacity: 0.45 }} />;
-            if (!touchedTime) return <Btn kind="primary" label="Set time" onPress={() => setTimeOpen(true)} />;
-            const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hm} – ${toHM(fromHM(hm) + minutes)}`;
-            return (
-              <View style={{ flexDirection: 'row', gap: S.s2 }}>
-                <Btn kind="primary" label={ed ? 'Save changes' : 'Save'} style={{ flex: 1 }} onPress={save} />
-                <Btn label={range} accessibilityLabel={`Session ${range}, ${lenText(minutes)}. Change time`} onPress={() => setTimeOpen(true)} />
-              </View>
-            );
-          })()}
+          {DAY_PREVIEW ? (
+            <DayBar start={fromHM(hmNow)} minutes={minutes} color={ed?.color ?? p.ink}
+              busy={state.tasks.filter(t => t.id !== ed?.id && !t.done && t.slot && (mode === 'repeat' ? t.slot.days.some(d => days.includes(d)) : t.slot.days.includes(onceDate.getDay())))
+                .map(t => [fromHM(t.slot!.time), t.minutes ?? DEFAULT_MINUTES] as [number, number])} />
+          ) : null}
         </ScrollView>
+
+        {/* One bottom action. It says what is missing (no error popup); before a time is set it opens the time
+            screen; then it saves. The time pill in the card changes the time afterwards. */}
+        <View style={{ paddingHorizontal: S.page, paddingTop: S.s2, paddingBottom: S.s4 }}>
+          {missing ? <Btn kind="primary" label={missing} disabled />
+            : !touchedTime ? <Btn kind="primary" label="Set time" onPress={() => setTimeOpen(true)} />
+            : <Btn kind="primary" label={ed ? 'Save changes' : 'Save'} accessibilityHint={`Session ${range}, ${lenText(minutes)}`} onPress={save} />}
+        </View>
       </KeyboardAvoidingView>
+
+      <Sheet open={sheet === 'deadline'} title="Deadline" onClose={() => setSheet(null)}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+          {UNITS.map(u => quick?.u === u ? (
+            <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: H.md, borderRadius: R.md, backgroundColor: p.ink }}>
+              <IconButton size={H.md} accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)}>
+                <Txt style={{ fontFamily: F.uiSemi, fontSize: T.lg }} color={p.bg}>−</Txt>
+              </IconButton>
+              <Txt style={{ fontFamily: F.uiSemi, fontSize: 14, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }} color={p.bg}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
+              <IconButton size={H.md} accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)}>
+                <Txt style={{ fontFamily: F.uiSemi, fontSize: T.lg }} color={p.bg}>+</Txt>
+              </IconButton>
+            </View>
+          ) : <Btn key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
+        </View>
+        <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); }} />
+      </Sheet>
+
+      <Sheet open={sheet === 'schedule'} title="When you'll work on it" onClose={() => setSheet(null)}>
+        <GlassSegment options={['Repeat', 'Once'] as const} height={H.md} fontSize={T.sm} value={mode === 'once' ? 'Once' : 'Repeat'}
+          onChange={v => setMode(v === 'Once' ? 'once' : 'repeat')} />
+        {mode === 'repeat' ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            {DAYS.map(([l, n, name]) => {
+              const on = days.includes(n);
+              return (
+                <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ selected: on }} hitSlop={4}
+                  onPress={() => { haptic.tick(); setDays(d => (d.includes(n) ? d.filter(x => x !== n) : [...d, n])); }}
+                  style={({ pressed }) => ({ width: H.md, height: H.md, borderRadius: R.full, alignItems: 'center', justifyContent: 'center',
+                    borderWidth: 1, borderColor: on ? p.ink : p.hairline, backgroundColor: on ? p.ink : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                  <Txt style={{ fontFamily: F.uiSemi, fontSize: T.sm }} color={on ? p.bg : p.dim}>{l}</Txt>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : (
+          <DateTimeField label="Day" mode="date" value={onceDate} minimumDate={new Date()} maximumDate={deadline} onChange={setOnceDate} />
+        )}
+      </Sheet>
       <TimeSheet open={timeOpen} onClose={() => setTimeOpen(false)}
         start={`${pad(time.getHours())}:${pad(time.getMinutes())}`} minutes={minutes}
         onDone={(st, len) => { setClock(st); setMinutes(len); setTouchedTime(true); }}

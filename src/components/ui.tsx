@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
-import { BTN, F, R, S, T, statusColor, usePalette, type Status } from '../theme';
+import { Animated, Pressable, StyleSheet, Switch, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { F, H, R, S, T, slop, statusColor, usePalette, type Status } from '../theme';
 
 export const haptic = {
   tick: () => Haptics.selectionAsync().catch(() => {}),
@@ -37,36 +37,116 @@ export function DateTitle({ date, size = T.xl, month = 'long', style, color }: {
   );
 }
 
-type BtnProps = PressableProps & { label: string; icon?: ReactNode; kind?: 'primary' | 'pill' | 'ghost'; style?: StyleProp<ViewStyle> };
-export function Btn({ label, icon, kind = 'pill', style, onPress, ...rest }: BtnProps) {
+type BtnKind = 'primary' | 'secondary' | 'pill' | 'ghost';
+type BtnProps = PressableProps & {
+  label: string; icon?: ReactNode; kind?: BtnKind; size?: 'sm' | 'md' | 'lg'; danger?: boolean; style?: StyleProp<ViewStyle>;
+};
+/**
+ * The one button. Primary is solid ink, for the main action (lg, full width, at the bottom of a screen; md inline).
+ * Secondary is a raised surface with a hairline, for everything else that matters; ghost is text only, for the
+ * least important choice. Sizes are visual only: hitSlop keeps every button at least 44pt to tap.
+ * 'pill' is the old name of secondary.
+ */
+export function Btn({ label, icon, kind = 'secondary', size, danger, disabled, style, onPress, ...rest }: BtnProps) {
   const p = usePalette();
-  const primary = kind === 'primary';
+  const primary = kind === 'primary', ghost = kind === 'ghost';
+  const sz = size ?? (primary ? 'lg' : 'md');
+  const h = H[sz];
+  const fg = primary ? p.bg : danger ? p.redInk : ghost ? p.dim : p.ink;
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      hitSlop={slop(h)}
       onPress={e => { haptic.tick(); onPress?.(e); }}
       style={({ pressed }) => [
         styles.btn,
-        // One button height across the app; secondary buttons are frosted glass.
-        { minHeight: BTN.m, backgroundColor: primary ? p.ink : kind === 'pill' ? p.glass : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] },
-        kind === 'pill' && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi },
+        {
+          minHeight: h, paddingHorizontal: sz === 'lg' ? 20 : sz === 'md' ? 16 : 12, borderRadius: sz === 'sm' ? R.sm : R.md,
+          backgroundColor: primary ? p.ink : ghost ? (pressed ? p.raise2 : 'transparent') : p.raise2,
+          opacity: disabled ? 0.4 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
+        },
+        !primary && !ghost && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.hairline },
         style,
       ]}
       {...rest}
     >
       {icon}
-      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
+      <Txt numberOfLines={1} style={{ fontFamily: primary ? F.uiSemi : F.uiMedium, fontSize: sz === 'sm' ? T.sm : 14, lineHeight: 20, fontVariant: ['tabular-nums'] }} color={fg}>{label}</Txt>
     </Pressable>
   );
 }
 
-export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) {
+/** A round icon-only button (close, back, settings…). 40 across, 44+ to tap. Always give an accessibilityLabel. */
+export function IconButton({ children, kind = 'ghost', size = H.md, style, onPress, accessibilityLabel, ...rest }:
+  PressableProps & { children: ReactNode; kind?: 'ghost' | 'secondary'; size?: number; style?: StyleProp<ViewStyle>; accessibilityLabel: string }) {
   const p = usePalette();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic.tick(); onPress(); }}
-      style={[styles.chip, { borderColor: on ? p.ink : p.glassEdge, borderTopColor: on ? p.ink : p.glassHi, backgroundColor: on ? p.ink : p.glass }]}>
-      <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={on ? p.bg : p.ink}>{label}</Txt>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} hitSlop={slop(size)}
+      onPress={e => { haptic.tick(); onPress?.(e); }}
+      style={({ pressed }) => [{
+        width: size, height: size, borderRadius: R.full, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: kind === 'secondary' || pressed ? p.raise2 : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }],
+      }, kind === 'secondary' && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.hairline }, style]}
+      {...rest}>
+      {children}
     </Pressable>
+  );
+}
+
+/**
+ * A compact pill: an action ("+1 week") or, with `on`, a choice in a set where several can be picked (a ✓ marks
+ * the picked ones). For one-of-two or one-of-three choices use GlassSegment.
+ */
+export function Chip({ label, on, onPress, icon }: { label: string; on?: boolean; onPress: () => void; icon?: ReactNode }) {
+  const p = usePalette();
+  return (
+    <Pressable accessibilityRole="button" accessibilityState={on == null ? undefined : { selected: on }} hitSlop={slop(H.sm)}
+      onPress={() => { haptic.tick(); onPress(); }}
+      style={({ pressed }) => [styles.chip, {
+        borderColor: on ? p.ink : p.hairline, backgroundColor: on || pressed ? p.raise2 : 'transparent',
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+      }]}>
+      {on ? <Txt style={{ fontFamily: F.uiSemi, fontSize: T.sm, lineHeight: 18 }}>✓</Txt> : icon}
+      <Txt numberOfLines={1} style={{ fontFamily: on ? F.uiSemi : F.uiMedium, fontSize: T.sm, lineHeight: 18, fontVariant: ['tabular-nums'] }}>{label}</Txt>
+    </Pressable>
+  );
+}
+
+/** The platform switch in the app's colours (ink when on), so it matches the rest of the controls. */
+export function Toggle({ value, onValueChange, disabled, accessibilityLabel }: { value: boolean; onValueChange: (v: boolean) => void; disabled?: boolean; accessibilityLabel?: string }) {
+  const p = usePalette();
+  return (
+    <Switch value={value} disabled={disabled} accessibilityLabel={accessibilityLabel}
+      onValueChange={v => { haptic.tick(); onValueChange(v); }}
+      trackColor={{ false: p.raise2, true: p.ink }} thumbColor={value ? p.bg : p.dim} ios_backgroundColor={p.raise2}
+      style={disabled ? { opacity: 0.4 } : undefined} />
+  );
+}
+
+type FieldProps = TextInputProps & { bare?: boolean; error?: string; helper?: string; big?: boolean; wrap?: StyleProp<ViewStyle>; trailing?: ReactNode };
+/**
+ * The one text field. Boxed (raised surface, hairline that brightens on focus) when it stands alone; `bare` inside a
+ * card, where the card is the box. `big` for a title. Helper or error text sits under it.
+ */
+export function Field({ bare, error, helper, big, wrap, trailing, style, onFocus, onBlur, ...rest }: FieldProps) {
+  const p = usePalette();
+  const [focus, setFocus] = useState(false);
+  return (
+    <View style={[{ gap: S.s1 }, wrap]}>
+      <View style={[{ flexDirection: 'row', alignItems: 'center', minHeight: big ? H.lg : H.md },
+        !bare && { borderRadius: R.md, borderWidth: 1, backgroundColor: p.raise, paddingLeft: S.s3, paddingRight: trailing ? S.s1 : S.s3,
+          borderColor: error ? p.redInk : focus ? p.dim : p.hairline }]}>
+        <TextInput placeholderTextColor={p.dim} maxFontSizeMultiplier={2} selectionColor={p.ink}
+          onFocus={e => { setFocus(true); onFocus?.(e); }} onBlur={e => { setFocus(false); onBlur?.(e); }}
+          style={[{ flex: 1, color: p.ink, paddingVertical: S.s2,
+            ...(big ? { fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, letterSpacing: -0.3 } : { fontFamily: F.uiMedium, fontSize: T.md, lineHeight: 20 }) }, style]}
+          {...rest} />
+        {trailing}
+      </View>
+      {error ? <Txt variant="small" color={p.redInk}>{error}</Txt> : helper ? <Txt variant="small" dim>{helper}</Txt> : null}
+    </View>
   );
 }
 
@@ -150,7 +230,7 @@ export function Section({ label, st, count, children }: { label?: string; st?: S
 }
 
 const styles = StyleSheet.create({
-  btn: { borderRadius: R.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
-  chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: R.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  chip: { minHeight: H.sm, paddingHorizontal: S.s3, borderRadius: R.full, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   toast: { position: 'absolute', left: 20, right: 20, bottom: 110, borderRadius: R.md, paddingHorizontal: 18, paddingVertical: 14 },
 });

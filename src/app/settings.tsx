@@ -1,17 +1,18 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Chip, StatusDot, Txt, useToast } from '../components/ui';
+import { GlassSegment } from '../components/Glass';
+import { Btn, IconButton, StatusDot, Toggle, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { aiAvailable } from '../lib/ai';
 import { usePartner } from '../lib/partner';
 import { ChevronIcon, CloseIcon } from '../components/icons';
 import { DEFAULT_STATE, TAB_TITLES, fixTabOrder, useStore } from '../lib/store';
 import { addYears, pad, parseBirth, slotLabel, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, H, R, S, T, usePalette } from '../theme';
 
 // What the next digest notification will say: built by the same code that schedules it.
 function DigestPreview() {
@@ -55,24 +56,28 @@ export default function Settings() {
   useEffect(() => { permissionStatus().then(setPerm).catch(() => setPerm('unknown')); }, []);
 
   const row = (title: string, sub: string | undefined, right: ReactNode) => (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: S.s3, minHeight: 64, paddingVertical: S.s3 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: S.s3, minHeight: 56, paddingVertical: S.s3 }}>
       <View style={{ flex: 1, minWidth: 160 }}><Txt style={{ fontFamily: F.uiSemi }}>{title}</Txt>{sub ? <Txt variant="small" dim>{sub}</Txt> : null}</View>
       {right}
     </View>
   );
   const group = (label: string, children: ReactNode) => (
     // Groups set apart by space (48), rows inside them close together, no rule under every row.
-    <View style={{ marginTop: S.s7 }}><Txt variant="label" dim style={{ marginBottom: S.s2 }}>{label}</Txt>{children}</View>
+    // Each group is one raised card on the page, like the task form.
+    <View style={{ marginTop: S.s6 }}>
+      <Txt variant="label" dim style={{ marginBottom: S.s2, marginLeft: S.s1 }}>{label}</Txt>
+      <View style={{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: p.hairline, paddingHorizontal: S.s4, paddingVertical: S.s1 }}>{children}</View>
+    </View>
   );
   const toDate = (hm: string) => { const [h, m] = hm.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Settings</Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s8 }}>
         {group('You', <>
@@ -80,28 +85,25 @@ export default function Settings() {
             onChange={d => { if (+addYears(d, state.life) <= Date.now()) return toast('Check the year of birth'); update(s => ({ ...s, birth: ymd(d) })); }} /></View>)}
           {row('Reference age', 'A point to count towards, not a prediction', (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1 }}>
-              <Btn label="−" accessibilityLabel="Younger" style={{ width: 48 }} onPress={() => update(s => (+addYears(parseBirth(s.birth), s.life - 1) <= Date.now() ? s : { ...s, life: Math.max(50, s.life - 1) }))} />
+              <Btn size="sm" label="−" accessibilityLabel="Younger" style={{ width: H.sm }} onPress={() => update(s => (+addYears(parseBirth(s.birth), s.life - 1) <= Date.now() ? s : { ...s, life: Math.max(50, s.life - 1) }))} />
               <Txt style={{ fontFamily: F.uiBold, minWidth: 32, textAlign: 'center' }}>{state.life}</Txt>
-              <Btn label="+" accessibilityLabel="Older" style={{ width: 48 }} onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} />
+              <Btn size="sm" label="+" accessibilityLabel="Older" style={{ width: H.sm }} onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} />
             </View>
           ))}
-          {row('Accountability partner', partnerSub, <Btn label={partner.active || partner.incoming.length ? 'Open' : 'Set up'} onPress={() => router.push('/partner')} />)}
+          {row('Accountability partner', partnerSub, <Btn size="sm" label={partner.active || partner.incoming.length ? 'Open' : 'Set up'} onPress={() => router.push('/partner')} />)}
         </>)}
 
         {group('Display', <>
           {row('Appearance', 'Light reads best in bright places; dark is easier at night', (
-            <View style={{ flexDirection: 'row', gap: S.s1 }}>
-              {(['system', 'light', 'dark'] as const).map(a => (
-                <Chip key={a} label={a === 'system' ? 'Auto' : a[0].toUpperCase() + a.slice(1)} on={(state.appearance ?? 'system') === a}
-                  onPress={() => update(s => ({ ...s, appearance: a }))} />
-              ))}
-            </View>
+            <GlassSegment options={['Auto', 'Light', 'Dark'] as const} height={H.sm} fontSize={T.sm} style={{ width: 180 }}
+              value={({ system: 'Auto', light: 'Light', dark: 'Dark' } as const)[state.appearance ?? 'system']}
+              onChange={v => update(s => ({ ...s, appearance: ({ Auto: 'system', Light: 'light', Dark: 'dark' } as const)[v] }))} />
           ))}
-          {row('Show life grid', 'Turn off to see only the number', <Switch value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
-          {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Switch value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
-          {row('Important dates', `${(state.events ?? []).length || 'No'} dates on your life grid`, <Btn label="Open" onPress={() => router.push('/events')} />)}
-          {row('Widgets', 'Your weeks and deadlines on the home screen', <Btn label="Open" onPress={() => router.push('/widgets')} />)}
-          {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn label="Make" onPress={() => router.push('/wallpaper')} />)}
+          {row('Show life grid', 'Turn off to see only the number', <Toggle value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
+          {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Toggle value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
+          {row('Important dates', `${(state.events ?? []).length || 'No'} dates on your life grid`, <Btn size="sm" label="Open" onPress={() => router.push('/events')} />)}
+          {row('Widgets', 'Your weeks and deadlines on the home screen', <Btn size="sm" label="Open" onPress={() => router.push('/widgets')} />)}
+          {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn size="sm" label="Make" onPress={() => router.push('/wallpaper')} />)}
           {/* Tab order: move a tab up or down; the first one is where the app opens. */}
           <View style={{ marginTop: S.s4 }}>
             <Txt style={{ fontFamily: F.uiSemi }}>Tab order</Txt>
@@ -129,12 +131,12 @@ export default function Settings() {
               );
             })}
           </View>
-          {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
+          {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Toggle value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
 
         {group('Wisdom', <>
           {row('Wisdom for your work', state.career ? `${state.career.student ? 'Studying for' : 'Based on'} ${state.career.title} · ${state.career.creators.length} ${state.career.creators.length === 1 ? 'creator' : 'creators'}` : 'Articles and videos from people in your field', (
-            <Btn label={state.career ? 'Edit' : 'Set up'} onPress={() => router.push('/career')} />
+            <Btn size="sm" label={state.career ? 'Edit' : 'Set up'} onPress={() => router.push('/career')} />
           ))}
         </>)}
 
@@ -142,14 +144,14 @@ export default function Settings() {
           {row('Understand with Gemini', aiAvailable
             ? 'Better at long sentences and spoken lists. Sends what you say or type for a task (not your other data) to Google. Off: everything is read on your phone.'
             : 'Needs Firebase set up in this build', (
-            <Switch disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
+            <Toggle disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
           ))}
         </>)}
 
         {group('Reminders', <>
           {row('Notifications', perm === 'granted' ? (nextReminderLabel(state) ?? 'Allowed') : perm === 'denied' ? 'Turned off in phone settings' : 'Not allowed yet', (
             perm === 'granted' ? <Txt variant="meta" dim>On</Txt>
-              : <Btn label={perm === 'denied' ? 'Open settings' : 'Allow'} onPress={async () => {
+              : <Btn size="sm" label={perm === 'denied' ? 'Open settings' : 'Allow'} onPress={async () => {
                 if (perm === 'denied') return Linking.openSettings();
                 setPerm((await askPermission()) ? 'granted' : 'denied');
               }} />
@@ -163,14 +165,14 @@ export default function Settings() {
               </View>
             ))}
           </View>
-          <Btn style={{ marginTop: S.s3 }} label={showDigest ? 'Hide preview' : 'Preview next digest'} onPress={() => setShowDigest(!showDigest)} />
+          <Btn size="sm" style={{ marginTop: S.s3, alignSelf: 'flex-start' }} label={showDigest ? 'Hide preview' : 'Preview next digest'} onPress={() => setShowDigest(!showDigest)} />
           {showDigest ? <DigestPreview /> : null}
         </>)}
 
         {group('More', <>
-          {row('Weekly review', 'Arrives every Sunday at 18:00', <Btn label="Open" onPress={() => router.push('/review')} />)}
-          {row('Replay intro', undefined, <Btn label="Replay" onPress={() => { update(s => ({ ...s, onboarded: false })); router.replace('/onboarding'); }} />)}
-          {row('Erase everything', 'Removes all tasks and settings on this phone', <Btn label={armReset ? 'Tap again' : 'Erase'} onPress={() => {
+          {row('Weekly review', 'Arrives every Sunday at 18:00', <Btn size="sm" label="Open" onPress={() => router.push('/review')} />)}
+          {row('Replay intro', undefined, <Btn size="sm" label="Replay" onPress={() => { update(s => ({ ...s, onboarded: false })); router.replace('/onboarding'); }} />)}
+          {row('Erase everything', 'Removes all tasks and settings on this phone', <Btn size="sm" danger label={armReset ? 'Tap again' : 'Erase'} onPress={() => {
             if (!armReset) return setArmReset(true);
             update(() => DEFAULT_STATE); router.replace('/onboarding');
           }} />)}

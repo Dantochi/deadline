@@ -2,11 +2,11 @@
 // week on the Life screen (?week=N fills in that week's date).
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon, PlusIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Field, IconButton, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { EVENT_COLORS, type LifeEvent } from '../lib/events';
 import { uid, useStore } from '../lib/store';
 import { addYears, ageYears, fdate, parseBirth, weekStart, ymd } from '../lib/time';
@@ -37,9 +37,8 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
   return (
     // Part of the page: no panel of its own, only hairlines between the fields.
     <View style={{ gap: S.s4, paddingBottom: S.s4, borderBottomWidth: 1, borderBottomColor: p.line }}>
-      <TextInput value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated, Met Ada, Mum's birthday"
-        placeholderTextColor={p.dim} maxLength={60} maxFontSizeMultiplier={2} autoFocus={!exists}
-        style={{ fontFamily: F.uiSemi, fontSize: 21, color: p.ink, borderBottomWidth: 1, borderBottomColor: p.line, paddingVertical: S.s3 }} />
+      <Field big value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated, Met Ada, Mum's birthday"
+        maxLength={60} autoFocus={!exists} />
 
       <View style={{ gap: S.s1 }}>
         <Txt variant="small" dim>{ev.end ? 'From' : 'Date'}</Txt>
@@ -56,11 +55,11 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
         <Txt style={{ flex: 1 }}>Lasts longer than a day</Txt>
-        <Switch value={!!ev.end} onValueChange={v => setEv({ ...ev, end: v ? ymd(new Date(+at(ev.date) + 30 * 864e5)) : null })} />
+        <Toggle value={!!ev.end} onValueChange={v => setEv({ ...ev, end: v ? ymd(new Date(+at(ev.date) + 30 * 864e5)) : null })} />
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
         <View style={{ flex: 1 }}><Txt>Every year</Txt><Txt variant="small" dim>Birthdays and anniversaries, on every row</Txt></View>
-        <Switch value={!!ev.yearly} onValueChange={yearly => setEv({ ...ev, yearly })} />
+        <Toggle value={!!ev.yearly} onValueChange={yearly => setEv({ ...ev, yearly })} />
       </View>
 
       <View style={{ gap: S.s2 }}>
@@ -80,9 +79,9 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
       </View>
 
       <View style={{ flexDirection: 'row', gap: S.s2 }}>
-        <Btn kind="primary" style={{ flex: 1 }} label="Save" onPress={save} />
+        <Btn kind="primary" size="md" style={{ flex: 1 }} label="Save" onPress={save} />
         {exists ? (
-          <Btn style={{ flex: 1 }} label={armDelete ? 'Tap again' : 'Delete'} onPress={() => {
+          <Btn danger style={{ flex: 1 }} label={armDelete ? 'Tap again' : 'Delete'} onPress={() => {
             if (!armDelete) { setArmDelete(true); haptic.warn(); return; }
             update(s => ({ ...s, events: (s.events ?? []).filter(e => e.id !== ev.id) }));
             onDone();
@@ -125,18 +124,18 @@ export default function Events() {
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
         <Txt variant="h2" style={{ flex: 1 }}>Important dates</Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s6 }} keyboardShouldPersistTaps="handled">
         {editing ? <Editor key={editing.id} initial={editing} onDone={() => setEditing(null)} />
-          : <Btn label="Add a date" icon={<PlusIcon color={p.ink} size={18} />} style={{ alignSelf: 'flex-start' }} onPress={() => setEditing(fresh(today))} />}
+          : <Btn label="Add a date" icon={<PlusIcon color={p.ink} size={16} />} style={{ alignSelf: 'flex-start' }} onPress={() => setEditing(fresh(today))} />}
 
         {!state.showLived && past.length ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 56 }}>
             <Txt variant="meta" style={{ flex: 1 }}>Past dates show on the grid when lived weeks are shown.</Txt>
-            <Switch value={false} onValueChange={v => update(s => ({ ...s, showLived: v }))} />
+            <Toggle value={false} onValueChange={v => update(s => ({ ...s, showLived: v }))} />
           </View>
         ) : null}
 

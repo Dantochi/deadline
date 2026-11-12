@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { Chip, Txt, haptic } from './ui';
+import { Btn, Txt, haptic } from './ui';
 import { useReduceMotion } from './Motion';
-import { F, S, usePalette } from '../theme';
+import { F, R, S, usePalette } from '../theme';
 
 export const MicIcon = ({ color, size = 22 }: { color: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
@@ -112,7 +112,7 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
       <SafeAreaView style={{ flex: 1, backgroundColor: p.bg, paddingHorizontal: S.page }}>
         <View style={{ height: 64, flexDirection: 'row', alignItems: 'center' }}>
           <Txt variant="h2" style={{ flex: 1 }}>Say the task</Txt>
-          <Chip label="Cancel" onPress={() => { stop(); onClose(); }} />
+          <Btn kind="ghost" size="sm" label="Cancel" onPress={() => { stop(); onClose(); }} />
         </View>
         <Txt dim>For example: “Write chapter three by Friday, weekdays at 7am for 45 minutes.”</Txt>
 
@@ -128,12 +128,10 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
 
         <Txt variant="label" dim style={{ marginBottom: S.s2 }}>{error || 'What I heard (you can edit it)'}</Txt>
         <TextInput value={text} onChangeText={v => { setText(v); kept.current = v; }} multiline placeholder="Or type it here" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-          style={{ height: 120, padding: S.s4, backgroundColor: p.raise, color: p.ink, fontFamily: F.uiMedium, fontSize: 19, lineHeight: 26, textAlignVertical: 'top' }} />
+          style={{ height: 120, padding: S.s4, backgroundColor: p.raise, borderRadius: R.md, borderWidth: 1, borderColor: p.hairline, color: p.ink, fontFamily: F.uiMedium, fontSize: 19, lineHeight: 26, textAlignVertical: 'top' }} />
 
-        <Pressable accessibilityRole="button" disabled={!text.trim()} onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }}
-          style={{ marginTop: S.s5, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: p.ink, opacity: text.trim() ? 1 : 0.4 }}>
-          <Txt style={{ fontFamily: F.uiBold, fontSize: 19 }} color={p.bg}>Fill in the task</Txt>
-        </Pressable>
+        <Btn kind="primary" label="Fill in the task" disabled={!text.trim()} style={{ marginTop: S.s5 }}
+          onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }} />
       </SafeAreaView>
     </Modal>
   );

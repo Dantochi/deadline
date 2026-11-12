@@ -3,11 +3,12 @@ import { router } from 'expo-router';
 import { Animated, Linking, PanResponder, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowOutIcon, BookIcon, ChevronIcon, HeartIcon, PlayIcon } from '../../components/icons';
-import { Chip, Txt, haptic, useToast } from '../../components/ui';
+import { GlassSegment } from '../../components/Glass';
+import { Txt, haptic, useToast } from '../../components/ui';
 import { creatorLink, workLink } from '../../lib/career';
 import { useStore } from '../../lib/store';
 import { QUOTES, READ, WATCH, quoteKey, quoteOfTheDay, type Link } from '../../lib/wisdom';
-import { F, R, S, usePalette } from '../../theme';
+import { F, H, R, S, T, usePalette } from '../../theme';
 
 export default function Wisdom() {
   const { state, update } = useStore();
@@ -90,14 +91,13 @@ export default function Wisdom() {
         <Txt dim style={{ marginTop: S.s2 }}>From people who spent their time well.</Txt>
 
         {saved.length ? (
-          <View style={{ flexDirection: 'row', gap: S.s1, marginTop: S.s5 }}>
-            <View style={{ flex: 1 }}><Chip label="All" on={!onlySaved} onPress={() => { setOnlySaved(false); setI(quoteOfTheDay()); }} /></View>
-            <View style={{ flex: 1 }}><Chip label={`Saved ${saved.length}`} on={onlySaved} onPress={() => { setOnlySaved(true); setI(0); }} /></View>
-          </View>
+          <GlassSegment options={['All', `Saved ${saved.length}`]} height={H.md} fontSize={T.sm} style={{ marginTop: S.s5 }}
+            value={onlySaved ? `Saved ${saved.length}` : 'All'}
+            onChange={v => { if (v === 'All') { setOnlySaved(false); setI(quoteOfTheDay()); } else { setOnlySaved(true); setI(0); } }} />
         ) : null}
 
         {q ? (
-          <View {...swipe.panHandlers} style={{ marginTop: S.s5, paddingTop: S.s6, paddingHorizontal: S.s5, paddingBottom: S.s2, backgroundColor: p.raise, borderRadius: R.xl, gap: 18 }}>
+          <View {...swipe.panHandlers} style={{ marginTop: S.s5, paddingTop: S.s6, paddingHorizontal: S.s5, paddingBottom: S.s2, backgroundColor: p.raise, borderRadius: R.lg, gap: 18 }}>
             <Txt aria-hidden style={{ fontFamily: F.dot, fontSize: 64, lineHeight: 40, height: 34, color: p.dim }}>“</Txt>
             <Animated.View style={{ opacity: fade, gap: 18 }} accessibilityLiveRegion="polite">
               {/* Fixed size: five lines for every quote (long ones scale down to fit), so the card never changes height. */}

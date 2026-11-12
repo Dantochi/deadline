@@ -9,7 +9,7 @@ import { Btn, Chip, Txt, haptic } from '../components/ui';
 import { askPermission } from '../lib/notifications';
 import { useStore } from '../lib/store';
 import { addYears, fmt, parseBirth, weekNow, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, H, R, S, usePalette } from '../theme';
 
 const FOCUS: [string, string][] = [['career', 'Career'], ['health', 'Health'], ['money', 'Money'], ['learning', 'Learning'], ['family', 'Family'], ['creative', 'Creative work'], ['home', 'Home']];
 
@@ -58,9 +58,9 @@ export default function Onboarding() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
               <View style={{ flex: 1 }}><Txt style={{ fontFamily: F.uiSemi }}>Count towards age</Txt><Txt variant="small" dim>A reference point, not a prediction</Txt></View>
-              <Btn label="−" accessibilityLabel="Younger" onPress={() => update(s => ({ ...s, life: Math.max(50, s.life - 1) }))} style={{ width: 48 }} />
+              <Btn size="sm" label="−" accessibilityLabel="Younger" onPress={() => update(s => ({ ...s, life: Math.max(50, s.life - 1) }))} style={{ width: H.sm }} />
               <Txt style={{ fontFamily: F.uiBold, minWidth: 32, textAlign: 'center' }}>{state.life}</Txt>
-              <Btn label="+" accessibilityLabel="Older" onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} style={{ width: 48 }} />
+              <Btn size="sm" label="+" accessibilityLabel="Older" onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} style={{ width: H.sm }} />
             </View>
             {err ? <Txt variant="meta" color={p.redInk}>{err}</Txt> : null}
             <Btn kind="primary" label="Draw my life" onPress={() => {

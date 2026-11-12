@@ -43,8 +43,8 @@ export function TaskFabs({ onTask, onDate }: { onTask?: () => void; onDate: () =
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', right: 20, bottom: 28 + insets.bottom, alignItems: 'flex-end', gap: S.s3 }}>
-      <Fab size={56} label="Mark as an important date" icon={<FlagIcon color={p.ink} />} onPress={onDate} />
-      {onTask ? <Fab size={56} solid label="New task" icon={<PlusIcon color={p.bg} />} onPress={onTask} /> : null}
+      <Fab size={52} label="Mark as an important date" icon={<FlagIcon color={p.ink} />} onPress={onDate} />
+      {onTask ? <Fab size={52} solid label="New task" icon={<PlusIcon color={p.bg} />} onPress={onTask} /> : null}
     </View>
   );
 }

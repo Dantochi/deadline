@@ -9,7 +9,7 @@ import { ChevronIcon, CloseIcon } from '../components/icons';
 import { TaskFabs } from '../components/Fabs';
 import { Enter } from '../components/Motion';
 import { PartnerCard, ReviewCard, TaskRow } from '../components/TaskParts';
-import { DateTitle, Section, Txt, haptic } from '../components/ui';
+import { DateTitle, IconButton, Section, Txt, haptic } from '../components/ui';
 import { dayDetail } from '../lib/calendar';
 import { activeTasks, useStore, type Task } from '../lib/store';
 import { DAY, addYears, info, parseBirth, ymd } from '../lib/time';
@@ -71,9 +71,9 @@ export default function Day() {
         <Pressable accessibilityRole="button" accessibilityLabel="Next day" onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
           <ChevronIcon color={p.ink} />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
-        </Pressable>
+        </IconButton>
       </View>
 
       {/* Fixed row: the same day as hours. */}
