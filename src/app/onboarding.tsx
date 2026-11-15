@@ -21,7 +21,7 @@ export default function Onboarding() {
   const [birth, setBirth] = useState(parseBirth(state.birth));
   const [err, setErr] = useState('');
 
-  const finish = () => { update(s => ({ ...s, onboarded: true })); router.replace('/'); };
+  const finish = () => { update(s => ({ ...s, onboarded: true, briefSeen: ymd(new Date()) })); router.replace('/'); };
   const card = (title: string, body: string, onPress: () => void) => (
     <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); onPress(); }}
       style={({ pressed }) => ({ padding: S.s5, borderRadius: R.lg, borderWidth: 1, borderColor: p.line, backgroundColor: p.raise, gap: S.s1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>

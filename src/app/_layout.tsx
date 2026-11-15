@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { AppState, Appearance, BackHandler, Platform, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DailyBrief } from '../components/DailyBrief';
 import { ToastProvider, useToast } from '../components/ui';
 import { reschedule } from '../lib/notifications';
 import { PartnerProvider } from '../lib/partner';
@@ -109,6 +110,7 @@ function Shell() {
         <Stack.Screen name="day" />
         <Stack.Screen name="task" />
       </Stack>
+      <DailyBrief />
     </>
   );
 }
