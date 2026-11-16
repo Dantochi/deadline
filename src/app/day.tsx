@@ -9,7 +9,7 @@ import { ChevronIcon, CloseIcon } from '../components/icons';
 import { TaskFabs } from '../components/Fabs';
 import { Enter } from '../components/Motion';
 import { PartnerCard, ReviewCard, TaskRow } from '../components/TaskParts';
-import { DateTitle, IconButton, Section, Txt, haptic } from '../components/ui';
+import { Empty, DateTitle, IconButton, Section, Txt, haptic } from '../components/ui';
 import { dayDetail } from '../lib/calendar';
 import { activeTasks, useStore, type Task } from '../lib/store';
 import { DAY, addYears, info, parseBirth, ymd } from '../lib/time';
@@ -85,9 +85,10 @@ export default function Day() {
         {body}
 
         {empty ? (
-          <View style={{ height: 200, alignItems: 'center', justifyContent: 'center', gap: S.s2 }}>
-            <Txt variant="h2">{isToday ? 'No deadlines yet' : 'A clear day'}</Txt>
-            <Txt dim style={{ textAlign: 'center' }}>{isToday ? 'Give a goal an end date and it gets its own boxes.' : past ? 'Nothing was running on this day.' : 'Nothing is due or running yet.'}</Txt>
+          <View style={{ minHeight: 200, justifyContent: 'center' }}>
+            <Txt variant="h2" style={{ textAlign: 'center' }}>{isToday ? 'No deadlines yet' : 'A clear day'}</Txt>
+            <Empty style={{ paddingVertical: S.s3 }} text={isToday ? 'Give a goal an end date and it gets its own boxes.' : past ? 'Nothing was running on this day.' : 'Nothing is due or running yet.'}
+              action={past ? undefined : 'Plan a task'} onPress={() => router.push({ pathname: '/new-task', params: isToday ? {} : { deadline: key } })} />
           </View>
         ) : null}
 

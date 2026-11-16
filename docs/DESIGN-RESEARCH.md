@@ -291,3 +291,22 @@ therefore rests on the peer-reviewed findings below rather than on mood boards.
 - Gu, B. et al. (2025). Evaluation of digital twin interface layout based on aesthetics and AHP. *M2VIP*. https://consensus.app/papers/details/7ab50d38b1a551bfad4dbd8b760afb32/
 - Wang, Y. et al. (2022). What is the glamor of black-and-white? *Journal of Consumer Behaviour*. https://consensus.app/papers/details/7323a2910a215873aa1fb91cd05ece9d/
 - Schlamann, M. et al. (2026). Attractive things do work better: a meta-analysis. *IJHCI*. https://consensus.app/papers/details/5f6c4dac5ae45e9d9d4e86b82dbf92fb/
+
+## UX pass, November 2026 (motion, layout, task workflow, first run)
+
+Reference source tried: the Awwwards MCP server (`awwwards-mcp`, website references with a mobile viewport). It was
+installed and started, but awwwards.com refused every connection from the build session, so it returned no sites.
+Nothing in this pass is taken from Awwwards. The changes follow the principles already recorded above (Material 3,
+Apple HIG, the benchmark apps):
+
+- Motion keeps continuity and stays short: lists arrive 30 ms apart (`Stagger`), the toast slides up, sheets rise
+  over a fading scrim, a finished task gets a small tick (`Pop`), loading shows placeholder pills (`Pulse`). All
+  are skipped with Reduce motion.
+- One main action per screen: the task screen has a single "Mark done" button with the rest as icon buttons;
+  yes/no questions use a primary and a secondary button rather than two equal chips.
+- Frequent actions without opening the task: press and hold a row for Done, reschedule, timeline and delete.
+- Orientation in a flow: onboarding shows step dots and a back button.
+- Empty and loading states are designed, not blank: `Empty` gives the next step where there is one.
+
+To try Awwwards references again, run the server on a computer where the site is reachable:
+`claude mcp add awwwards -- npx -y awwwards-mcp`.

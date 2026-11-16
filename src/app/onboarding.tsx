@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LifeGrid } from '../components/LifeGrid';
 import { DateTimeField } from '../components/pickers';
 import { CareerSetup } from '../components/CareerSetup';
-import { Btn, Chip, Txt, haptic } from '../components/ui';
+import { Btn, Chip, IconButton, Txt, haptic } from '../components/ui';
+import { ChevronIcon } from '../components/icons';
+import { Enter } from '../components/Motion';
 import { askPermission } from '../lib/notifications';
 import { useStore } from '../lib/store';
 import { addYears, fmt, parseBirth, weekNow, ymd } from '../lib/time';
@@ -21,6 +23,9 @@ export default function Onboarding() {
   const [birth, setBirth] = useState(parseBirth(state.birth));
   const [err, setErr] = useState('');
 
+  // "Just my deadlines" skips the two life-grid steps.
+  const shown = state.showGrid ? [0, 1, 2, 3, 4, 5] : [0, 3, 4, 5];
+  const back = (n: number) => shown[Math.max(0, shown.indexOf(n) - 1)] ?? 0;
   const finish = () => { update(s => ({ ...s, onboarded: true, briefSeen: ymd(new Date()) })); router.replace('/'); };
   const card = (title: string, body: string, onPress: () => void) => (
     <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); onPress(); }}
@@ -40,7 +45,18 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', padding: '6%', gap: S.s5 }} keyboardShouldPersistTaps="handled">
+      {/* Where you are in the setup, and a way back. */}
+      <View style={{ height: H.lg, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
+        <View style={{ width: H.md, marginLeft: -8 }}>
+          {step > 0 ? <IconButton accessibilityLabel="Back" onPress={() => { setErr(''); setStep(back(step)); }}><ChevronIcon left color={p.ink} /></IconButton> : null}
+        </View>
+        <View accessible accessibilityLabel={`Step ${shown.indexOf(step) + 1} of ${shown.length}`} style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', gap: S.s2 }}>
+          {shown.map(i => <View key={i} style={{ width: i === step ? 20 : 6, height: 6, borderRadius: R.full, backgroundColor: i === step ? p.ink : p.line }} />)}
+        </View>
+        <View style={{ width: H.md }} />
+      </View>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: S.page, paddingBottom: S.s5, paddingTop: S.s3 }} keyboardShouldPersistTaps="handled">
+        <Enter id={step} from={{ x: 16 }} duration={240} style={{ gap: S.s5 }}>
         {step === 0 ? (
           <>
             {heading('How do you want to see your time?', 'You can change this later in Settings.')}
@@ -108,6 +124,7 @@ export default function Onboarding() {
             <Btn kind="ghost" label="Not now" onPress={finish} />
           </>
         ) : null}
+        </Enter>
       </ScrollView>
     </SafeAreaView>
   );

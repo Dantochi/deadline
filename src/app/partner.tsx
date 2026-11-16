@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { Linking, ScrollView, Share, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
-import { Btn, Field as UiField, IconButton, StatusDot, Toggle, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Field as UiField, IconButton, ScreenHeader, StatusDot, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { INSTALL_LINK } from '../lib/firebase';
 import { cleanUsername, friendlyError, mondayOf, otherSide, usePartner, type Progress } from '../lib/partner';
 import { useStore } from '../lib/store';
@@ -210,12 +210,11 @@ export default function PartnerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-        <Txt variant="h2" style={{ flex: 1 }}>Accountability partner</Txt>
+      <ScreenHeader title="Accountability partner">
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>
-      </View>
+      </ScreenHeader>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s3, paddingBottom: S.s8, gap: S.s4 }} keyboardShouldPersistTaps="handled">
         <Txt dim>Pick one person. Every Sunday you both see how the week went: sessions kept, missed, finished and what is coming up.</Txt>
         {!P.configured ? <Txt>Partners are not switched on in this test build yet.</Txt>

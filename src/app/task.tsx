@@ -3,16 +3,17 @@
 // fixed bar at the bottom.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, UndoIcon } from '../components/icons';
 import { Diary } from '../components/Diary';
+import { Pop } from '../components/Motion';
 import { Subtasks } from '../components/Subtasks';
 import { useDeleteTask } from '../components/TaskParts';
-import { BoxStrip, Btn, Card, Chip, IconButton, StatusDot, Txt, haptic, useToast } from '../components/ui';
+import { BoxStrip, Btn, Card, Empty, IconButton, StatusDot, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, slotLabel } from '../lib/time';
-import { F, S, statusColor, usePalette } from '../theme';
+import { F, H, S, statusColor, usePalette } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 
 const NotesIcon = ({ color }: { color: string }) => (
@@ -38,8 +39,7 @@ export default function TaskScreen() {
   if (!t) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: p.bg, alignItems: 'center', justifyContent: 'center', gap: S.s3 }}>
-        <Txt dim>This task no longer exists.</Txt>
-        <Btn size="sm" label="Back" onPress={() => router.back()} />
+        <Empty text="This task no longer exists." action="Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
@@ -84,13 +84,8 @@ export default function TaskScreen() {
   const card = (children: ReactNode) => <Card style={{ gap: S.s3 }}>{children}</Card>;
   const line = (k: string, v: string) => <Txt variant="meta" numberOfLines={2}><Txt variant="meta" dim>{k} · </Txt>{v}</Txt>;
 
-  // Bottom bar: small, equal buttons (icon over a short label), fixed height.
-  const act = (key: string, text: string, icon: ReactNode, onPress: () => void, danger?: boolean) => (
-    <Pressable key={key} accessibilityRole="button" accessibilityLabel={text} onPress={() => { haptic.tick(); onPress(); }}
-      style={({ pressed }) => ({ flex: 1, height: 56, alignItems: 'center', justifyContent: 'center', gap: 4, opacity: pressed ? 0.6 : 1 })}>
-      {icon}
-      <Txt variant="small" style={{ fontFamily: F.uiSemi }} color={danger ? p.redInk : p.ink}>{text}</Txt>
-    </Pressable>
+  const act = (label: string, icon: ReactNode, onPress: () => void) => (
+    <IconButton key={label} accessibilityLabel={label} size={H.hit} onPress={onPress}>{icon}</IconButton>
   );
 
   return (
@@ -106,7 +101,7 @@ export default function TaskScreen() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s7 }}>
         <View style={{ gap: S.s2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
-            <StatusDot st={st} shapes={state.shapes} />
+            {t.done && !t.letGo ? <Pop on><CheckIcon size={16} color={statusColor(p, 'green', true)} /></Pop> : <StatusDot st={st} shapes={state.shapes} />}
             <Txt variant="label" color={statusColor(p, st, true)}>{label}</Txt>
           </View>
           <Txt variant="h1" style={[t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
@@ -122,21 +117,24 @@ export default function TaskScreen() {
           <Txt style={{ fontFamily: F.uiSemi }}>The deadline passed {leftShort(left).replace(' over', '')} ago.</Txt>
           <Txt variant="meta" dim>That happens. Choose what is true now.</Txt>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-            <Chip label="+3 days" onPress={() => extend(3)} /><Chip label="+1 week" onPress={() => extend(7)} /><Chip label="+2 weeks" onPress={() => extend(14)} />
-            <Chip label="Let go" onPress={() => { updateTask(t.id, x => ({ ...x, done: true, letGo: true, doneAt: Date.now() })); toast('Let go. That time is yours again.'); }} />
+            <Btn size="sm" label="+3 days" onPress={() => extend(3)} /><Btn size="sm" label="+1 week" onPress={() => extend(7)} /><Btn size="sm" label="+2 weeks" onPress={() => extend(14)} />
+            <Btn size="sm" kind="ghost" label="Let go" onPress={() => { updateTask(t.id, x => ({ ...x, done: true, letGo: true, doneAt: Date.now() })); toast('Let go. That time is yours again.'); }} />
           </View>
         </>) : null}
 
         {ask && !rescheduling ? card(<>
           <Txt>Did your {pad(new Date(ls!).getHours())}:{pad(new Date(ls!).getMinutes())} session happen?</Txt>
-          <View style={{ flexDirection: 'row', gap: S.s2 }}><Chip label="Yes" onPress={() => checkIn(true)} /><Chip label="Not today" onPress={() => checkIn(false)} /></View>
+          <View style={{ flexDirection: 'row', gap: S.s2 }}>
+            <Btn kind="primary" size="md" label="Yes, it happened" style={{ flex: 1 }} onPress={() => checkIn(true)} />
+            <Btn label="Not today" onPress={() => checkIn(false)} />
+          </View>
         </>) : null}
         {rescheduling ? card(<>
           <Txt variant="meta">No problem. Missing one session does not undo the others. Find another time:</Txt>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-            {new Date().getHours() < 18 ? <Chip label="This evening" onPress={() => reserveAt(at(0, 19, 0))} /> : null}
-            <Chip label="Tomorrow, usual time" onPress={() => reserveAt(at(1, uh, um))} />
-            <Chip label="Tomorrow evening" onPress={() => reserveAt(at(1, 19, 0))} />
+            {new Date().getHours() < 18 ? <Btn size="sm" label="This evening" onPress={() => reserveAt(at(0, 19, 0))} /> : null}
+            <Btn size="sm" label="Tomorrow, usual time" onPress={() => reserveAt(at(1, uh, um))} />
+            <Btn size="sm" label="Tomorrow evening" onPress={() => reserveAt(at(1, 19, 0))} />
           </View>
         </>) : null}
 
@@ -155,21 +153,21 @@ export default function TaskScreen() {
         <Diary t={t} writeSignal={write} />
       </ScrollView>
 
-      {/* Fixed action bar. */}
-      <View style={{ height: 72, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: p.line, paddingHorizontal: '2%' }}>
+      {/* One main action (finish, or bring back), with the rest as icon buttons beside it. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: p.line, paddingHorizontal: S.page, paddingTop: S.s3, paddingBottom: S.s4 }}>
         {t.done
-          ? act('restore', 'Restore', <UndoIcon color={p.ink} />, () => updateTask(t.id, x => ({ ...x, done: false, letGo: false, doneAt: undefined })))
-          : act('done', 'Done', <CheckIcon color={p.ink} />, complete)}
+          ? <Btn label="Restore" icon={<UndoIcon size={18} color={p.ink} />} size="lg" style={{ flex: 1, marginRight: S.s2 }} onPress={() => updateTask(t.id, x => ({ ...x, done: false, letGo: false, doneAt: undefined }))} />
+          : <Btn kind="primary" label="Mark done" icon={<CheckIcon size={18} color={p.bg} />} style={{ flex: 1, marginRight: S.s2 }} onPress={complete} />}
         {!t.done ? (paused
-          ? act('resume', 'Resume', <PlayIcon color={p.ink} />, () => {
+          ? act('Resume', <PlayIcon color={p.ink} />, () => {
             const away = Date.now() - (t.pausedAt ?? Date.now());
             updateTask(t.id, x => ({ ...x, pausedAt: null, deadline: x.deadline + away, start: x.start + away }));
             toast(`Welcome back. Deadline moved to ${fdate(t.deadline + away)}.`);
           })
-          : act('pause', 'Pause', <PauseIcon color={p.ink} />, () => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); })) : null}
-        {act('notes', 'Note', <NotesIcon color={p.ink} />, () => setWrite(w => w + 1))}
-        {act('edit', 'Edit', <EditIcon color={p.ink} />, () => router.push({ pathname: '/new-task', params: { edit: t.id } }))}
-        {act('delete', 'Delete', <TrashIcon color={p.redInk} />, () => { router.back(); del(t); }, true)}
+          : act('Pause', <PauseIcon color={p.ink} />, () => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); })) : null}
+        {act('Add a note', <NotesIcon color={p.ink} />, () => setWrite(w => w + 1))}
+        {act('Edit', <EditIcon color={p.ink} />, () => router.push({ pathname: '/new-task', params: { edit: t.id } }))}
+        {act('Delete', <TrashIcon color={p.redInk} />, () => { router.back(); del(t); })}
       </View>
 
     </SafeAreaView>

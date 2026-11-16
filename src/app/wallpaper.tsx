@@ -9,7 +9,7 @@ import { captureRef } from 'react-native-view-shot';
 import { CloseIcon } from '../components/icons';
 import { LifeGrid } from '../components/LifeGrid';
 import { GlassSegment } from '../components/Glass';
-import { Btn, IconButton, Txt, haptic, useToast } from '../components/ui';
+import { Btn, IconButton, ScreenHeader, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { ageYears, fmt, parseBirth, weekNow } from '../lib/time';
 import { F, H as CH, R, S, T, palettes, usePalette } from '../theme';
@@ -48,12 +48,11 @@ export default function Wallpaper() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-        <Txt variant="h2" style={{ flex: 1 }}>Wallpaper</Txt>
+      <ScreenHeader title="Wallpaper">
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>
-      </View>
+      </ScreenHeader>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5, alignItems: 'center' }}>
         <View accessible accessibilityRole="image" accessibilityLabel="Wallpaper preview"
           style={{ width: W * scale, height: H * scale, borderRadius: R.lg, overflow: 'hidden', borderWidth: 1, borderColor: p.line, marginTop: S.s4 }}>

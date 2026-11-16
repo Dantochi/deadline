@@ -5,7 +5,7 @@ import { Linking, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateTimeField } from '../components/pickers';
 import { GlassSegment } from '../components/Glass';
-import { Btn, IconButton, StatusDot, Toggle, Txt, useToast } from '../components/ui';
+import { Btn, IconButton, ScreenHeader, StatusDot, Toggle, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { aiAvailable } from '../lib/ai';
 import { usePartner } from '../lib/partner';
@@ -73,12 +73,11 @@ export default function Settings() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-        <Txt variant="h2" style={{ flex: 1 }}>Settings</Txt>
+      <ScreenHeader title="Settings">
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>
-      </View>
+      </ScreenHeader>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s8 }}>
         {group('You', <>
           {row('Date of birth', undefined, <View style={{ minWidth: 160 }}><DateTimeField label="Date of birth" mode="date" value={parseBirth(state.birth)} maximumDate={new Date()}

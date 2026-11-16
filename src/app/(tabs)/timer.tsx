@@ -3,17 +3,21 @@
 // The rotate button turns it into a display piece: the countdown on its side, full screen, beside a pixel
 // hourglass whose sand runs down through the day.
 import { useKeepAwake } from 'expo-keep-awake';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RotateIcon } from '../../components/icons';
 import { RollingNumber } from '../../components/RollingNumber';
 import { SandGlass } from '../../components/SandGlass';
-import { IconButton, Txt } from '../../components/ui';
+import { Card, IconButton, Txt } from '../../components/ui';
+import { sessionsOn, toHM } from '../../lib/schedule';
+import { useStore } from '../../lib/store';
 import { hms, secondsLeftToday } from '../../lib/time';
-import { S, T, palettes, usePalette } from '../../theme';
+import { F, S, T, palettes, usePalette } from '../../theme';
+
+const hm = (ms: number) => { const d = new Date(ms); return toHM(d.getHours() * 60 + d.getMinutes()); };
 
 const DAY_SECONDS = 24 * 3600;
 
@@ -56,6 +60,7 @@ function LandscapeClock({ left, label, onClose }: { left: number; label: string;
 
 export default function Today() {
   const p = usePalette();
+  const { state } = useStore();
   const { width } = useWindowDimensions();
   const [now, setNow] = useState(() => new Date());
   const [wide, setWide] = useState(false);
@@ -69,6 +74,10 @@ export default function Today() {
   }, []));
 
   const left = secondsLeftToday(now), hour = now.getHours();
+  const minute = Math.floor(+now / 6e4);
+  const sessions = useMemo(() => sessionsOn(state, minute * 6e4).filter(b => !b.t.pausedAt && !b.t.done), [state, minute]);
+  const ahead = sessions.filter(b => b.state === 'planned');
+  const next = ahead[0], later = Math.max(0, ahead.length - 1);
   const inner = width - S.page * 2;
   // Eight dot-matrix characters across the page width.
   const size = Math.floor(inner / 5.2);
@@ -98,6 +107,22 @@ export default function Today() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: S.s2 }}>
           {['00', '06', '12', '18', '24'].map(l => <Txt key={l} variant="num" dim allowFontScaling={false} style={{ fontSize: T.xs, lineHeight: 16 }}>{l}</Txt>)}
         </View>
+
+        {/* What the rest of the day holds: the next reserved session, or how many are left. */}
+        <Pressable accessibilityRole="button" disabled={!next} onPress={() => next && router.push({ pathname: '/task', params: { id: next.t.id } })}
+          style={({ pressed }) => ({ marginTop: S.s6, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 64 }}>
+            {next ? (
+              <>
+                <View style={{ flex: 1 }}>
+                  <Txt variant="label" dim>{next.start <= +now ? 'Now' : 'Next'}{later ? ` · ${later} more today` : ''}</Txt>
+                  <Txt numberOfLines={1} style={{ fontFamily: F.uiMedium, marginTop: 2 }}>{next.t.title}</Txt>
+                </View>
+                <Txt variant="num" allowFontScaling={false} style={{ fontSize: T.lg, lineHeight: 24 }}>{hm(next.start)}</Txt>
+              </>
+            ) : <Txt variant="meta" dim style={{ flex: 1 }}>{sessions.length ? 'No more sessions today.' : 'Nothing is reserved for today.'}</Txt>}
+          </Card>
+        </Pressable>
       </View>
 
       <Modal visible={wide} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setWide(false)}>

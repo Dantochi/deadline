@@ -1,6 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Pressable, StyleSheet, Switch, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Stagger } from './Motion';
 import { F, H, R, S, T, slop, statusColor, tint, usePalette, type Status } from '../theme';
 
 export const haptic = {
@@ -157,6 +159,29 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
   return <View style={[{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: p.hairline, padding: S.s4 }, style]}>{children}</View>;
 }
 
+/** The header of a screen: its title on the left (with an optional line under it), actions on the right. */
+export function ScreenHeader({ title, sub, children, big }: { title: string; sub?: string; children?: ReactNode; big?: boolean }) {
+  return (
+    <View style={{ minHeight: H.lg, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3, gap: S.s1 }}>
+      <View style={{ flex: 1 }}>
+        <Txt variant={big ? 'h1' : 'h2'} accessibilityRole="header">{title}</Txt>
+        {sub ? <Txt variant="small" dim>{sub}</Txt> : null}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+/** What a screen or list shows when there is nothing in it: one calm line, and the next step if there is one. */
+export function Empty({ text, action, onPress, style }: { text: string; action?: string; onPress?: () => void; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[{ alignItems: 'center', gap: S.s3, paddingVertical: S.s6 }, style]}>
+      <Txt variant="meta" dim style={{ textAlign: 'center' }}>{text}</Txt>
+      {action && onPress ? <Btn size="sm" label={action} onPress={onPress} /> : null}
+    </View>
+  );
+}
+
 /** A small tinted pill for a status or time left ("2d", "Due", "Paused"): the colour as a soft wash with its text on
  *  top, so urgency is easy to scan without shouting. Neutral when no status is given. */
 export function StatusPill({ label, st }: { label: string; st?: Status }) {
@@ -206,31 +231,40 @@ export function BoxStrip({ n, gone, st }: { n: number; gone: number; st: Status 
   );
 }
 
-// Tiny toast, one at a time.
+// Tiny toast, one at a time. It slides up from just above the tab bar and fades out.
 type ToastAction = { label: string; onPress: () => void };
 const ToastCtx = createContext<(msg: string, ms?: number, action?: ToastAction) => void>(() => {});
 export function ToastProvider({ children }: { children: ReactNode }) {
   const p = usePalette();
+  const insets = useSafeAreaInsets();
   const [msg, setMsg] = useState<{ text: string; action?: ToastAction } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [t] = useState(() => new Animated.Value(0));
+  const hide = useCallback(() => {
+    Animated.timing(t, { toValue: 0, duration: 160, useNativeDriver: true }).start(({ finished }) => { if (finished) setMsg(null); });
+  }, [t]);
   // An optional action (e.g. Undo after a delete) keeps the toast up longer and makes it tappable.
   const show = useCallback((m: string, ms = 2600, action?: ToastAction) => {
     setMsg({ text: m, action });
+    t.stopAnimation();
+    Animated.timing(t, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMsg(null), action ? Math.max(ms, 6000) : ms);
-  }, []);
+    timer.current = setTimeout(hide, action ? Math.max(ms, 6000) : ms);
+  }, [t, hide]);
   return (
     <ToastCtx.Provider value={show}>
       {children}
       {msg ? (
-        <View pointerEvents={msg.action ? 'box-none' : 'none'} style={[styles.toast, { backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: S.s3 }]} accessibilityLiveRegion="polite">
-          <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20, flex: msg.action ? 1 : undefined }} color={p.bg}>{msg.text}</Txt>
+        <Animated.View pointerEvents={msg.action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
+          style={[styles.toast, { bottom: 72 + insets.bottom + S.s3, backgroundColor: p.ink, flexDirection: 'row', alignItems: 'center', gap: S.s3,
+            opacity: t, transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
+          <Txt style={{ fontFamily: F.uiSemi, fontSize: 14, lineHeight: 20, flex: msg.action ? 1 : undefined }} color={p.bg}>{msg.text}</Txt>
           {msg.action ? (
-            <Pressable accessibilityRole="button" hitSlop={12} onPress={() => { haptic.tick(); msg.action!.onPress(); setMsg(null); }}>
-              <Txt style={{ fontFamily: F.uiBold, fontSize: T.md, lineHeight: 20, textDecorationLine: 'underline' }} color={p.bg}>{msg.action.label}</Txt>
+            <Pressable accessibilityRole="button" hitSlop={12} onPress={() => { haptic.tick(); msg.action!.onPress(); if (timer.current) clearTimeout(timer.current); hide(); }}>
+              <Txt style={{ fontFamily: F.uiBold, fontSize: 14, lineHeight: 20, textDecorationLine: 'underline' }} color={p.bg}>{msg.action.label}</Txt>
             </Pressable>
           ) : null}
-        </View>
+        </Animated.View>
       ) : null}
     </ToastCtx.Provider>
   );
@@ -244,7 +278,7 @@ export function Section({ label, st, count, children }: { label?: string; st?: S
       {label ? <Txt variant="label" color={st ? statusColor(p, st, true) : p.dim} style={{ marginBottom: S.s3 }}>
         {label}{count != null ? <Txt variant="label" dim>{`  ${count}`}</Txt> : null}
       </Txt> : null}
-      {children}
+      <Stagger>{children}</Stagger>
     </View>
   );
 }
@@ -252,5 +286,5 @@ export function Section({ label, st, count, children }: { label?: string; st?: S
 const styles = StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   chip: { minHeight: H.sm, paddingHorizontal: S.s3, borderRadius: R.full, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  toast: { position: 'absolute', left: 20, right: 20, bottom: 110, borderRadius: R.md, paddingHorizontal: 18, paddingVertical: 14 },
+  toast: { position: 'absolute', left: S.s4, right: S.s4, borderRadius: R.md, paddingHorizontal: S.s4, paddingVertical: S.s3 },
 });

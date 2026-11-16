@@ -6,7 +6,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon, PlusIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Field, IconButton, Toggle, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Empty, Field, IconButton, ScreenHeader, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { EVENT_COLORS, type LifeEvent } from '../lib/events';
 import { uid, useStore } from '../lib/store';
 import { addYears, ageYears, fdate, parseBirth, weekStart, ymd } from '../lib/time';
@@ -122,12 +122,11 @@ export default function Events() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-        <Txt variant="h2" style={{ flex: 1 }}>Important dates</Txt>
+      <ScreenHeader title="Important dates">
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>
-      </View>
+      </ScreenHeader>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s6 }} keyboardShouldPersistTaps="handled">
         {editing ? <Editor key={editing.id} initial={editing} onDone={() => setEditing(null)} />
           : <Btn label="Add a date" icon={<PlusIcon color={p.ink} size={16} />} style={{ alignSelf: 'flex-start' }} onPress={() => setEditing(fresh(today))} />}
@@ -141,7 +140,7 @@ export default function Events() {
 
         {ahead.length ? <View><Txt variant="label" dim>Ahead and every year</Txt>{ahead.map(row)}</View> : null}
         {past.length ? <View><Txt variant="label" dim>Lived</Txt>{past.map(row)}</View> : null}
-        {!events.length && !editing ? <Txt dim style={{ textAlign: 'center', marginTop: S.s6 }}>No dates yet. Birthdays, graduations, the day you moved: anything you want to see in your weeks.</Txt> : null}
+        {!events.length && !editing ? <Empty text="No dates yet. Birthdays, graduations, the day you moved: anything you want to see in your weeks." /> : null}
       </ScrollView>
     </SafeAreaView>
   );

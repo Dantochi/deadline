@@ -3,10 +3,15 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Animated, Modal, PanResponder, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Enter } from './Motion';
 import { Btn, Txt } from './ui';
 import { R, S, usePalette } from '../theme';
 
-export function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
+export function Sheet({ open, title, onClose, children, done = 'Done' }: {
+  open: boolean; title: string; onClose: () => void; children: ReactNode;
+  /** The closing button's label; null for a sheet of actions, which close by themselves. */
+  done?: string | null;
+}) {
   const p = usePalette();
   const insets = useSafeAreaInsets();
   const [y] = useState(() => new Animated.Value(0));
@@ -19,9 +24,10 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
     },
   }), [y, onClose]);
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: p.scrim }} />
+        <Enter from={{ y: 40 }} duration={240}>
         <Animated.View style={{
           transform: [{ translateY: y }], backgroundColor: p.raise, borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg,
           borderWidth: 1, borderBottomWidth: 0, borderColor: p.hairline,
@@ -29,11 +35,12 @@ export function Sheet({ open, title, onClose, children }: { open: boolean; title
         }}>
           <View {...pan.panHandlers} style={{ paddingTop: S.s2, paddingBottom: S.s3 }}>
             <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: p.line }} />
-            <Txt variant="h2" style={{ marginTop: S.s3 }}>{title}</Txt>
+            <Txt variant="h2" numberOfLines={2} style={{ marginTop: S.s3 }}>{title}</Txt>
           </View>
           <View style={{ gap: S.s4 }}>{children}</View>
-          <Btn kind="primary" label="Done" onPress={onClose} style={{ marginTop: S.s5 }} />
+          {done ? <Btn kind="primary" label={done} onPress={onClose} style={{ marginTop: S.s5 }} /> : null}
         </Animated.View>
+        </Enter>
       </View>
     </Modal>
   );

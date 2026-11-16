@@ -8,7 +8,7 @@ import { Sheet } from '../components/Sheet';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Chip, Field, IconButton, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Chip, Field, IconButton, ScreenHeader, Txt, haptic, useToast } from '../components/ui';
 import { aiAvailable, aiParse } from '../lib/ai';
 import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
@@ -151,7 +151,7 @@ export default function NewTask() {
     update(s => ({ ...s, tasks: [...s.tasks, t] }));
     haptic.ok();
     const n = nextSlot(t);
-    toast(n ? `${slotLabel(n)} is reserved for this.` : 'The clock is running');
+    toast(n ? `${slotLabel(n)} is reserved for this.` : 'The clock is running', 5000, { label: 'View', onPress: () => router.push({ pathname: '/task', params: { id: t.id } }) });
     router.back();
   };
 
@@ -168,12 +168,11 @@ export default function NewTask() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-          <Txt variant="h2" style={{ flex: 1 }}>{ed ? 'Edit task' : 'New task'}</Txt>
+        <ScreenHeader title={ed ? 'Edit task' : 'New task'}>
           <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
             <CloseIcon color={p.dim} />
           </IconButton>
-        </View>
+        </ScreenHeader>
         <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s6, gap: S.s3 }} keyboardShouldPersistTaps="handled">
           {/* The whole task in one card: the name, then its properties as pills that open a sheet each. */}
           <View style={{ backgroundColor: p.raise, borderRadius: R.lg, borderWidth: 1, borderColor: focus ? p.dim : p.hairline }}>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
-import { Btn, Chip, IconButton, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Chip, IconButton, ScreenHeader, Txt, haptic, useToast } from '../components/ui';
 import { useStore } from '../lib/store';
 import { hms, secondsLeftToday } from '../lib/time';
 import { F, palettes, R, S, usePalette } from '../theme';
@@ -67,12 +67,11 @@ export default function Widgets() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-        <Txt variant="h2" style={{ flex: 1 }}>Widgets</Txt>
+      <ScreenHeader title="Widgets">
         <IconButton accessibilityLabel="Close" onPress={() => router.back()} style={{ marginRight: -8 }}>
           <CloseIcon color={p.dim} />
         </IconButton>
-      </View>
+      </ScreenHeader>
       <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingBottom: S.s7, gap: S.s5 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1, marginTop: S.s3 }}>
           {SIZES.map(x => <Chip key={x.name} label={x.label} on={pick === x.name} onPress={() => setPick(x.name)} />)}

@@ -7,7 +7,7 @@ import { LifeGrid } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
 import { RollingNumber } from '../../components/RollingNumber';
 import { GlassSegment } from '../../components/Glass';
-import { IconButton, StatusDot, Txt } from '../../components/ui';
+import { IconButton, StatusDot, StatusPill, Txt } from '../../components/ui';
 import { eventsInWeek } from '../../lib/events';
 import { activeTasks, useStore } from '../../lib/store';
 import { DAY, YEAR, addYears, fdate, fmt, fshort, info, leftShort, parseBirth, weekEnd, weekNow, weekStart } from '../../lib/time';
@@ -81,8 +81,13 @@ export default function Life() {
               </View>
             ) : detail.hit ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><StatusDot st={info(detail.hit).st} shapes={state.shapes} size={8} /><Txt variant="meta" dim numberOfLines={1}>{detail.hit.title}</Txt></View> : null}
           </Enter>
-        ) : !state.showGrid && next ? (
-          <Txt variant="meta" dim numberOfLines={2}>Next deadline · {next.title} · {leftShort(info(next).left)}</Txt>
+        ) : next ? (
+          <Pressable accessibilityRole="button" accessibilityHint="Opens the task" onPress={() => router.push({ pathname: '/task', params: { id: next.id } })}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
+            <StatusDot st={info(next).st} shapes={state.shapes} size={8} />
+            <Txt variant="meta" numberOfLines={1} style={{ flex: 1 }}><Txt variant="meta" dim>Next deadline · </Txt>{next.title}</Txt>
+            <StatusPill label={leftShort(info(next).left)} st={info(next).st} />
+          </Pressable>
         ) : null}
       </View>
 

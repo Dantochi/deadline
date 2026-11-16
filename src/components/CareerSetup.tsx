@@ -1,12 +1,13 @@
 // Setting up Wisdom for your work: the career (or, for a student, the career they're heading towards), then a pick
 // of well-known creators in that field, plus any names typed in. Used in onboarding and in Settings → Wisdom.
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { Pulse } from './Motion';
 import { GlassSegment } from './Glass';
 import { CloseIcon } from './icons';
 import { Btn, Chip, Field, IconButton, Txt, haptic } from './ui';
 import { suggestCreators, type Career, type Creator } from '../lib/career';
-import { H, S, T, usePalette } from '../theme';
+import { H, R, S, T, usePalette } from '../theme';
 
 const WHO = ['I work in it', 'I’m studying for it'] as const;
 
@@ -65,7 +66,13 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
       </View>
 
       {stage === 'loading' ? (
-        <View style={{ height: 64, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={p.dim} /></View>
+        // Placeholder pills where the suggestions will appear, so the page doesn't jump when they arrive.
+        <View accessible accessibilityLabel="Finding creators" accessibilityLiveRegion="polite" style={{ gap: S.s3 }}>
+          <Txt variant="label" dim>Finding creators…</Txt>
+          <Pulse style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+            {[96, 132, 84, 120, 104, 76].map((w, i) => <View key={i} style={{ width: w, height: H.sm, borderRadius: R.full, backgroundColor: p.raise2 }} />)}
+          </Pulse>
+        </View>
       ) : null}
 
       {stage === 'refused' ? (
