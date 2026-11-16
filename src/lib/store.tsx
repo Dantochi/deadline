@@ -56,6 +56,7 @@ export type State = {
   focus?: string;
   digest: string[]; // three times a day, HH:MM
   partner?: string; // partner's display name, kept in sync by PartnerProvider
+  briefSeen?: string; // the day (YYYY-MM-DD) the daily summary was last shown
   reviewSeen?: string; // Monday (YYYY-MM-DD) of the week whose review was opened
   shareTitles?: boolean; // include task titles in the weekly summary the partner sees (default on)
   events?: LifeEvent[]; // important dates shown on the life grid
