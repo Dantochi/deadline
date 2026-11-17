@@ -11,7 +11,7 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 </style></head>
 <body><main><nav><a href="/">Deadline</a><a href="/privacy">Privacy</a><a href="/delete-account">Delete account</a></nav>
 <h1>Privacy policy</h1>
-<p class="dim">Last updated 9 November 2026</p>
+<p class="dim">Last updated 17 November 2026</p>
 <p>Deadline is built so that almost everything stays on your phone. This page explains what the app stores, what leaves your phone, and the choices you have.</p>
 
 <h2>Stored only on your phone</h2>
@@ -20,7 +20,7 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <li>Your tasks, deadlines, reserved times, notes, backup plans, cues and check-in answers.</li>
 <li>Your settings, saved quotes and reminder times.</li>
 </ul>
-<p>This information is not sent to us. Uninstalling the app, or using Settings → Erase everything, deletes it.</p>
+<p>This information is not sent to us. If you turn on backup &amp; sync (below), an end-to-end encrypted copy is kept in your account, which we cannot read. Uninstalling the app, or using Settings → Erase everything, deletes what is on the phone.</p>
 
 <h2>Only if you use the accountability partner</h2>
 <p>The partner feature is optional and needs an account. If you create one, these are stored with Google Firebase: sign-in by Firebase Authentication, and the rest in Cloud Firestore, hosted in London (UK):</p>
@@ -30,6 +30,17 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <li><b>Your partnership</b>: who you asked or accepted.</li>
 <li><b>A weekly summary</b> that only your active partner can read: sessions kept and missed, tasks finished, how many tasks are on track or need attention, and, if you allow it, task titles. Notes are never shared.</li>
 </ul>
+
+<h2>Only if you turn on backup &amp; sync</h2>
+<p>Backup &amp; sync is off unless you turn it on (Settings &rarr; Backup &amp; sync). It uses the same account as the partner feature. When it is on, your tasks, notes, important dates and settings are copied to Cloud Firestore so you can restore them on a new phone and keep several phones in step.</p>
+<ul>
+<li><b>End-to-end encrypted.</b> Everything is encrypted on your phone before it is sent, with a key that never leaves your devices. We, Google and anyone else with access to the servers see only scrambled data, plus when each item last changed and how many there are.</li>
+<li><b>Your recovery phrase</b> (24 words) is shown to you once and is not stored anywhere readable. With it, or with approval from another of your phones, you can unlock your backup on a new phone. If you lose all your phones and the phrase, nobody can recover the backup, including us.</li>
+<li>Turning it off on a phone stops syncing there. Deleting your backup, or your account, removes the encrypted copy.</li>
+</ul>
+
+<h2>Only if you use dictation in notes</h2>
+<p>When you hold or tap the microphone button in a note, the recording is sent to our server and on to AssemblyAI, which turns it into text and tidies it (fillers, punctuation, corrections). The text comes back to your phone. Recordings are kept in memory only for the request and are not stored by our server. AssemblyAI's own handling is described in its privacy policy.</p>
 
 <h2>Only if you turn on "Understand with Gemini"</h2>
 <p>This setting is off unless you turn it on (Settings → Voice). When it is on, the sentence you say or type to create a task, together with today's date, is sent to Google's Gemini model through Firebase AI Logic so it can pick out the deadline, days, times, length and subtasks. Nothing else is sent: not your other tasks, notes, birth date or account. Deadline does not store these sentences on a server. Google processes them under the <a href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a>; while Deadline uses Google's free tier, those terms let Google use what is sent to improve its products, so avoid saying anything private in a task sentence. With the setting off, sentences are read only on your phone.</p>
@@ -55,6 +66,7 @@ ul{padding-left:20px}li{margin:6px 0}nav{display:flex;gap:16px;margin-bottom:32p
 <li>Use the app without an account; everything except the partner feature works offline.</li>
 <li>Leave "Understand with Gemini" off to keep task sentences on your phone.</li>
 <li>Turn off task titles in Settings → Accountability partner to share counts only.</li>
+<li>Keep backup &amp; sync off to keep your data only on your phone, or turn it on for an end-to-end encrypted copy.</li>
 <li>Delete your account and all shared data in the app (Settings → Accountability partner → Delete account), or see <a href="/delete-account">Delete your account</a>.</li>
 </ul>
 

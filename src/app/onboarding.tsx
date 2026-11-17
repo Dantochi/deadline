@@ -46,6 +46,8 @@ export default function Onboarding() {
             {heading('How do you want to see your time?', 'You can change this later in Settings.')}
             {card('My life in weeks', 'Every week you have left, with your deadlines on it.', () => { update(s => ({ ...s, showGrid: true })); setStep(1); })}
             {card('Just my deadlines', 'Countdowns and plans, without the life view.', () => { update(s => ({ ...s, showGrid: false })); setStep(3); })}
+            {/* Already use Deadline on another phone, or got a new one: bring everything back from the backup. */}
+            <Btn kind="ghost" label="Restore from my account" onPress={() => router.push({ pathname: '/backup', params: { restore: '1' } })} />
           </>
         ) : null}
 

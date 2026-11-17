@@ -1,6 +1,6 @@
 // Accountability partner. Signing in is only needed here: each person has an email account and a public
 // username; two people form one partnership; each phone publishes a small weekly summary that only the
-// partner can read (see firestore.rules). Invites go out from the person's own phone (email app or share sheet).
+// partner can read (see firestore.rules). The same account carries the encrypted backup (lib/cloud). Invites go out from the person's own phone (email app or share sheet).
 import {
   EmailAuthProvider, createUserWithEmailAndPassword, deleteUser, onAuthStateChanged, reauthenticateWithCredential,
   sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut as fbSignOut, type User,
@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { fb, firebaseReady } from './firebase';
+import { deleteCloudCopy, forgetKey } from './vault';
 import { activeTasks, useStore, type State } from './store';
 import { DAY, info, ymd } from './time';
 
@@ -197,6 +198,9 @@ export function PartnerProvider({ children }: { children: ReactNode }) {
       await deleteDoc(doc(db, 'progress', u.uid)).catch(() => {});
       if (profile) await deleteDoc(doc(db, 'usernames', profile.username)).catch(() => {});
       await deleteDoc(doc(db, 'users', u.uid)).catch(() => {});
+      // The encrypted backup goes with the account.
+      await deleteCloudCopy(db, u.uid).catch(() => {});
+      await forgetKey(u.uid);
       await deleteUser(u);
     },
   };

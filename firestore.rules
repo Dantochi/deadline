@@ -1,5 +1,6 @@
 rules_version = '2';
-// Deadline: accountability partner data only. Paste into Firebase → Firestore Database → Rules → Publish.
+// Deadline: accountability partner data and the encrypted backup. Deploy with `npm run deploy:rules`
+// (or paste into Firebase → Firestore Database → Rules → Publish).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -38,6 +39,37 @@ service cloud.firestore {
         && resource.data.status == 'pending' && request.resource.data.status == 'active'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt']);
       allow delete: if signedIn() && request.auth.uid in resource.data.members;
+    }
+
+    // Backup and sync: end-to-end encrypted on the phone. Only the account owner can read or write it, and the
+    // server never sees anything readable: records are ciphertext ("n" nonce, "c" ciphertext) with a time stamp.
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    match /accounts/{uid} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid)
+        && request.resource.data.keys().hasOnly(['v', 'check', 'recovery', 'created'])
+        && request.resource.data.v == 1 && request.resource.data.check is string && request.resource.data.recovery is map;
+      // Only the recovery copy of the key can change (a new recovery phrase); the key check never does.
+      allow update: if owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['recovery']);
+
+      match /records/{id} {
+        allow read, delete: if owner(uid);
+        allow write: if owner(uid) && id.matches('^(settings|t_[A-Za-z0-9_-]{1,64})$')
+          && request.resource.data.t is number
+          && (
+            (request.resource.data.keys().hasOnly(['t', 'del']) && request.resource.data.del == true)
+            || (request.resource.data.keys().hasOnly(['t', 'n', 'c']) && request.resource.data.n is string
+                && request.resource.data.c is string && request.resource.data.c.size() < 900000)
+          );
+      }
+
+      // A new phone asking a phone that already syncs for the key (it travels encrypted to the new phone).
+      match /pairing/{id} {
+        allow read, delete: if owner(uid);
+        allow create: if owner(uid) && request.resource.data.keys().hasOnly(['pub', 'code', 'created'])
+          && request.resource.data.pub is string && request.resource.data.pub.size() < 100;
+        allow update: if owner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reply']);
+      }
     }
 
     // Weekly summary: written by its owner, readable by their active partner.

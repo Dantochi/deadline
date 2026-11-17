@@ -1,60 +1,17 @@
-// Accountability partner: sign in (only needed here), pick a username, add or invite one partner,
+// Accountability partner: sign in (the same account as backup & sync), pick a username, add or invite one partner,
 // and see each other's week. Invites are sent from the phone's own email app or share sheet.
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Share, TextInput, View, type TextInputProps } from 'react-native';
+import { useState } from 'react';
+import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Block, Field, SignIn, type Run } from '../components/Account';
 import { CloseIcon } from '../components/icons';
 import { Btn, StatusDot, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { INSTALL_LINK } from '../lib/firebase';
 import { cleanUsername, friendlyError, mondayOf, otherSide, usePartner, type Progress } from '../lib/partner';
 import { useStore } from '../lib/store';
 import { fmt, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
-
-type Run = (fn: () => Promise<unknown>, ok?: string) => Promise<void>;
-
-function Field(props: TextInputProps & { label: string }) {
-  const p = usePalette();
-  return (
-    <View style={{ gap: S.s1 }}>
-      <Txt variant="small" dim>{props.label}</Txt>
-      <TextInput placeholderTextColor={p.dim} maxFontSizeMultiplier={2} autoCorrect={false} {...props}
-        style={{ minHeight: 52, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 }} />
-    </View>
-  );
-}
-
-function Block({ title, children }: { title?: string; children: ReactNode }) {
-  const p = usePalette();
-  return (
-    <View style={{ gap: S.s3, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
-      {title ? <Txt variant="label" dim>{title}</Txt> : null}
-      {children}
-    </View>
-  );
-}
-
-function SignIn({ run }: { run: Run }) {
-  const P = usePartner();
-  const [isNew, setIsNew] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  return (
-    <Block title={isNew ? 'Create your account' : 'Sign in'}>
-      <Field label="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" />
-      <Field label="Password" value={password} onChangeText={setPassword} placeholder={isNew ? 'At least 6 characters' : ''} secureTextEntry autoCapitalize="none"
-        autoComplete={isNew ? 'new-password' : 'current-password'} textContentType={isNew ? 'newPassword' : 'password'} />
-      <Btn kind="primary" label={isNew ? 'Create account' : 'Sign in'}
-        onPress={() => run(() => (isNew ? P.signUp(email, password) : P.signIn(email, password)))} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1 }}>
-        <Btn kind="ghost" label={isNew ? 'I already have an account' : 'I am new here'} onPress={() => setIsNew(!isNew)} />
-        {!isNew ? <Btn kind="ghost" label="Forgot password" onPress={() => run(() => P.resetPassword(email), 'Check your email for a reset link')} /> : null}
-      </View>
-      <Txt variant="small" dim>Your email is only for signing in. Your partner sees your name and username, never your email.</Txt>
-    </Block>
-  );
-}
+import { F, S, usePalette } from '../theme';
 
 function PickUsername({ run }: { run: Run }) {
   const P = usePartner();

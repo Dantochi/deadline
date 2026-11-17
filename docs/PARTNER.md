@@ -27,3 +27,18 @@ usernames, partnerships and the weekly summary. Nothing else leaves the phone. D
   allowed, task titles). Only the partner can read it. Notes are never shared.
 - Sunday at 18:00 both phones get a local "Sunday check-in" reminder.
 - Settings → Accountability partner also has Sign out and Delete account (removes the account and all shared data).
+
+## Backup & sync (same account)
+
+Settings → **Backup & sync** keeps an end-to-end encrypted copy of tasks, notes, important dates and settings in
+Firestore under `accounts/{uid}`, and keeps signed-in phones in step. Off until switched on.
+
+- The data key is random, made on the first phone and kept in its secure storage (Keychain / Keystore). It is never
+  derived from the password, so a password reset loses nothing.
+- A 24-word recovery phrase unlocks the key on a new phone. A phone that already syncs can also approve a new one;
+  both show the same 6-digit code to compare.
+- The rules in [`firestore.rules`](../firestore.rules) allow only the owner to read or write `accounts/{uid}`, and
+  only encrypted records. Deploy them after any change: `npm run deploy:rules`.
+- Deleting the account (Settings → Accountability partner → Delete account) removes the backup too.
+- Code: `src/lib/e2ee.ts` (encryption), `src/lib/sync.ts` (what changed and how changes merge), `src/lib/cloud.tsx`
+  (Firestore and the screens' actions), `src/app/backup.tsx` (the screen), `src/components/PairPrompt.tsx`.

@@ -7,6 +7,7 @@ import { DateTimeField } from '../components/pickers';
 import { Btn, Chip, StatusDot, Toggle, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { aiAvailable } from '../lib/ai';
+import { statusLine, useSync } from '../lib/cloud';
 import { usePartner } from '../lib/partner';
 import { ChevronIcon, CloseIcon } from '../components/icons';
 import { DEFAULT_STATE, TAB_TITLES, fixTabOrder, useStore } from '../lib/store';
@@ -48,6 +49,7 @@ export default function Settings() {
   const [armReset, setArmReset] = useState(false);
   const [showDigest, setShowDigest] = useState(false);
   const partner = usePartner();
+  const sync = useSync();
   const partnerSub = partner.active ? `${state.partner}. Sunday check-ins are on.`
     : partner.incoming.length ? `${partner.incoming[0].fromName || `@${partner.incoming[0].fromUsername}`} asked to be your partner`
       : partner.outgoing ? `Waiting for @${partner.outgoing.toUsername}`
@@ -85,6 +87,7 @@ export default function Settings() {
               <Btn label="+" accessibilityLabel="Older" style={{ width: 48 }} onPress={() => update(s => ({ ...s, life: Math.min(110, s.life + 1) }))} />
             </View>
           ))}
+          {row('Backup & sync', statusLine(sync.status, sync.last, sync.error), <Btn label={sync.on ? 'Open' : 'Set up'} onPress={() => router.push('/backup')} />)}
           {row('Accountability partner', partnerSub, <Btn label={partner.active || partner.incoming.length ? 'Open' : 'Set up'} onPress={() => router.push('/partner')} />)}
         </>)}
 
@@ -174,7 +177,7 @@ export default function Settings() {
             if (!armReset) return setArmReset(true);
             update(() => DEFAULT_STATE); router.replace('/onboarding');
           }} />)}
-          <Txt variant="small" dim style={{ marginTop: S.s4 }}>Deadline {Constants.expoConfig?.version ?? ''} · test build. Your data stays on this phone.</Txt>
+          <Txt variant="small" dim style={{ marginTop: S.s4 }}>Deadline {Constants.expoConfig?.version ?? ''} · test build. {sync.on ? 'Your data is on this phone and in your encrypted backup.' : 'Your data stays on this phone.'}</Txt>
         </>)}
       </ScrollView>
     </SafeAreaView>
