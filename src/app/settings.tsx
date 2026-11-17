@@ -1,10 +1,10 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Chip, StatusDot, Txt, useToast } from '../components/ui';
+import { Btn, Chip, StatusDot, Toggle, Txt, useToast } from '../components/ui';
 import { askPermission, digestContent, nextDigestAt, nextReminderLabel, permissionStatus } from '../lib/notifications';
 import { aiAvailable } from '../lib/ai';
 import { usePartner } from '../lib/partner';
@@ -23,7 +23,7 @@ function DigestPreview() {
       <Txt variant="small" dim>Arrives {slotLabel(at)}. One notification, most urgent first.</Txt>
       <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise2, gap: S.s1 }}>
         <Txt variant="small" dim><Txt variant="small" style={{ fontFamily: F.uiSemi }}>Deadline</Txt> · {pad(d.getHours())}:{pad(d.getMinutes())}</Txt>
-        <Txt style={{ fontFamily: F.uiBold }}>{c.title}</Txt>
+        <Txt style={{ fontFamily: F.uiSemi }}>{c.title}</Txt>
         {/* Fixed rows (two reserved times, four tasks) so the preview keeps one size whatever it holds. */}
         {[0, 1].map(i => <Txt key={`s${i}`} variant="meta" dim numberOfLines={1} style={{ height: 22 }}>{c.slots[i] ?? ''}</Txt>)}
         {[0, 1, 2, 3].map(i => {
@@ -97,8 +97,8 @@ export default function Settings() {
               ))}
             </View>
           ))}
-          {row('Show life grid', 'Turn off to see only the number', <Switch value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
-          {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Switch value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
+          {row('Show life grid', 'Turn off to see only the number', <Toggle value={state.showGrid} onValueChange={v => update(s => ({ ...s, showGrid: v }))} />)}
+          {state.showGrid ? row('Show weeks already lived', 'Every week since you were born, filled in. The grid scrolls.', <Toggle value={!!state.showLived} onValueChange={v => update(s => ({ ...s, showLived: v }))} />) : null}
           {row('Important dates', `${(state.events ?? []).length || 'No'} dates on your life grid`, <Btn label="Open" onPress={() => router.push('/events')} />)}
           {row('Widgets', 'Your weeks and deadlines on the home screen', <Btn label="Open" onPress={() => router.push('/widgets')} />)}
           {row('Lock screen wallpaper', 'Your weeks and years lived, as an image', <Btn label="Make" onPress={() => router.push('/wallpaper')} />)}
@@ -129,7 +129,7 @@ export default function Settings() {
               );
             })}
           </View>
-          {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Switch value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
+          {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Toggle value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
 
         {group('Wisdom', <>
@@ -142,7 +142,7 @@ export default function Settings() {
           {row('Understand with Gemini', aiAvailable
             ? 'Better at long sentences and spoken lists. Sends what you say or type for a task (not your other data) to Google. Off: everything is read on your phone.'
             : 'Needs Firebase set up in this build', (
-            <Switch disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
+            <Toggle disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
           ))}
         </>)}
 

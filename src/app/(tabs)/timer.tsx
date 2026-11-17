@@ -1,7 +1,6 @@
 // Today: what is left of the day, counting down to midnight in hours, minutes and seconds, in the same dot digits
 // as the life countdown. Under it, the day as 24 boxes (one per hour), lived hours grey, like the life grid.
-// The rotate button turns it into a display piece: the countdown on its side, full screen, beside a pixel
-// hourglass whose sand runs down through the day.
+// The rotate button turns it into a display piece: the countdown on its side, full screen, centred.
 import { useKeepAwake } from 'expo-keep-awake';
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,12 +9,9 @@ import { Animated, Modal, Pressable, View, useWindowDimensions } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RotateIcon } from '../../components/icons';
 import { RollingNumber } from '../../components/RollingNumber';
-import { SandGlass } from '../../components/SandGlass';
 import { Txt, haptic } from '../../components/ui';
 import { hms, secondsLeftToday } from '../../lib/time';
 import { S, T, palettes, usePalette } from '../../theme';
-
-const DAY_SECONDS = 24 * 3600;
 
 /** The countdown as a display piece: drawn on its side (the app itself stays in portrait), always dark, with the
  *  screen kept awake. Tap anywhere, or press back, to close. */
@@ -36,18 +32,14 @@ function LandscapeClock({ left, label, onClose }: { left: number; label: string;
       style={{ flex: 1, backgroundColor: d.bg }}>
       <StatusBar hidden />
       {w && h ? (
-        // A landscape canvas (h wide, w tall) centred on the screen and turned a quarter. The countdown has the
-        // stage; the hourglass is a small detail in the bottom right corner.
+        // A landscape canvas (h wide, w tall) centred on the screen and turned a quarter, the countdown in the middle.
         <View style={{ position: 'absolute', left: (w - h) / 2, top: (h - w) / 2, width: h, height: w, transform: [{ rotate: '90deg' }],
-          justifyContent: 'center', paddingHorizontal: S.s7, paddingBottom: S.s6 }}>
+          justifyContent: 'center', alignItems: 'center', paddingHorizontal: S.s7 }}>
           <RollingNumber value={left} text={hms(left)} fontSize={Math.floor(w * 0.42)} color={d.ink} accessibilityLabel={label} />
           <Txt variant="label" color={d.dim} allowFontScaling={false} style={{ marginTop: S.s3 }}>Left today</Txt>
           <Animated.View pointerEvents="none" style={{ position: 'absolute', top: S.s5, right: S.s7, opacity: hint }}>
             <Txt variant="label" color={d.dim} allowFontScaling={false}>Tap to close</Txt>
           </Animated.View>
-          <View pointerEvents="none" style={{ position: 'absolute', right: S.s7, bottom: S.s5 }}>
-            <SandGlass fraction={1 - left / DAY_SECONDS} height={Math.round(w * 0.18)} p={d} />
-          </View>
         </View>
       ) : null}
     </Pressable>

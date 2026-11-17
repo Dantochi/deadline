@@ -9,7 +9,7 @@ import { Btn, Chip, Txt, haptic } from '../components/ui';
 import { askPermission } from '../lib/notifications';
 import { useStore } from '../lib/store';
 import { addYears, fmt, parseBirth, weekNow, ymd } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, R, S, T, usePalette } from '../theme';
 
 const FOCUS: [string, string][] = [['career', 'Career'], ['health', 'Health'], ['money', 'Money'], ['learning', 'Learning'], ['family', 'Family'], ['creative', 'Creative work'], ['home', 'Home']];
 
@@ -25,7 +25,7 @@ export default function Onboarding() {
   const card = (title: string, body: string, onPress: () => void) => (
     <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); onPress(); }}
       style={({ pressed }) => ({ padding: S.s5, borderRadius: R.lg, borderWidth: 1, borderColor: p.line, backgroundColor: p.raise, gap: S.s1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Txt style={{ fontFamily: F.uiBold, fontSize: 19 }}>{title}</Txt>
+      <Txt style={{ fontFamily: F.uiSemi, fontSize: T.lg, lineHeight: 26 }}>{title}</Txt>
       <Txt variant="meta" dim>{body}</Txt>
     </Pressable>
   );

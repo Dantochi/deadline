@@ -56,12 +56,15 @@ export default function NewTask() {
   });
   // Quick deadlines: 1 week, 1 month or 1 year; once one is picked, − and + step it by that unit.
   const [quick, setQuick] = useState<{ u: Unit; n: number } | null>(ed || params.deadline || params.on ? null : { u: 'month', n: 1 });
-  const pickQuick = (u: Unit, n: number) => { const v = Math.max(1, Math.min(u === 'week' ? 52 : u === 'month' ? 24 : 10, n)); haptic.tick(); setQuick({ u, n: v }); setDeadline(fromNow(u, v)); };
+  const pickQuick = (u: Unit, n: number) => { const v = Math.max(1, Math.min(u === 'week' ? 52 : u === 'month' ? 24 : 10, n)); haptic.tick(); setQuick({ u, n: v }); setDeadline(fromNow(u, v)); setOnceSet(null); };
   // When: always answered. "Repeat" (days of the week) or "Once" (one date). A free time is pre-filled and said
   // to be a suggestion; there is no way to save without a time (Milkman et al. 2011: date *and* time prompts work).
   const [mode, setMode] = useState<'repeat' | 'once'>(ed ? (ed.slot ? 'repeat' : 'once') : onDate ? 'once' : 'repeat');
   const [days, setDays] = useState<number[]>(ed?.slot?.days ?? (onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5]));
-  const [onceDate, setOnceDate] = useState<Date>(ed?.oneOff ? new Date(ed.oneOff) : onDate ?? new Date(Date.now() + DAY));
+  // "Once" has no date box of its own (it repeated the deadline): the session is on the deadline day, unless it
+  // came from elsewhere (an existing task, a tapped hour, or a spoken day). Changing the deadline moves it too.
+  const [onceSet, setOnceSet] = useState<Date | null>(ed?.oneOff ? new Date(ed.oneOff) : onDate);
+  const onceDate = onceSet ?? deadline;
   const [minutes, setMinutes] = useState(ed?.minutes ?? DEFAULT_MINUTES);
   const edTime = ed ? (ed.slot?.time ?? (ed.oneOff ? `${pad(new Date(ed.oneOff).getHours())}:${pad(new Date(ed.oneOff).getMinutes())}` : undefined)) : undefined;
   const [suggested, setSuggested] = useState(() => edTime ?? params.time ?? suggestTime(state, onDate ? [onDate.getDay()] : [1, 2, 3, 4, 5], DEFAULT_MINUTES));
@@ -88,7 +91,7 @@ export default function NewTask() {
     const wd = r.days ?? (r.once ? [r.once.getDay()] : base.days);
     setMode(r.days ? 'repeat' : r.once ? 'once' : base.mode);
     setDays(r.days ?? base.days);
-    if (r.once) { setOnceDate(r.once); if (r.once > dl) { setDeadline(r.once); setQuick(null); } }
+    if (r.once) { setOnceSet(r.once); if (r.once > dl) { setDeadline(r.once); setQuick(null); } }
     let len = r.minutes ?? base.minutes;
     let startHM = r.time;
     if (!startHM && (r.days || r.once)) startHM = suggestTime(state, wd, len);
@@ -211,7 +214,7 @@ export default function NewTask() {
                 </View>
               ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
             </View>
-            <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); }} />
+            <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); setOnceSet(null); }} />
           </View>
 
           <View style={{ gap: S.s3 }}>
@@ -229,9 +232,7 @@ export default function NewTask() {
                   </Pressable>
                 ))}
               </View>
-            ) : (
-              <DateTimeField label="Day" mode="date" value={onceDate} minimumDate={new Date()} maximumDate={deadline} onChange={setOnceDate} />
-            )}
+            ) : null}
             {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The bottom button opens
                 the time screen, which shows the length and any clash. */}
             {DAY_PREVIEW ? <>

@@ -1,16 +1,16 @@
 // Important dates: add, edit and remove events shown on the life grid. Opened from Settings, or from a tapped
 // week on the Life screen (?week=N fills in that week's date).
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon, PlusIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
-import { Btn, Txt, haptic, useToast } from '../components/ui';
+import { Btn, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { EVENT_COLORS, type LifeEvent } from '../lib/events';
 import { uid, useStore } from '../lib/store';
 import { addYears, ageYears, fdate, parseBirth, weekStart, ymd } from '../lib/time';
-import { F, S, usePalette } from '../theme';
+import { F, R, S, T, usePalette } from '../theme';
 
 const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 
@@ -34,60 +34,68 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
     onDone();
   };
 
+  // Settings-style rows: what it is on the left, the control on the right, 56 tall, hairline between them.
+  const row = (label: string, control: ReactNode, sub?: string, last = false) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 56, paddingVertical: S.s2, borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth, borderBottomColor: p.line }}>
+      <View style={{ flex: 1 }}>
+        <Txt>{label}</Txt>
+        {sub ? <Txt variant="small" dim>{sub}</Txt> : null}
+      </View>
+      {control}
+    </View>
+  );
+  const sw = (value: boolean, onChange: (v: boolean) => void, label: string) => (
+    <Toggle value={value} onValueChange={onChange} accessibilityLabel={label} />
+  );
+  const dateField = (label: string, value: Date, onChange: (d: Date) => void, min?: Date) => (
+    <View style={{ width: 168 }}><DateTimeField label={label} mode="date" value={value} minimumDate={min} maximumDate={last} onChange={onChange} /></View>
+  );
+
   return (
-    // Part of the page: no panel of its own, only hairlines between the fields.
-    <View style={{ gap: S.s4, paddingBottom: S.s4, borderBottomWidth: 1, borderBottomColor: p.line }}>
-      <TextInput value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated, Met Ada, Mum's birthday"
-        placeholderTextColor={p.dim} maxLength={60} maxFontSizeMultiplier={2} autoFocus={!exists}
-        style={{ fontFamily: F.uiSemi, fontSize: 21, color: p.ink, borderBottomWidth: 1, borderBottomColor: p.line, paddingVertical: S.s3 }} />
-
-      <View style={{ gap: S.s1 }}>
-        <Txt variant="small" dim>{ev.end ? 'From' : 'Date'}</Txt>
-        <DateTimeField label="Date" mode="date" value={at(ev.date)} minimumDate={ev.yearly ? undefined : birth} maximumDate={last}
-          onChange={d => setEv({ ...ev, date: ymd(d), end: ev.end && ev.end < ymd(d) ? ymd(d) : ev.end })} />
-      </View>
-      {ev.end ? (
-        <View style={{ gap: S.s1 }}>
-          <Txt variant="small" dim>Until</Txt>
-          <DateTimeField label="End date" mode="date" value={at(ev.end)} minimumDate={at(ev.date)} maximumDate={last}
-            onChange={d => setEv({ ...ev, end: ymd(d) })} />
-        </View>
-      ) : null}
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
-        <Txt style={{ flex: 1 }}>Lasts longer than a day</Txt>
-        <Switch value={!!ev.end} onValueChange={v => setEv({ ...ev, end: v ? ymd(new Date(+at(ev.date) + 30 * 864e5)) : null })} />
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
-        <View style={{ flex: 1 }}><Txt>Every year</Txt><Txt variant="small" dim>Birthdays and anniversaries, on every row</Txt></View>
-        <Switch value={!!ev.yearly} onValueChange={yearly => setEv({ ...ev, yearly })} />
-      </View>
-
+    // One raised panel, set apart from the list: what the date is called (largest), when it is, its colour, then
+    // a single main action. Groups are 32 apart; things inside a group sit close together.
+    <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise, borderWidth: 1, borderColor: p.line, gap: S.s6 }}>
       <View style={{ gap: S.s2 }}>
-        <Txt variant="small" dim>Colour</Txt>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+        <Txt variant="label" dim>{exists ? 'Edit date' : 'New date'}</Txt>
+        <TextInput value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated"
+          placeholderTextColor={p.dim} maxLength={60} maxFontSizeMultiplier={2} autoFocus={!exists} accessibilityLabel="Name"
+          style={{ fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, color: p.ink, paddingVertical: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }} />
+      </View>
+
+      <View>
+        <Txt variant="label" dim style={{ marginBottom: S.s1 }}>When</Txt>
+        {row(ev.end ? 'From' : 'Date', dateField('Date', at(ev.date), d => setEv({ ...ev, date: ymd(d), end: ev.end && ev.end < ymd(d) ? ymd(d) : ev.end }), ev.yearly ? undefined : birth))}
+        {row('Lasts longer than a day', sw(!!ev.end, v => setEv({ ...ev, end: v ? ymd(new Date(+at(ev.date) + 30 * 864e5)) : null }), 'Lasts longer than a day'))}
+        {ev.end ? row('Until', dateField('End date', at(ev.end), d => setEv({ ...ev, end: ymd(d) }), at(ev.date))) : null}
+        {row('Every year', sw(!!ev.yearly, yearly => setEv({ ...ev, yearly }), 'Every year'), 'Birthdays and anniversaries', true)}
+      </View>
+
+      <View>
+        <Txt variant="label" dim style={{ marginBottom: S.s2 }}>Colour</Txt>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s1, marginLeft: -6 }}>
           {EVENT_COLORS.map(c => {
             const on = ev.color === c.hex;
             return (
               <Pressable key={c.hex} accessibilityRole="radio" accessibilityLabel={c.name} accessibilityState={{ selected: on }}
                 onPress={() => { haptic.tick(); setEv({ ...ev, color: c.hex }); }}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? p.ink : 'transparent' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.hex }} />
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.hex }} />
               </Pressable>
             );
           })}
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: S.s2 }}>
-        <Btn kind="primary" style={{ flex: 1 }} label="Save" onPress={save} />
+      {/* One main action; the way out (or delete, in red) is quieter, under it. */}
+      <View style={{ gap: S.s1 }}>
+        <Btn kind="primary" label={exists ? 'Save changes' : 'Add to my life grid'} onPress={save} />
         {exists ? (
-          <Btn style={{ flex: 1 }} label={armDelete ? 'Tap again' : 'Delete'} onPress={() => {
+          <Btn kind="ghost" label={armDelete ? 'Tap again to delete' : 'Delete this date'} style={{ minHeight: 44 }} onPress={() => {
             if (!armDelete) { setArmDelete(true); haptic.warn(); return; }
             update(s => ({ ...s, events: (s.events ?? []).filter(e => e.id !== ev.id) }));
             onDone();
           }} />
-        ) : <Btn style={{ flex: 1 }} label="Cancel" onPress={onDone} />}
+        ) : <Btn kind="ghost" label="Cancel" style={{ minHeight: 44 }} onPress={onDone} />}
       </View>
     </View>
   );
@@ -136,7 +144,7 @@ export default function Events() {
         {!state.showLived && past.length ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 56 }}>
             <Txt variant="meta" style={{ flex: 1 }}>Past dates show on the grid when lived weeks are shown.</Txt>
-            <Switch value={false} onValueChange={v => update(s => ({ ...s, showLived: v }))} />
+            <Toggle value={false} onValueChange={v => update(s => ({ ...s, showLived: v }))} />
           </View>
         ) : null}
 

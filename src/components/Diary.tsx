@@ -11,7 +11,7 @@ import { ChevronIcon } from './icons';
 import { Txt, haptic, useToast } from './ui';
 import { uid, useStore, type Note, type Task } from '../lib/store';
 import { pad } from '../lib/time';
-import { F, R, S, usePalette } from '../theme';
+import { F, R, S, T, usePalette } from '../theme';
 
 const PinIcon = ({ color, on }: { color: string; on?: boolean }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill={on ? color : 'none'} stroke={color} strokeWidth={1.9} strokeLinejoin="round" strokeLinecap="round">
@@ -70,7 +70,7 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
       onPress={() => { haptic.tick(); setOpen(n); }} onLongPress={() => { haptic.ok(); setMenuFor(n); }} delayLongPress={380}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Glass radius={R.sm - 2} style={{ padding: S.s3, gap: S.s1 }}>
-        {n.title ? <Txt numberOfLines={2} style={{ fontFamily: F.uiBold, fontSize: 16, lineHeight: 22 }}>{n.title}</Txt> : null}
+        {n.title ? <Txt numberOfLines={2} style={{ fontFamily: F.uiSemi, fontSize: T.base, lineHeight: 24 }}>{n.title}</Txt> : null}
         {n.text ? <Txt variant="meta" numberOfLines={10}>{n.text}</Txt> : null}
         <Txt variant="small" dim style={{ marginTop: S.s1 }}>{stamp(n.at)}</Txt>
       </Glass>
@@ -191,7 +191,7 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
           </View>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: S.page }}>
             <TextInput value={title} onChangeText={v => { setTitle(v); later({ title: v, text, pinned }); }} placeholder="Title" placeholderTextColor={p.dim}
-              maxFontSizeMultiplier={2} style={{ color: p.ink, fontFamily: F.uiBold, fontSize: 22, lineHeight: 28, paddingVertical: S.s2 }} />
+              maxFontSizeMultiplier={2} style={{ color: p.ink, fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, paddingVertical: S.s2 }} />
             <TextInput value={text} onChangeText={v => { setText(v); later({ title, text: v, pinned }); }} placeholder="Note" placeholderTextColor={p.dim}
               multiline autoFocus={note === 'new'} textAlignVertical="top" maxFontSizeMultiplier={2}
               style={{ flex: 1, minHeight: 240, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24, paddingVertical: S.s2 }} />

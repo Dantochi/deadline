@@ -16,7 +16,7 @@ const dark = {
 };
 const light: typeof dark = {
   bg: '#F3F4F5', raise: '#FFFFFF', raise2: '#E8EAEC', line: '#DADDE1',
-  ink: '#0F1113', dim: '#6A6F77', lived: '#A9AEB6', ahead: '#E2E4E7',
+  ink: '#0F1113', dim: '#62676F', lived: '#A9AEB6', ahead: '#E2E4E7',
   red: '#9F1D12', amber: '#A97800', green: '#0E8A7A',
   redInk: '#9F1D12', amberInk: '#845600', greenInk: '#0A6E61',
   scrim: 'rgba(15,17,19,0.38)',

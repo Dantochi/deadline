@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { Chip, Txt, haptic } from './ui';
 import { useReduceMotion } from './Motion';
-import { F, S, usePalette } from '../theme';
+import { F, S, T, usePalette } from '../theme';
 
 export const MicIcon = ({ color, size = 22 }: { color: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
@@ -132,7 +132,7 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
 
         <Pressable accessibilityRole="button" disabled={!text.trim()} onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }}
           style={{ marginTop: S.s5, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: p.ink, opacity: text.trim() ? 1 : 0.4 }}>
-          <Txt style={{ fontFamily: F.uiBold, fontSize: 19 }} color={p.bg}>Fill in the task</Txt>
+          <Txt style={{ fontFamily: F.uiBold, fontSize: T.md, lineHeight: 20 }} color={p.bg}>Fill in the task</Txt>
         </Pressable>
       </SafeAreaView>
     </Modal>

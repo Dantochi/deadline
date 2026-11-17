@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Animated, Pressable, StyleSheet, Switch, Text, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { BTN, F, R, S, T, statusColor, usePalette, type Status } from '../theme';
 
 export const haptic = {
@@ -57,6 +57,15 @@ export function Btn({ label, icon, kind = 'pill', style, onPress, ...rest }: Btn
       {icon}
       <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
+  );
+}
+
+/** The platform switch in the app's colours: ink when on, a quiet grey track when off. */
+export function Toggle({ value, onValueChange, disabled, accessibilityLabel }: { value: boolean; onValueChange: (v: boolean) => void; disabled?: boolean; accessibilityLabel?: string }) {
+  const p = usePalette();
+  return (
+    <Switch value={value} disabled={disabled} accessibilityLabel={accessibilityLabel} onValueChange={v => { haptic.tick(); onValueChange(v); }}
+      trackColor={{ false: p.raise2, true: p.ink }} thumbColor={value ? p.bg : p.dim} ios_backgroundColor={p.raise2} style={disabled ? { opacity: 0.4 } : undefined} />
   );
 }
 

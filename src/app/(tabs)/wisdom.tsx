@@ -99,13 +99,13 @@ export default function Wisdom() {
         {q ? (
           <View {...swipe.panHandlers} style={{ marginTop: S.s5, paddingTop: S.s6, paddingHorizontal: S.s5, paddingBottom: S.s2, backgroundColor: p.raise, borderRadius: R.xl, gap: 18 }}>
             <Txt aria-hidden style={{ fontFamily: F.dot, fontSize: 64, lineHeight: 40, height: 34, color: p.dim }}>“</Txt>
-            <Animated.View style={{ opacity: fade, gap: 18 }} accessibilityLiveRegion="polite">
+            <Animated.View style={{ opacity: fade, gap: S.s4 }} accessibilityLiveRegion="polite">
               {/* Fixed size: five lines for every quote (long ones scale down to fit), so the card never changes height. */}
               <View style={{ height: 32 * 5, justifyContent: 'center' }}>
                 <Txt numberOfLines={5} adjustsFontSizeToFit minimumFontScale={0.65} style={{ fontFamily: F.uiMedium, fontSize: 24, lineHeight: 32 }}>{q.q}</Txt>
               </View>
               <View style={{ height: 44, justifyContent: 'center' }}>
-                <Txt numberOfLines={1} style={{ fontFamily: F.uiBold }}>{q.who}</Txt>
+                <Txt numberOfLines={1} style={{ fontFamily: F.uiSemi }}>{q.who}</Txt>
                 <Txt numberOfLines={1} variant="small" dim>{q.src}</Txt>
               </View>
             </Animated.View>

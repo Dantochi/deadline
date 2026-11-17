@@ -16,12 +16,6 @@ import { DAY, boxesAt, endOfDay, fdate, fshort, info, lastSlot, leftShort, pad, 
 import { F, S, statusColor, usePalette } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 
-const NotesIcon = ({ color }: { color: string }) => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round"><Path d="M5 4h14v16H5zM8.5 9h7M8.5 13h7M8.5 17h4" /></Svg>
-);
-const EditIcon = ({ color }: { color: string }) => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><Path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" /></Svg>
-);
 const TrashIcon = ({ color }: { color: string }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><Path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" /></Svg>
 );
@@ -34,7 +28,6 @@ export default function TaskScreen() {
   const del = useDeleteTask();
   const t = state.tasks.find(x => x.id === id);
   const [rescheduling, setRescheduling] = useState(false);
-  const [write, setWrite] = useState(0); // bumped by the Notes button: open a new diary note
 
   if (!t) {
     return (
@@ -98,6 +91,10 @@ export default function TaskScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
       <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page }}>
         <View style={{ flex: 1 }} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Edit task" hitSlop={8} onPress={() => { haptic.tick(); router.push({ pathname: '/new-task', params: { edit: t.id } }); }}
+          style={{ height: 48, justifyContent: 'center', paddingHorizontal: S.s3 }}>
+          <Txt style={{ fontFamily: F.uiSemi }}>Edit</Txt>
+        </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
           <CloseIcon color={p.dim} />
         </Pressable>
@@ -153,7 +150,7 @@ export default function TaskScreen() {
         {/* Breaking work into small parts is one of the best-supported ways to start (and to plan time realistically). */}
         <Subtasks t={t} />
 
-        <Diary t={t} writeSignal={write} />
+        <Diary t={t} />
       </ScrollView>
 
       {/* Fixed action bar. */}
@@ -168,8 +165,6 @@ export default function TaskScreen() {
             toast(`Welcome back. Deadline moved to ${fdate(t.deadline + away)}.`);
           })
           : act('pause', 'Pause', <PauseIcon color={p.ink} />, () => { updateTask(t.id, x => ({ ...x, pausedAt: Date.now() })); toast('Paused. The clock is stopped.'); })) : null}
-        {act('notes', 'Note', <NotesIcon color={p.ink} />, () => setWrite(w => w + 1))}
-        {act('edit', 'Edit', <EditIcon color={p.ink} />, () => router.push({ pathname: '/new-task', params: { edit: t.id } }))}
         {act('delete', 'Delete', <TrashIcon color={p.redInk} />, () => { router.back(); del(t); }, true)}
       </View>
 

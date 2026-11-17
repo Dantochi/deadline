@@ -21,7 +21,7 @@ export function ReviewCard() {
   return (
     <View style={{ marginTop: S.s5, flexDirection: 'row', alignItems: 'center', borderRadius: R.lg, backgroundColor: p.raise }}>
       <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push('/review'); }} style={{ flex: 1, padding: S.s4, gap: 2 }}>
-        <Txt style={{ fontFamily: F.uiBold }}>Your week is ready</Txt>
+        <Txt style={{ fontFamily: F.uiSemi }}>Your week is ready</Txt>
         <Txt variant="meta" dim>{r.finished.length} finished · {r.needYou.length} {r.needYou.length === 1 ? 'needs' : 'need'} you · {r.sessions} sessions</Txt>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => update(s => ({ ...s, reviewSeen: weekKey() }))}

@@ -15,7 +15,7 @@ import { Txt, haptic } from '../../components/ui';
 import { MONTHS, fitYear, yearCells } from '../../lib/calendar';
 import { useStore } from '../../lib/store';
 import { addYears, parseBirth, ymd } from '../../lib/time';
-import { F, R, S, statusColor, usePalette } from '../../theme';
+import { F, R, S, T, statusColor, usePalette } from '../../theme';
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 export default function Year() {
@@ -97,9 +97,9 @@ export default function Year() {
     return (
       <Pressable key={m} accessibilityRole="button" accessibilityLabel={`${MONTHS[m]} ${year}`} accessibilityState={{ selected: on }}
         onPress={() => focus(year, m)} hitSlop={4} style={{ width: mw }}>
-        <Txt variant="label" allowFontScaling={false} style={{ fontSize: 11, letterSpacing: 1, marginBottom: 3 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
+        <Txt variant="label" allowFontScaling={false} style={{ fontSize: T.xs, letterSpacing: 1, marginBottom: S.s1 }} color={on ? p.ink : p.dim}>{MONTHS[m].slice(0, 3)}</Txt>
         <Svg width={mw} height={6 * v}>{items}</Svg>
-        <View style={{ height: 2, marginTop: 3, backgroundColor: on ? p.ink : 'transparent' }} />
+        <View style={{ height: 2, marginTop: S.s1, backgroundColor: on ? p.ink : 'transparent' }} />
       </Pressable>
     );
   };
@@ -121,12 +121,12 @@ export default function Year() {
       <ScrollView style={{ flex: 1 }} onLayout={e => { const h = Math.round(e.nativeEvent.layout.height); if (h !== bodyH) setBodyH(h); }}
         scrollEnabled={fit.scroll} bounces={fit.scroll}
         contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4 + fit.extra / 2, paddingBottom: S.s4 }}>
-        {/* Month and year, fixed height; the year in the app's dot numerals. */}
+        {/* Month and year, fixed height; the year in the same font as the month, quieter. */}
         <View style={{ height: 64, flexDirection: 'row', alignItems: 'center' }}>
           {arrow(-1)}
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Txt variant="h2" numberOfLines={1}>{MONTHS[month]}</Txt>
-            <Txt allowFontScaling={false} style={{ fontFamily: F.dot, fontSize: 22, lineHeight: 26 }} color={p.dim}>{year}</Txt>
+            <Txt variant="h2" numberOfLines={1} allowFontScaling={false} color={p.dim} style={{ fontVariant: ['tabular-nums'] }}>{year}</Txt>
           </View>
           {arrow(1)}
         </View>

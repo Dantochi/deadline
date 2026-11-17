@@ -2,10 +2,10 @@
 // and see each other's week. Invites are sent from the phone's own email app or share sheet.
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Share, Switch, TextInput, View, type TextInputProps } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, TextInput, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from '../components/icons';
-import { Btn, StatusDot, Txt, haptic, useToast } from '../components/ui';
+import { Btn, StatusDot, Toggle, Txt, haptic, useToast } from '../components/ui';
 import { INSTALL_LINK } from '../lib/firebase';
 import { cleanUsername, friendlyError, mondayOf, otherSide, usePartner, type Progress } from '../lib/partner';
 import { useStore } from '../lib/store';
@@ -133,7 +133,7 @@ function Connected({ run }: { run: Run }) {
               <Txt style={{ fontFamily: F.uiSemi }}>Task titles</Txt>
               <Txt variant="small" dim>Off: {name} only sees counts. Notes are never shared.</Txt>
             </View>
-            <Switch value={state.shareTitles !== false} onValueChange={v => update(s => ({ ...s, shareTitles: v }))} />
+            <Toggle value={state.shareTitles !== false} onValueChange={v => update(s => ({ ...s, shareTitles: v }))} />
           </View>
           <Btn label={armStop ? 'Tap again to stop' : 'Stop being partners'} onPress={() => {
             if (!armStop) { setArmStop(true); haptic.warn(); return; }
