@@ -9,6 +9,8 @@ import Svg, { Path } from 'react-native-svg';
 import { Glass } from './Glass';
 import { ChevronIcon } from './icons';
 import { Txt, haptic, useToast } from './ui';
+import { DictationButton } from './DictationButton';
+import { insertDictation } from '../lib/dictate';
 import { uid, useStore, type Note, type Task } from '../lib/store';
 import { pad } from '../lib/time';
 import { F, R, S, T, usePalette } from '../theme';
@@ -163,6 +165,7 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
   };
   const later = (v: { title: string; text: string; pinned: boolean }) => { clearTimeout(timer.current); timer.current = setTimeout(() => save(v), 500); };
   const close = () => { save({ title, text, pinned }); onClose(); };
+  const sel = useRef<{ start: number; end: number } | null>(null);
   const e = new Date(edited);
 
   return (
@@ -193,11 +196,17 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
             <TextInput value={title} onChangeText={v => { setTitle(v); later({ title: v, text, pinned }); }} placeholder="Title" placeholderTextColor={p.dim}
               maxFontSizeMultiplier={2} style={{ color: p.ink, fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, paddingVertical: S.s2 }} />
             <TextInput value={text} onChangeText={v => { setText(v); later({ title, text: v, pinned }); }} placeholder="Note" placeholderTextColor={p.dim}
+              onSelectionChange={ev => { sel.current = ev.nativeEvent.selection; }}
               multiline autoFocus={note === 'new'} textAlignVertical="top" maxFontSizeMultiplier={2}
               style={{ flex: 1, minHeight: 240, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24, paddingVertical: S.s2 }} />
           </ScrollView>
-          <View style={{ height: 44, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: p.line }}>
-            <Txt variant="small" dim>Edited {pad(e.getHours())}:{pad(e.getMinutes())} · {t.title}</Txt>
+          {/* Footer: when it was last edited, and dictation into the note (at the cursor, or at the end). */}
+          <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', gap: S.s3, paddingHorizontal: S.page, borderTopWidth: 1, borderTopColor: p.line }}>
+            <Txt variant="small" dim numberOfLines={1} style={{ flex: 1 }}>Edited {pad(e.getHours())}:{pad(e.getMinutes())} · {t.title}</Txt>
+            <DictationButton onTranscript={add => {
+              const r = insertDictation(text, add, sel.current ?? undefined);
+              setText(r.value); sel.current = { start: r.cursor, end: r.cursor }; later({ title, text: r.value, pinned });
+            }} />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
