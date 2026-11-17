@@ -1,9 +1,10 @@
 // The life grid: always weeks, 52 per row, one row per year. Rows already lived are removed unless
 // "Show weeks already lived" is on; then the grid starts at birth and scrolls. The box size comes from
 // the width only, so boxes never resize when units change or lived weeks are shown.
-import { useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Defs, FeGaussianBlur, Filter, G, Path, Rect } from 'react-native-svg';
+import { useReduceMotion } from './Motion';
 import { eventColorMap } from '../lib/events';
 import { activeTasks, useStore, type State } from '../lib/store';
 import { DAY, addYears, info, parseBirth, weekNow } from '../lib/time';
@@ -13,6 +14,31 @@ import { statusColor, usePalette, type Palette } from '../theme';
 export const GAP = 1.5;
 const WEEK = 7 * DAY;
 export const DECADE = 6;
+
+// Entrance: the boxes start soft and see-through and come into focus together (blur 6 → 0, opacity 0 → 1).
+const INTRO_MS = 520, INTRO_BLUR = 6, FRAME_MS = 32;
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+/** 0 → 1 over INTRO_MS once `go` is true (once per mount); 1 straight away with Reduce motion or when `skip`. The
+ *  blur is a property of the drawing, so it is stepped about 30 times a second rather than every frame: only the
+ *  filter changes, never the paths, so each step is cheap. */
+function useIntro(go: boolean, skip: boolean) {
+  const reduce = useReduceMotion();
+  const [t, setT] = useState(skip ? 1 : 0);
+  useEffect(() => {
+    if (!go || skip || reduce) return;
+    let raf = 0, last = 0;
+    const start = Date.now();
+    const step = () => {
+      const now = Date.now(), k = Math.min(1, (now - start) / INTRO_MS);
+      if (k === 1 || now - last >= FRAME_MS) { last = now; setT(easeOut(k)); }
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [go, skip, reduce]);
+  return reduce || skip ? 1 : t;
+}
 
 export function useGridGeometry(width: number, state: State, lived = false) {
   return useMemo(() => {
@@ -37,6 +63,8 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const g = useGridGeometry(width, state, lived);
   const tasks = state.tasks, evs = state.events;
   const height = Math.min(g.h, maxHeight);
+  const intro = useIntro(width > 0, !!frozen); // the wallpaper image is drawn sharp
+  const blur = Math.round(INTRO_BLUR * (1 - intro) * 10) / 10;
 
   // One <Path> per colour (each made of many rectangles) keeps the native view count tiny. Recomputed only when
   // something drawn changes (tasks, dates, palette, size, or a new day), not on every state change; the selected
@@ -111,8 +139,18 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const grid = (
     <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
       {width ? (
-        <Svg width={width} height={g.h}>
-          {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
+        <Svg width={width} height={g.h} opacity={intro}>
+          {blur > 0 ? (
+            <Defs>
+              <Filter id="lifeIntro" x="-5%" y="-5%" width="110%" height="110%">
+                <FeGaussianBlur stdDeviation={blur} />
+              </Filter>
+            </Defs>
+          ) : null}
+          {/* The filter is only attached while it is doing something, so the settled grid draws as before. */}
+          <G filter={blur > 0 ? 'url(#lifeIntro)' : undefined}>
+            {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
+          </G>
           {selRect ? <Rect x={selRect.x} y={selRect.y} width={selRect.s} height={selRect.s} fill={p.dim} /> : null}
         </Svg>
       ) : null}
