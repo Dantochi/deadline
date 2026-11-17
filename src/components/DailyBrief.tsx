@@ -12,6 +12,10 @@ import { useStore, type Task } from '../lib/store';
 import { hms, info, leftShort, secondsLeftToday, ymd } from '../lib/time';
 import { S, T, statusColor, usePalette } from '../theme';
 
+// Lets other screens react when the summary goes away (the Life tab replays its entrance then).
+const closedListeners = new Set<() => void>();
+export function onBriefClosed(fn: () => void) { closedListeners.add(fn); return () => { closedListeners.delete(fn); }; }
+
 const hm = (ms: number) => { const d = new Date(ms); return toHM(d.getHours() * 60 + d.getMinutes()); };
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -46,7 +50,7 @@ export function DailyBrief() {
   const brief = useMemo(() => dailyBrief(state, Date.now()), [state.tasks, state.events, day, open]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!open) return null;
 
-  const close = () => setOpen(false);
+  const close = () => { setOpen(false); closedListeners.forEach(f => f()); };
   const go = (t: Task) => { haptic.tick(); close(); router.push({ pathname: '/task', params: { id: t.id } }); };
   const left = secondsLeftToday(now);
   const hrs = Math.floor(left / 3600), mins = Math.floor((left % 3600) / 60);

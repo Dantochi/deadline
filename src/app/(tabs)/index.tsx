@@ -1,7 +1,8 @@
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View, useWindowDimensions } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppState, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { onBriefClosed } from '../../components/DailyBrief';
 import { SlidersIcon } from '../../components/icons';
 import { LifeGrid } from '../../components/LifeGrid';
 import { Enter } from '../../components/Motion';
@@ -23,6 +24,18 @@ export default function Life() {
   const { height } = useWindowDimensions();
   const [unit, setUnit] = useState<Unit>('weeks');
   const [sel, setSel] = useState<number | null>(null);
+  // The grid's blur-fade entrance plays on every visit: when this tab is opened, when the daily summary closes,
+  // and when the app comes back to the front while Life is showing.
+  const [play, setPlay] = useState(0);
+  const [focused, setFocused] = useState(false);
+  const replay = useCallback(() => setPlay(n => n + 1), []);
+  useFocusEffect(useCallback(() => { setFocused(true); replay(); return () => setFocused(false); }, [replay]));
+  useEffect(() => onBriefClosed(replay), [replay]);
+  useEffect(() => {
+    if (!focused) return;
+    const sub = AppState.addEventListener('change', a => { if (a === 'active') replay(); });
+    return () => sub.remove();
+  }, [focused, replay]);
   const birth = parseBirth(state.birth);
   const wNow = weekNow(birth, state.life);
 
@@ -62,7 +75,7 @@ export default function Life() {
         <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />
         <GlassSegment<Short> options={['W', 'M', 'Y']} value={(unit[0].toUpperCase() as Short)} onChange={k => setUnit(SHORT[k])}
           labels={{ W: 'Weeks', M: 'Months', Y: 'Years' }} style={{ width: 150, marginTop: S.s2, marginBottom: S.s5 }} />
-        {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} /> : null}
+        {state.showGrid ? <LifeGrid state={state} maxHeight={height * 0.5} selected={sel} onSelect={setSel} play={play} /> : null}
       </View>
 
       <View style={{ height: 52, justifyContent: 'center', marginTop: S.s3 }} accessibilityLiveRegion="polite">

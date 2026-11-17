@@ -2,9 +2,9 @@
 // "Show weeks already lived" is on; then the grid starts at birth and scrolls. The box size comes from
 // the width only, so boxes never resize when units change or lived weeks are shown.
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Animated, PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Svg, { Defs, FeGaussianBlur, Filter, G, Path, Rect } from 'react-native-svg';
-import { useReduceMotion } from './Motion';
+import { EASE_OUT, useReduceMotion } from './Motion';
 import { eventColorMap } from '../lib/events';
 import { activeTasks, useStore, type State } from '../lib/store';
 import { DAY, addYears, info, parseBirth, weekNow } from '../lib/time';
@@ -15,29 +15,33 @@ export const GAP = 1.5;
 const WEEK = 7 * DAY;
 export const DECADE = 6;
 
-// Entrance: the boxes start soft and see-through and come into focus together (blur 6 → 0, opacity 0 → 1).
-const INTRO_MS = 520, INTRO_BLUR = 6, FRAME_MS = 32;
+// Entrance: the boxes start soft and see-through and come into focus together (blur 8 → 0, opacity 0 → 1).
+const INTRO_MS = 700, INTRO_BLUR = 8, FRAME_MS = 32;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** 0 → 1 over INTRO_MS once `go` is true (once per mount); 1 straight away with Reduce motion or when `skip`. The
- *  blur is a property of the drawing, so it is stepped about 30 times a second rather than every frame: only the
- *  filter changes, never the paths, so each step is cheap. */
-function useIntro(go: boolean, skip: boolean) {
+/** Plays the entrance whenever `play` changes (and once the grid has a size). The fade runs on the native thread;
+ *  the blur is a property of the drawing, so it is stepped about 30 times a second: only the filter changes, never
+ *  the paths, so each step is cheap. Nothing plays with Reduce motion, or when `skip` (the wallpaper image). */
+function useIntro(ready: boolean, play: number, skip: boolean) {
   const reduce = useReduceMotion();
-  const [t, setT] = useState(skip ? 1 : 0);
+  const [blur, setBlur] = useState(0);
+  const [fade] = useState(() => new Animated.Value(1));
   useEffect(() => {
-    if (!go || skip || reduce) return;
+    if (!ready || skip || reduce) return;
+    fade.setValue(0);
+    const a = Animated.timing(fade, { toValue: 1, duration: INTRO_MS, easing: EASE_OUT, useNativeDriver: true });
+    a.start();
     let raf = 0, last = 0;
     const start = Date.now();
     const step = () => {
       const now = Date.now(), k = Math.min(1, (now - start) / INTRO_MS);
-      if (k === 1 || now - last >= FRAME_MS) { last = now; setT(easeOut(k)); }
+      if (k === 1 || now - last >= FRAME_MS) { last = now; setBlur(Math.round(INTRO_BLUR * (1 - easeOut(k)) * 10) / 10); }
       if (k < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [go, skip, reduce]);
-  return reduce || skip ? 1 : t;
+    return () => { a.stop(); fade.setValue(1); cancelAnimationFrame(raf); setBlur(0); };
+  }, [ready, play, skip, reduce, fade]);
+  return { blur: reduce || skip ? 0 : blur, fade };
 }
 
 export function useGridGeometry(width: number, state: State, lived = false) {
@@ -51,10 +55,11 @@ export function useGridGeometry(width: number, state: State, lived = false) {
   }, [width, state.birth, state.life, lived]);
 }
 
-export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived: livedProp, frozen }: {
+export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived: livedProp, frozen, play = 0 }: {
   state: State; maxHeight: number; onSelect?: (week: number) => void; selected?: number | null; palette?: Palette;
   /** Overrides the "show weeks already lived" setting (the wallpaper chooses its own). */ lived?: boolean;
   /** Show the same window the scroll view opens on, without scrolling (for the wallpaper image). */ frozen?: boolean;
+  /** Change this to play the blur-fade entrance again (e.g. each time the Life tab is visited). */ play?: number;
 }) {
   const system = usePalette(), p = palette ?? system;
   const [width, setWidth] = useState(0);
@@ -63,8 +68,7 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const g = useGridGeometry(width, state, lived);
   const tasks = state.tasks, evs = state.events;
   const height = Math.min(g.h, maxHeight);
-  const intro = useIntro(width > 0, !!frozen); // the wallpaper image is drawn sharp
-  const blur = Math.round(INTRO_BLUR * (1 - intro) * 10) / 10;
+  const { blur, fade } = useIntro(width > 0, play, !!frozen); // the wallpaper image is drawn sharp
 
   // One <Path> per colour (each made of many rectangles) keeps the native view count tiny. Recomputed only when
   // something drawn changes (tasks, dates, palette, size, or a new day), not on every state change; the selected
@@ -139,7 +143,8 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const grid = (
     <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
       {width ? (
-        <Svg width={width} height={g.h} opacity={intro}>
+        <Animated.View style={{ opacity: fade }}>
+        <Svg width={width} height={g.h}>
           {blur > 0 ? (
             <Defs>
               <Filter id="lifeIntro" x="-5%" y="-5%" width="110%" height="110%">
@@ -153,6 +158,7 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
           </G>
           {selRect ? <Rect x={selRect.x} y={selRect.y} width={selRect.s} height={selRect.s} fill={p.dim} /> : null}
         </Svg>
+        </Animated.View>
       ) : null}
     </Pressable>
   );
