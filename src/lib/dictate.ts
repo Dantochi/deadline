@@ -1,5 +1,5 @@
 // Sends a dictation recording to our API (POST /api/dictate) and returns the cleaned text. The server does the
-// speech-to-text (AssemblyAI) and the tidy-up (Gemini); no keys live in the app.
+// speech-to-text and the tidy-up, both on AssemblyAI; no keys live in the app.
 
 /** Where the API runs, from EXPO_PUBLIC_API_URL (e.g. http://192.168.1.20:8787 in development). */
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');

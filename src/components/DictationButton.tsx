@@ -1,5 +1,5 @@
 // Voice dictation for a text field: tap to start and tap again to stop, or hold to talk and let go. The recording
-// (16 kHz mono AAC in an .m4a) goes to our API, which transcribes it (AssemblyAI) and tidies it (Gemini); the
+// (16 kHz mono AAC in an .m4a) goes to our API, which transcribes and tidies it (both on AssemblyAI); the
 // cleaned text comes back through onTranscript. States: idle, recording (pulsing ring), processing (spinner).
 import { AudioQuality, IOSOutputFormat, getRecordingPermissionsAsync, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, type RecordingOptions } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
