@@ -1,7 +1,7 @@
 // The life grid: always weeks, 52 per row, one row per year. Rows already lived are removed unless
 // "Show weeks already lived" is on; then the grid starts at birth and scrolls. The box size comes from
 // the width only, so boxes never resize when units change or lived weeks are shown.
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Animated, PixelRatio, Pressable, ScrollView, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Svg, { Defs, FeGaussianBlur, Filter, G, Path, Rect } from 'react-native-svg';
 import { EASE_OUT, useReduceMotion } from './Motion';
@@ -15,33 +15,45 @@ export const GAP = 1.5;
 const WEEK = 7 * DAY;
 export const DECADE = 6;
 
-// Entrance: the boxes start soft and see-through and come into focus together (blur 8 → 0, opacity 0 → 1).
-const INTRO_MS = 700, INTRO_BLUR = 8, FRAME_MS = 32;
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+// Entrance: the boxes start soft and see-through and come into focus together.
+//
+// Animating a blur's strength means re-blurring the whole grid on every frame, in software, which mid-range
+// phones can't keep up with (it stuttered on a Redmi Note 13). Instead the grid is drawn twice while the entrance
+// plays: a copy blurred once (over the visible window only) on top, the sharp grid underneath. Both opacities then
+// run on the native thread, soft fading out while sharp fades in, so nothing is redrawn during the motion and the
+// eye still sees the boxes come into focus. The blurred copy is removed when it's done.
+const INTRO_MS = 700, INTRO_BLUR = 8;
 
-/** Plays the entrance whenever `play` changes (and once the grid has a size). The fade runs on the native thread;
- *  the blur is a property of the drawing, so it is stepped about 30 times a second: only the filter changes, never
- *  the paths, so each step is cheap. Nothing plays with Reduce motion, or when `skip` (the wallpaper image). */
+/** Plays the entrance whenever `play` changes (once the grid has a size). Nothing plays with Reduce motion, or when
+ *  `skip` (the wallpaper image). `drawn` is called once the blurred copy is on screen: only then does the motion
+ *  start, so the one-off blur never lands in the middle of it. */
 function useIntro(ready: boolean, play: number, skip: boolean) {
   const reduce = useReduceMotion();
-  const [blur, setBlur] = useState(0);
-  const [fade] = useState(() => new Animated.Value(1));
+  const on = ready && !skip && !reduce;
+  // The entrance whose motion has finished; any other `play` value means one is due or running.
+  const [doneFor, setDoneFor] = useState<number | null>(null);
+  const [sharp] = useState(() => new Animated.Value(1));
+  const [soft] = useState(() => new Animated.Value(0));
+  const start = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (!ready || skip || reduce) return;
-    fade.setValue(0);
-    const a = Animated.timing(fade, { toValue: 1, duration: INTRO_MS, easing: EASE_OUT, useNativeDriver: true });
-    a.start();
-    let raf = 0, last = 0;
-    const start = Date.now();
-    const step = () => {
-      const now = Date.now(), k = Math.min(1, (now - start) / INTRO_MS);
-      if (k === 1 || now - last >= FRAME_MS) { last = now; setBlur(Math.round(INTRO_BLUR * (1 - easeOut(k)) * 10) / 10); }
-      if (k < 1) raf = requestAnimationFrame(step);
+    if (!on) return;
+    let live = true, raf = 0, begun = false;
+    const anim = Animated.parallel([
+      Animated.timing(sharp, { toValue: 1, duration: INTRO_MS, easing: EASE_OUT, useNativeDriver: true }),
+      Animated.timing(soft, { toValue: 0, duration: INTRO_MS, easing: EASE_OUT, useNativeDriver: true }),
+    ]);
+    sharp.setValue(0); soft.setValue(1);
+    const begin = () => {
+      if (begun || !live) return;
+      begun = true;
+      raf = requestAnimationFrame(() => anim.start(({ finished }) => { if (finished && live) setDoneFor(play); }));
     };
-    raf = requestAnimationFrame(step);
-    return () => { a.stop(); fade.setValue(1); cancelAnimationFrame(raf); setBlur(0); };
-  }, [ready, play, skip, reduce, fade]);
-  return { blur: reduce || skip ? 0 : blur, fade };
+    start.current = begin;
+    const fallback = setTimeout(begin, 250); // if the blurred copy never reports in, play anyway
+    return () => { live = false; clearTimeout(fallback); cancelAnimationFrame(raf); anim.stop(); sharp.setValue(1); soft.setValue(0); start.current = null; };
+  }, [on, play, sharp, soft]);
+  const drawn = useCallback(() => start.current?.(), []);
+  return { playing: on && doneFor !== play, sharp, soft, drawn };
 }
 
 export function useGridGeometry(width: number, state: State, lived = false) {
@@ -68,7 +80,8 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const g = useGridGeometry(width, state, lived);
   const tasks = state.tasks, evs = state.events;
   const height = Math.min(g.h, maxHeight);
-  const { blur, fade } = useIntro(width > 0, play, !!frozen); // the wallpaper image is drawn sharp
+  const intro = useIntro(width > 0, play, !!frozen); // the wallpaper image is drawn sharp
+  const [scrollY, setScrollY] = useState<number | null>(null); // where the lived view rests, for the blurred copy
 
   // One <Path> per colour (each made of many rectangles) keeps the native view count tiny. Recomputed only when
   // something drawn changes (tasks, dates, palette, size, or a new day), not on every state change; the selected
@@ -134,6 +147,7 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const openAt = Math.max(0, Math.min(g.h - maxHeight, state.gridTop != null ? yAtRow(state.gridTop) : fallback));
   const remember = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
+    setScrollY(y);
     let k = 0;
     for (let r = 0; r < g.rows; r++) if (g.yOf(r) <= y) k = r;
     const row = Math.round((k + Math.min(1, (y - g.yOf(k)) / g.u)) * 100) / 100;
@@ -143,21 +157,11 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
   const grid = (
     <Pressable onPress={e => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)}>
       {width ? (
-        <Animated.View style={{ opacity: fade }}>
-        <Svg width={width} height={g.h}>
-          {blur > 0 ? (
-            <Defs>
-              <Filter id="lifeIntro" x="-5%" y="-5%" width="110%" height="110%">
-                <FeGaussianBlur stdDeviation={blur} />
-              </Filter>
-            </Defs>
-          ) : null}
-          {/* The filter is only attached while it is doing something, so the settled grid draws as before. */}
-          <G filter={blur > 0 ? 'url(#lifeIntro)' : undefined}>
+        <Animated.View style={{ opacity: intro.sharp }}>
+          <Svg width={width} height={g.h}>
             {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
-          </G>
-          {selRect ? <Rect x={selRect.x} y={selRect.y} width={selRect.s} height={selRect.s} fill={p.dim} /> : null}
-        </Svg>
+            {selRect ? <Rect x={selRect.x} y={selRect.y} width={selRect.s} height={selRect.s} fill={p.dim} /> : null}
+          </Svg>
         </Animated.View>
       ) : null}
     </Pressable>
@@ -180,6 +184,27 @@ export function LifeGrid({ state, maxHeight, onSelect, selected, palette, lived:
           </ScrollView>
         )
       ) : grid}
+      {intro.playing && width ? (() => {
+        // The blurred copy of what is on screen: the visible window only, blurred once, laid over the grid.
+        const y = lived && g.h > maxHeight ? (scrollY ?? openAt) : 0, pad = INTRO_BLUR * 3;
+        return (
+          <Animated.View pointerEvents="none" onLayout={intro.drawn}
+            style={{ position: 'absolute', left: 0, top: 0, width, height, opacity: intro.soft }}>
+            <Svg width={width} height={height}>
+              <Defs>
+                <Filter id="lifeIntro" filterUnits="userSpaceOnUse" x={-pad} y={y - pad} width={width + pad * 2} height={height + pad * 2}>
+                  <FeGaussianBlur stdDeviation={INTRO_BLUR} />
+                </Filter>
+              </Defs>
+              <G transform={`translate(0, ${-y})`}>
+                <G filter="url(#lifeIntro)">
+                  {paths.map(x => <Path key={x.color} d={x.d} fill={x.color} />)}
+                </G>
+              </G>
+            </Svg>
+          </Animated.View>
+        );
+      })() : null}
     </View>
   );
 }
