@@ -2,12 +2,13 @@
 // of well-known creators in that field, plus any names typed in. Used in onboarding and in Settings → Wisdom.
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
-import { CloseIcon } from './icons';
+import { CheckIcon, CloseIcon } from './icons';
 import { Btn, Chip, Txt, haptic } from './ui';
 import { suggestCreators, type Career, type Creator } from '../lib/career';
 import { F, R, S, usePalette } from '../theme';
 
 type Stage = 'ask' | 'loading' | 'pick' | 'refused';
+const KIND: Record<string, string> = { author: 'Author', youtube: 'YouTube', podcast: 'Podcast', blog: 'Writer', speaker: 'Speaker' };
 
 export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
   initial?: Career | null; onDone: (career: Career) => void; doneLabel?: string;
@@ -34,6 +35,8 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
     setField(t.replace(/^studying\s+/i, '').toLowerCase());
     // Keep anyone already picked or typed in, then the new suggestions.
     setOptions(o => [...o.filter(c => picked.includes(c.name)), ...r.creators.filter(c => !o.some(x => x.name === c.name && picked.includes(x.name)))]);
+    // Most people keep good defaults: the top five suggestions start ticked (untick any you don't want).
+    setPicked(x => (x.length ? x : r.creators.slice(0, 5).map(c => c.name)));
     setStage('pick');
   };
   const add = () => {
@@ -67,7 +70,11 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
       </View>
 
       {stage === 'loading' ? (
-        <View style={{ height: 64, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={p.dim} /></View>
+        // Placeholder cards where the suggestions will appear, and why it takes a moment.
+        <View accessible accessibilityLabel="Finding creators" accessibilityLiveRegion="polite" style={{ gap: S.s2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}><ActivityIndicator color={p.dim} /><Txt variant="small" dim>Asking Gemini for people in your field. This takes a few seconds.</Txt></View>
+          {[0, 1, 2].map(i => <View key={i} style={{ height: 64, borderRadius: R.md, backgroundColor: p.raise2, opacity: 1 - i * 0.25 }} />)}
+        </View>
       ) : null}
 
       {stage === 'refused' ? (
@@ -78,8 +85,26 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
         <View style={{ gap: S.s3 }}>
           <Txt variant="label" dim>Creators{field ? ` in ${field}` : ''}</Txt>
           {offline ? <Txt variant="small" dim>Suggestions aren't available right now. Add the people you follow by name, or try again later.</Txt> : null}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-            {options.map(c => <Chip key={c.name} label={c.name} on={picked.includes(c.name)} onPress={() => toggle(c.name)} />)}
+          {/* A card per suggestion: the name, what kind of creator, and one thing they're known for. */}
+          <View style={{ gap: S.s2 }}>
+            {options.map(c => {
+              const on = picked.includes(c.name);
+              return (
+                <Pressable key={c.name} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+                  accessibilityLabel={`${c.name}, ${KIND[c.kind] ?? 'Creator'}${c.works[0] ? `, known for ${c.works[0].title}` : ''}`}
+                  onPress={() => toggle(c.name)}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 64, paddingHorizontal: S.s4, paddingVertical: S.s2, borderRadius: R.md, borderWidth: 1,
+                    borderColor: on ? p.ink : p.line, backgroundColor: on ? p.raise2 : 'transparent', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+                  <View style={{ flex: 1 }}>
+                    <Txt style={{ fontFamily: F.uiSemi }} numberOfLines={1}>{c.name}</Txt>
+                    <Txt variant="small" dim numberOfLines={1}>{KIND[c.kind] ?? 'Creator'}{c.works[0] ? ` · ${c.works[0].title}` : ''}</Txt>
+                  </View>
+                  <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? p.ink : p.line, backgroundColor: on ? p.ink : 'transparent' }}>
+                    {on ? <CheckIcon size={14} color={p.bg} /> : null}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
             <TextInput value={extra} onChangeText={setExtra} onSubmitEditing={add} placeholder="Add someone not listed" placeholderTextColor={p.dim}
@@ -94,7 +119,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
         </View>
       ) : null}
 
-      {stage === 'pick' ? <Btn kind="primary" label={doneLabel} disabled={!title.trim()} onPress={save} /> : null}
+      {stage === 'pick' ? <Btn kind="primary" label={picked.length ? `${doneLabel} · ${picked.length} creator${picked.length === 1 ? '' : 's'}` : doneLabel} disabled={!title.trim()} onPress={save} /> : null}
     </View>
   );
 }
