@@ -75,3 +75,8 @@ export const ClockIcon = ({ size = 24, color }: P) => (
     <Rect x={3.5} y={3.5} width={17} height={17} rx={3} /><Path d="M12 7.5V12l3 2" />
   </Svg>
 );
+export const RepeatIcon = ({ size = 24, color }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H19M16 3l3 3-3 3M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H5M8 21l-3-3 3-3" />
+  </Svg>
+);

@@ -108,7 +108,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
             <TextInput value={extra} onChangeText={setExtra} onSubmitEditing={add} placeholder="Add someone not listed" placeholderTextColor={p.dim}
-              maxLength={60} returnKeyType="done" maxFontSizeMultiplier={2} style={[input, { flex: 1 }]} />
+              maxLength={60} returnKeyType="done" maxFontSizeMultiplier={2} style={[input, { flex: 1, minWidth: 0 }]} />
             {extra ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={() => setExtra('')} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
                 <CloseIcon color={p.dim} />

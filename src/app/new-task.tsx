@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CalendarIcon, CheckIcon, ChevronIcon, ClockIcon, CloseIcon, RotateIcon } from '../components/icons';
+import { CalendarIcon, CheckIcon, ChevronIcon, ClockIcon, CloseIcon, RepeatIcon } from '../components/icons';
 import { Sheet } from '../components/Sheet';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
@@ -190,7 +190,7 @@ export default function NewTask() {
           <View style={[{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.title ? tint(statusColor(p, 'green')) : 'transparent' }]}>
             <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
               placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-              style={{ flex: 1, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
+              style={{ flex: 1, minWidth: 0, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
             <Pressable accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
               style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: p.raise2 }}>
               <MicIcon color={p.ink} />
@@ -230,7 +230,7 @@ export default function NewTask() {
               seconds when voice has just filled it in. */}
           <View style={{ borderRadius: R.md, borderWidth: 1, borderColor: p.line, overflow: 'hidden' }}>
             <FormRow icon={<CalendarIcon size={22} color={p.dim} />} label="Deadline" value={fshort(+deadline)} hint={dueIn(deadline)} glow={glow.deadline} onPress={() => setSheet('deadline')} />
-            <FormRow icon={<RotateIcon size={22} color={p.dim} />} label="Schedule" glow={glow.when} onPress={() => setSheet('schedule')}
+            <FormRow icon={<RepeatIcon size={22} color={p.dim} />} label="Schedule" glow={glow.when} onPress={() => setSheet('schedule')}
               value={mode === 'once' ? `Once, ${fshort(+onceDate)}` : days.length ? daysLabel(days) : 'Pick days'} />
             <FormRow icon={<ClockIcon size={22} color={p.dim} />} label="Time" glow={glow.when} last onPress={() => setTimeOpen(true)}
               value={touchedTime ? `${pad(time.getHours())}:${pad(time.getMinutes())} – ${toHM(fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`) + minutes)}` : 'Not set'}
