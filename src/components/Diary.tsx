@@ -136,6 +136,7 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
 /** One note, full screen: title and text, saved as you type. */
 function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; onClose: () => void }) {
   const { updateTask } = useStore();
+  const [recording, setRecording] = useState(false);
   const toast = useToast();
   const p = usePalette();
   const [title, setTitle] = useState('');
@@ -195,17 +196,20 @@ function NoteEditor({ t, note, onClose }: { t: Task; note: Note | 'new' | null; 
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: S.page }}>
             <TextInput value={title} onChangeText={v => { setTitle(v); later({ title: v, text, pinned }); }} placeholder="Title" placeholderTextColor={p.dim}
               maxFontSizeMultiplier={2} style={{ color: p.ink, fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 28, paddingVertical: S.s2 }} />
-            <TextInput value={text} onChangeText={v => { setText(v); later({ title, text: v, pinned }); }} placeholder="Note" placeholderTextColor={p.dim}
+            <TextInput value={text} onChangeText={v => { setText(v); later({ title, text: v, pinned }); }} placeholder="Write, or tap the mic to dictate" placeholderTextColor={p.dim}
               onSelectionChange={ev => { sel.current = ev.nativeEvent.selection; }}
               multiline autoFocus={note === 'new'} textAlignVertical="top" maxFontSizeMultiplier={2}
               style={{ flex: 1, minHeight: 240, color: p.ink, fontFamily: F.ui, fontSize: 17, lineHeight: 24, paddingVertical: S.s2 }} />
           </ScrollView>
           {/* Footer: when it was last edited, and dictation into the note (at the cursor, or at the end). */}
           <View style={{ height: 64, flexDirection: 'row', alignItems: 'center', gap: S.s3, paddingHorizontal: S.page, borderTopWidth: 1, borderTopColor: p.line }}>
-            <Txt variant="small" dim numberOfLines={1} style={{ flex: 1 }}>Edited {pad(e.getHours())}:{pad(e.getMinutes())} · {t.title}</Txt>
-            <DictationButton onTranscript={add => {
+            {recording ? <View style={{ flex: 1 }} /> : <Txt variant="small" dim numberOfLines={1} style={{ flex: 1 }}>Edited {pad(e.getHours())}:{pad(e.getMinutes())} · {t.title}</Txt>}
+            <DictationButton onActive={setRecording} onTranscript={add => {
+              const before = text;
               const r = insertDictation(text, add, sel.current ?? undefined);
               setText(r.value); sel.current = { start: r.cursor, end: r.cursor }; later({ title, text: r.value, pinned });
+              // The tidy-up can misread a word: one tap puts the note back as it was.
+              toast(`Added ${add.split(/\s+/).length} words`, 6000, { label: 'Undo', onPress: () => { setText(before); later({ title, text: before, pinned }); } });
             }} />
           </View>
         </KeyboardAvoidingView>

@@ -62,6 +62,7 @@ export type State = {
   events?: LifeEvent[]; // important dates shown on the life grid
   saved?: string[]; // saved Wisdom quotes (quoteKey)
   tabOrder?: TabName[]; // order of the bottom tabs, set in Settings
+  dictation?: boolean; // dictation in notes (sends recordings to AssemblyAI); asked before first use
   aiParse?: boolean; // let Gemini read spoken/typed tasks (sends the sentence to Google); off by default
   career?: Career | null; // Wisdom for your work (or the career a student is heading towards); null = said no
   tasks: Task[];

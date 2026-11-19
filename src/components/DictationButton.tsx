@@ -3,12 +3,13 @@
 // cleaned text comes back through onTranscript. States: idle, recording (pulsing ring), processing (spinner).
 import { AudioQuality, IOSOutputFormat, getRecordingPermissionsAsync, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, type RecordingOptions } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Linking, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Linking, Modal, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useReduceMotion } from './Motion';
 import { MicIcon } from './Voice';
-import { haptic } from './ui';
+import { Btn, Txt, haptic } from './ui';
+import { useStore } from '../lib/store';
 import { DictationError, dictate, dictationAvailable } from '../lib/dictate';
-import { usePalette } from '../theme';
+import { F, R, S, usePalette } from '../theme';
 
 /** Small files for speech: one channel, 16 kHz, AAC at 32 kbps in an MPEG-4 (.m4a) container. */
 const SPEECH: RecordingOptions = {
@@ -41,8 +42,19 @@ async function micAllowed(): Promise<boolean> {
   return false;
 }
 
-export function DictationButton({ onTranscript, size = 44, style }: { onTranscript: (text: string) => void; size?: number; style?: StyleProp<ViewStyle> }) {
+export function DictationButton({ onTranscript, onActive, size = 44, style }: {
+  onTranscript: (text: string) => void; size?: number; style?: StyleProp<ViewStyle>;
+  /** Told when recording starts and stops, so the screen can make room for the recording bar. */
+  onActive?: (recording: boolean) => void;
+}) {
   const p = usePalette();
+  const { state, update } = useStore();
+  // Dictation sends audio to AssemblyAI, so it is asked for once, plainly, before the first recording leaves the
+  // phone (and again if it was turned off in Settings → AI features).
+  const [asking, setAsking] = useState(false);
+  const agreed = useRef(state.dictation === true);
+  useEffect(() => { agreed.current = state.dictation === true; }, [state.dictation]);
+  const [secs, setSecs] = useState(0);
   const reduce = useReduceMotion();
   const recorder = useAudioRecorder(SPEECH);
   const [phase, setPhaseState] = useState<Phase>('idle');
@@ -78,6 +90,7 @@ export function DictationButton({ onTranscript, size = 44, style }: { onTranscri
   };
   const begin = async () => {
     if (!dictationAvailable) { Alert.alert('Dictation isn’t set up', 'This build has no dictation server (EXPO_PUBLIC_API_URL).'); return; }
+    if (!agreed.current) { stopWhenReady.current = false; setAsking(true); return; }
     if (!(await micAllowed())) return;
     try {
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -86,6 +99,7 @@ export function DictationButton({ onTranscript, size = 44, style }: { onTranscri
       started.current = Date.now();
       haptic.tick();
       setPhase('recording');
+      setSecs(0); onActive?.(true);
       limit.current = setTimeout(() => { finish(); }, MAX_MS);
       // Released (hold-to-talk) while the microphone was still being asked for or set up: nothing to send yet.
       if (stopWhenReady.current) { stopWhenReady.current = false; finish(); }
@@ -112,9 +126,26 @@ export function DictationButton({ onTranscript, size = 44, style }: { onTranscri
       haptic.warn();
       Alert.alert('Couldn’t transcribe', e instanceof DictationError ? e.message : 'Something went wrong. Try again.');
     } finally {
-      setPhase('idle');
+      setPhase('idle'); onActive?.(false);
     }
   };
+
+  /** Throws the recording away: nothing is sent. */
+  const cancel = async () => {
+    if (now.current !== 'recording') return;
+    if (limit.current) { clearTimeout(limit.current); limit.current = null; }
+    setPhase('idle'); onActive?.(false);
+    haptic.tick();
+    await recorder.stop().catch(() => {});
+    await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+  };
+
+  // Elapsed time on the recording bar.
+  useEffect(() => {
+    if (phase !== 'recording') return;
+    const id = setInterval(() => setSecs(Math.floor((Date.now() - started.current) / 1000)), 500);
+    return () => clearInterval(id);
+  }, [phase]);
 
   // Tap toggles; a press held past HOLD_MS is hold-to-talk and stops when released.
   const onPressIn = () => {
@@ -132,8 +163,47 @@ export function DictationButton({ onTranscript, size = 44, style }: { onTranscri
 
   const recording = phase === 'recording', busy = phase === 'processing';
   const label = busy ? 'Transcribing' : recording ? 'Stop dictation' : 'Dictate';
+  const consent = (
+    <Modal visible={asking} transparent animationType="fade" onRequestClose={() => setAsking(false)}>
+      <View style={{ flex: 1, backgroundColor: p.scrim, justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: p.raise, borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg, padding: S.page, paddingBottom: S.s7, gap: S.s3 }}>
+          <Txt variant="h2">Dictate with AI?</Txt>
+          <Txt>Your recording is sent to AssemblyAI, which turns it into text and tidies it. Deadline's server passes it on and doesn't keep it.</Txt>
+          <Txt variant="meta" dim>Only while you hold or tap the mic; nothing else from your notes is sent. You can turn this off in Settings → AI features.</Txt>
+          <Btn kind="primary" label="Turn on dictation" style={{ marginTop: S.s2 }} onPress={() => { update(x => ({ ...x, dictation: true })); agreed.current = true; setAsking(false); start(); }} />
+          <Btn kind="ghost" label="Not now" onPress={() => setAsking(false)} />
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // While recording: a bar with the time so far, Cancel (nothing is sent) and the stop button.
+  if (recording) {
+    return (
+      <View style={[{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }, style]}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: p.redInk }} />
+        <Txt style={{ fontFamily: F.uiSemi, fontVariant: ['tabular-nums'], minWidth: 40 }} accessibilityLabel={`Recording, ${secs} seconds`}>{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}</Txt>
+        <Pressable accessibilityRole="button" accessibilityLabel="Cancel dictation" hitSlop={8} onPress={cancel} style={{ height: size, justifyContent: 'center', paddingHorizontal: S.s2 }}>
+          <Txt style={{ fontFamily: F.uiSemi }} dim>Cancel</Txt>
+        </Pressable>
+        <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View pointerEvents="none" style={{
+            position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: p.redInk,
+            opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0] }),
+            transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }],
+          }} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Stop and transcribe" hitSlop={6} onPressIn={onPressIn} onPressOut={onPressOut}
+            style={({ pressed }) => ({ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: p.redInk, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+            <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: p.bg }} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
+      {consent}
       {recording ? (
         <Animated.View pointerEvents="none" style={{
           position: 'absolute', width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: p.redInk,

@@ -135,17 +135,18 @@ export default function Settings() {
           {row('Shapes on status colours', '● on track  ◆ pay attention  ▲ act now', <Toggle value={state.shapes} onValueChange={v => update(s => ({ ...s, shapes: v }))} />)}
         </>)}
 
-        {group('Wisdom', <>
-          {row('Wisdom for your work', state.career ? `${state.career.student ? 'Studying for' : 'Based on'} ${state.career.title} · ${state.career.creators.length} ${state.career.creators.length === 1 ? 'creator' : 'creators'}` : 'Articles and videos from people in your field', (
-            <Btn label={state.career ? 'Edit' : 'Set up'} onPress={() => router.push('/career')} />
-          ))}
-        </>)}
-
-        {group('Voice', <>
-          {row('Understand with Gemini', aiAvailable
-            ? 'Better at long sentences and spoken lists. Sends what you say or type for a task (not your other data) to Google. Off: everything is read on your phone.'
+        {/* Everything that sends something to an AI service, in one place, each saying where it goes. */}
+        {group('AI features', <>
+          {row('Understand spoken tasks', aiAvailable
+            ? 'Google Gemini reads what you say or type for a new task (only that sentence). Off: everything is read on your phone.'
             : 'Needs Firebase set up in this build', (
-            <Toggle disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} />
+            <Toggle disabled={!aiAvailable} value={!!state.aiParse && aiAvailable} onValueChange={v => update(s => ({ ...s, aiParse: v }))} accessibilityLabel="Understand spoken tasks with Gemini" />
+          ))}
+          {row('Dictation in notes', 'AssemblyAI turns what you say in a note into text. Only the recording is sent, and only while the mic is on.', (
+            <Toggle value={state.dictation === true} onValueChange={v => update(s => ({ ...s, dictation: v }))} accessibilityLabel="Dictation in notes" />
+          ))}
+          {row('Wisdom for your work', state.career ? `Google Gemini suggested creators for ${state.career.title} · ${state.career.creators.length} ${state.career.creators.length === 1 ? 'creator' : 'creators'}` : 'Google Gemini suggests people in your field. Only your career is sent.', (
+            <Btn label={state.career ? 'Edit' : 'Set up'} onPress={() => router.push('/career')} />
           ))}
         </>)}
 

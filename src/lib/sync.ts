@@ -11,7 +11,7 @@ import type { Note, State, Task } from './store';
 /** Settings that follow the person to every phone. Everything else (onboarding done, grid scroll position, what
  *  was seen today) belongs to the phone it happened on. */
 export const SYNCED = ['birth', 'life', 'showGrid', 'appearance', 'showLived', 'shapes', 'focus', 'digest', 'shareTitles',
-  'events', 'saved', 'tabOrder', 'aiParse', 'career'] as const;
+  'events', 'saved', 'tabOrder', 'aiParse', 'dictation', 'career'] as const;
 export type Settings = Partial<Pick<State, (typeof SYNCED)[number]>>;
 
 export type RecordData = { kind: 'settings'; v: Settings } | { kind: 'task'; v: Task };
