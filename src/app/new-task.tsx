@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckIcon, CloseIcon } from '../components/icons';
@@ -12,7 +12,7 @@ import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
 import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
-import { F, R, S, statusColor, usePalette } from '../theme';
+import { F, R, S, statusColor, tint, usePalette } from '../theme';
 
 type Unit = 'week' | 'month' | 'year';
 const UNITS: Unit[] = ['week', 'month', 'year'];
@@ -108,10 +108,27 @@ export default function NewTask() {
   };
   const seq = useRef(0);
   const [thinking, setThinking] = useState(false);
+  // What voice changed: a snapshot of the form from before, for one-tap Undo, and which parts were filled, shown
+  // with a soft highlight for a few seconds so the person can check them.
+  type Snap = Base & { quick: typeof quick; onceSet: Date | null; touchedTime: boolean; newSteps: string[] };
+  const [undo, setUndo] = useState<Snap | null>(null);
+  const [glow, setGlow] = useState<{ title?: boolean; deadline?: boolean; when?: boolean }>({});
+  useEffect(() => { if (!glow.title && !glow.deadline && !glow.when) return; const id = setTimeout(() => setGlow({}), 3000); return () => clearTimeout(id); }, [glow]);
+  const marks = (r: Parsed) => setGlow({ title: !!r.title, deadline: !!(r.deadline || r.once), when: !!(r.days || r.once || r.time || r.minutes || r.end) });
+  const restore = () => {
+    if (!undo) return;
+    seq.current++; // ignore a Gemini answer still on its way
+    setTitle(undo.title); setDeadline(undo.deadline); setQuick(undo.quick); setMode(undo.mode); setDays(undo.days); setOnceSet(undo.onceSet);
+    setMinutes(undo.minutes); setTime(undo.time); setTouchedTime(undo.touchedTime); setNewSteps(undo.newSteps);
+    setHeard([]); setUndo(null); setGlow({}); setThinking(false); haptic.tick();
+  };
   const apply = (sentence: string) => {
     const base: Base = { deadline, days, minutes, time, mode, title };
+    setUndo(u => u ?? { ...base, quick, onceSet, touchedTime, newSteps });
     const n = ++seq.current;
-    fill(parseTask(sentence), base); // instant, on the phone
+    const first = parseTask(sentence);
+    fill(first, base); // instant, on the phone
+    marks(first);
     setBy('phone');
     if (!state.aiParse || !aiAvailable) return;
     // Then Gemini, if turned on; its reading replaces the first unless something newer was said meanwhile.
@@ -119,7 +136,7 @@ export default function NewTask() {
     aiParse(sentence).then(r => {
       if (n !== seq.current) return;
       setThinking(false);
-      if (r) { fill(r, base); setBy('gemini'); }
+      if (r) { fill(r, base); marks(r); setBy('gemini'); }
     });
   };
   const [by, setBy] = useState<'phone' | 'gemini'>('phone');
@@ -168,7 +185,7 @@ export default function NewTask() {
         </View>
         {/* Each question is its own group, 48 apart; inside a group, 12. */}
         <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s7 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }}>
+          <View style={[{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.title ? tint(statusColor(p, 'green')) : 'transparent' }]}>
             <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
               placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
               style={{ flex: 1, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
@@ -178,9 +195,17 @@ export default function NewTask() {
             </Pressable>
           </View>
           {heard.length ? (
-            <View style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s6 }}>
+            <View style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s6 }}>
               <CheckIcon size={16} color={statusColor(p, 'green', true)} />
-              <Txt variant="small" numberOfLines={2} style={{ flex: 1 }}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… · ' : by === 'gemini' ? 'Understood by Gemini · ' : 'Understood · '}</Txt>{heard.join(' · ')}</Txt>
+              <View style={{ flex: 1 }}>
+                <Txt variant="small" numberOfLines={2}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… · ' : by === 'gemini' ? 'Understood by Gemini · ' : 'Understood · '}</Txt>{heard.join(' · ')}</Txt>
+                {by === 'gemini' && !thinking ? <Txt variant="small" dim>AI can misread. Check the date and time.</Txt> : null}
+              </View>
+              {undo ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Undo what voice filled in" hitSlop={10} onPress={restore} style={{ height: 40, justifyContent: 'center', paddingHorizontal: S.s2 }}>
+                  <Txt variant="small" style={{ fontFamily: F.uiSemi, textDecorationLine: 'underline' }}>Undo</Txt>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
           {newSteps.length ? (
@@ -199,7 +224,7 @@ export default function NewTask() {
             </View>
           ) : null}
 
-          <View style={{ gap: S.s3 }}>
+          <View style={[{ gap: S.s3, paddingVertical: S.s1 }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.deadline ? tint(statusColor(p, 'green')) : 'transparent' }]}>
             <Txt variant="label" dim>Deadline</Txt>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
               {UNITS.map(u => quick?.u === u ? (
@@ -217,7 +242,7 @@ export default function NewTask() {
             <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); setOnceSet(null); }} />
           </View>
 
-          <View style={{ gap: S.s3 }}>
+          <View style={[{ gap: S.s3, paddingVertical: S.s1 }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.when ? tint(statusColor(p, 'green')) : 'transparent' }]}>
             <View style={{ flexDirection: 'row', gap: S.s1 }}>
               <View style={{ flex: 1 }}><Chip label="Repeat" on={mode === 'repeat'} onPress={() => setMode('repeat')} /></View>
               <View style={{ flex: 1 }}><Chip label="Once" on={mode === 'once'} onPress={() => setMode('once')} /></View>
