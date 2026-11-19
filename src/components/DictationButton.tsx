@@ -168,7 +168,7 @@ export function DictationButton({ onTranscript, onActive, size = 44, style }: {
       <View style={{ flex: 1, backgroundColor: p.scrim, justifyContent: 'flex-end' }}>
         <View style={{ backgroundColor: p.raise, borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg, padding: S.page, paddingBottom: S.s7, gap: S.s3 }}>
           <Txt variant="h2">Dictate with AI?</Txt>
-          <Txt>Your recording is sent to AssemblyAI, which turns it into text and tidies it. Deadline's server passes it on and doesn't keep it.</Txt>
+          <Txt>Your recording is sent to AssemblyAI, which turns it into text and tidies it. Deadline’s server passes it on and doesn’t keep it.</Txt>
           <Txt variant="meta" dim>Only while you hold or tap the mic; nothing else from your notes is sent. You can turn this off in Settings → AI features.</Txt>
           <Btn kind="primary" label="Turn on dictation" style={{ marginTop: S.s2 }} onPress={() => { update(x => ({ ...x, dictation: true })); agreed.current = true; setAsking(false); start(); }} />
           <Btn kind="ghost" label="Not now" onPress={() => setAsking(false)} />
