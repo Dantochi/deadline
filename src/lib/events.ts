@@ -58,3 +58,30 @@ export function eventColorMap(state: State) {
 
 export const eventsInWeek = (state: State, week: number) =>
   (state.events ?? []).filter(ev => eventWeeks(ev, state).includes(week));
+
+const dayDiff = (a: Date, b: Date) => Math.round((+new Date(a.getFullYear(), a.getMonth(), a.getDate()) - +new Date(b.getFullYear(), b.getMonth(), b.getDate())) / DAY);
+/** Whole calendar months from a to b (b later), e.g. 19 Nov → 18 Apr is 4, → 19 Apr is 5. */
+const monthsBetween = (a: Date, b: Date) => (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() - (b.getDate() < a.getDate() ? 1 : 0);
+const n = (k: number, w: string) => `${k} ${w}${k === 1 ? '' : 's'}`;
+
+/** How far a date is from today, in words: "Today", "in 16 days", "in 5 months", "3 years ago". Yearly dates count
+ *  to the next one; a range that includes today is "Now". `days` sorts (negative = past, Infinity-free). */
+export function eventDistance(ev: LifeEvent, now = new Date()): { days: number; label: string; past: boolean } {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let start = at(ev.date), end = ev.end ? at(ev.end) : start;
+  if (ev.yearly) {
+    const len = dayDiff(end, start);
+    start = new Date(today.getFullYear(), start.getMonth(), start.getDate());
+    end = new Date(+start + len * DAY);
+    if (end < today) { start = new Date(today.getFullYear() + 1, start.getMonth(), start.getDate()); end = new Date(+start + len * DAY); }
+  }
+  if (start <= today && today <= end) return { days: 0, label: ev.end ? 'Now' : 'Today', past: false };
+  const ahead = dayDiff(start, today);
+  if (ahead > 0) {
+    const label = ahead === 1 ? 'Tomorrow' : ahead < 60 ? `in ${ahead} days` : monthsBetween(today, start) < 12 ? `in ${n(Math.max(2, monthsBetween(today, start)), 'month')}` : `in ${n(Math.floor(monthsBetween(today, start) / 12), 'year')}`;
+    return { days: ahead, label, past: false };
+  }
+  const ago = dayDiff(today, end);
+  const label = ago === 1 ? 'Yesterday' : ago < 60 ? `${ago} days ago` : monthsBetween(end, today) < 12 ? `${n(Math.max(2, monthsBetween(end, today)), 'month')} ago` : `${n(Math.floor(monthsBetween(end, today) / 12), 'year')} ago`;
+  return { days: -ago, label, past: true };
+}

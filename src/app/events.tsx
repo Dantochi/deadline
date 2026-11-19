@@ -4,10 +4,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GlassSegment } from '../components/Glass';
 import { CloseIcon, PlusIcon } from '../components/icons';
 import { DateTimeField } from '../components/pickers';
 import { Btn, Toggle, Txt, haptic, useToast } from '../components/ui';
-import { EVENT_COLORS, type LifeEvent } from '../lib/events';
+import { EVENT_COLORS, eventDistance, type LifeEvent } from '../lib/events';
 import { uid, useStore } from '../lib/store';
 import { addYears, ageYears, fdate, parseBirth, weekStart, ymd } from '../lib/time';
 import { F, R, S, T, usePalette } from '../theme';
@@ -112,8 +113,12 @@ export default function Events() {
 
   const events = [...(state.events ?? [])].sort((a, b) => a.date.localeCompare(b.date));
   const today = ymd(new Date());
-  const past = events.filter(e => !e.yearly && (e.end ?? e.date) < today);
-  const ahead = events.filter(e => e.yearly || (e.end ?? e.date) >= today);
+  // How far each date is, which is what people come here to check. Next: soonest first; Past: most recent first.
+  const dist = new Map(events.map(e => [e.id, eventDistance(e)]));
+  const ahead = events.filter(e => !dist.get(e.id)!.past).sort((a, b) => dist.get(a.id)!.days - dist.get(b.id)!.days);
+  const past = events.filter(e => dist.get(e.id)!.past).sort((a, b) => dist.get(b.id)!.days - dist.get(a.id)!.days);
+  const [view, setView] = useState<'Next' | 'Past'>('Next');
+  const shown = view === 'Next' ? ahead : past;
 
   const row = (e: LifeEvent) => (
     <Pressable key={e.id} accessibilityRole="button" onPress={() => { haptic.tick(); setEditing(e); }}
@@ -126,6 +131,7 @@ export default function Events() {
             : `${fdate(+at(e.date))}${e.end ? ` – ${fdate(+at(e.end))}` : ''} · age ${ageYears(birth, at(e.date))}`}
         </Txt>
       </View>
+      <Txt variant="meta" style={{ fontFamily: F.uiSemi, fontVariant: ['tabular-nums'] }} color={dist.get(e.id)!.days === 0 ? p.ink : p.dim}>{dist.get(e.id)!.label}</Txt>
     </Pressable>
   );
 
@@ -148,8 +154,14 @@ export default function Events() {
           </View>
         ) : null}
 
-        {ahead.length ? <View><Txt variant="label" dim>Ahead and every year</Txt>{ahead.map(row)}</View> : null}
-        {past.length ? <View><Txt variant="label" dim>Lived</Txt>{past.map(row)}</View> : null}
+        {events.length ? (
+          <View style={{ gap: S.s2 }}>
+            <GlassSegment options={['Next', 'Past'] as const} value={view} onChange={setView} style={{ width: 180 }}
+              labels={{ Next: `Next, ${ahead.length}`, Past: `Past, ${past.length}` }} />
+            {shown.length ? <View>{shown.map(row)}</View>
+              : <Txt dim style={{ marginTop: S.s3 }}>{view === 'Next' ? 'Nothing coming up. Birthdays and anniversaries set to every year always show here.' : 'No past dates yet.'}</Txt>}
+          </View>
+        ) : null}
         {!events.length && !editing ? <Txt dim style={{ textAlign: 'center', marginTop: S.s6 }}>No dates yet. Birthdays, graduations, the day you moved: anything you want to see in your weeks.</Txt> : null}
       </ScrollView>
     </SafeAreaView>
