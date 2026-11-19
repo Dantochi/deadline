@@ -22,7 +22,7 @@ function DigestPreview() {
   return (
     <View style={{ marginTop: S.s3, gap: S.s2 }}>
       <Txt variant="small" dim>Arrives {slotLabel(at)}. One notification, most urgent first.</Txt>
-      <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise2, gap: S.s1 }}>
+      <View style={{ padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.raise2, gap: S.s1 }}>
         <Txt variant="small" dim><Txt variant="small" style={{ fontFamily: F.uiSemi }}>Deadline</Txt> · {pad(d.getHours())}:{pad(d.getMinutes())}</Txt>
         <Txt style={{ fontFamily: F.uiSemi }}>{c.title}</Txt>
         {/* Fixed rows (two reserved times, four tasks) so the preview keeps one size whatever it holds. */}

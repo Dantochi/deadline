@@ -166,7 +166,7 @@ export function DictationButton({ onTranscript, onActive, size = 44, style }: {
   const consent = (
     <Modal visible={asking} transparent animationType="fade" onRequestClose={() => setAsking(false)}>
       <View style={{ flex: 1, backgroundColor: p.scrim, justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: p.raise, borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg, padding: S.page, paddingBottom: S.s7, gap: S.s3 }}>
+        <View style={{ backgroundColor: p.raise, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, borderCurve: 'continuous', padding: S.page, paddingBottom: S.s7, gap: S.s3 }}>
           <Txt variant="h2">Dictate with AI?</Txt>
           <Txt>Your recording is sent to AssemblyAI, which turns it into text and tidies it. Deadline’s server passes it on and doesn’t keep it.</Txt>
           <Txt variant="meta" dim>Only while you hold or tap the mic; nothing else from your notes is sent. You can turn this off in Settings → AI features.</Txt>

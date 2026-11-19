@@ -30,5 +30,5 @@ export function DateTimeField({ value, onChange, mode, minimumDate, maximumDate,
 }
 
 const styles = StyleSheet.create({
-  field: { minHeight: 56, borderRadius: R.md, borderWidth: 1, paddingHorizontal: 16, justifyContent: 'center' },
+  field: { minHeight: 56, borderRadius: R.sm, borderCurve: 'continuous', borderWidth: 1, paddingHorizontal: 16, justifyContent: 'center' },
 });

@@ -72,7 +72,7 @@ function Join({ run, restoring }: { run: Run; restoring: boolean }) {
         <Txt variant="small" dim>Type or paste the 24 words, in order, with spaces between them.</Txt>
         <TextInput value={phrase} onChangeText={setPhrase} multiline autoCapitalize="none" autoCorrect={false} autoComplete="off" spellCheck={false}
           placeholder="word word word …" placeholderTextColor={p.dim} accessibilityLabel="Recovery phrase" textAlignVertical="top" maxFontSizeMultiplier={2}
-          style={{ minHeight: 120, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: T.base, lineHeight: 24 }} />
+          style={{ minHeight: 120, borderRadius: R.sm, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, padding: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: T.base, lineHeight: 24 }} />
         <Btn kind="primary" label={restoring ? 'Restore my data' : 'Turn on backup & sync'} onPress={() => run(() => sync.joinWithPhrase(phrase), restoring ? 'Restored' : 'Backup & sync is on')} />
         <Btn kind="ghost" label="Back" onPress={() => setMode('choose')} />
       </Block>

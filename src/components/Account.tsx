@@ -14,7 +14,7 @@ export function Field(props: TextInputProps & { label: string }) {
     <View style={{ gap: S.s1 }}>
       <Txt variant="small" dim>{props.label}</Txt>
       <TextInput placeholderTextColor={p.dim} maxFontSizeMultiplier={2} autoCorrect={false} {...props}
-        style={{ minHeight: 52, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 }} />
+        style={{ minHeight: 52, borderRadius: R.sm, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s3, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 }} />
     </View>
   );
 }
@@ -22,7 +22,7 @@ export function Field(props: TextInputProps & { label: string }) {
 export function Block({ title, children }: { title?: string; children: ReactNode }) {
   const p = usePalette();
   return (
-    <View style={{ gap: S.s3, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+    <View style={{ gap: S.s3, padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.bg }}>
       {title ? <Txt variant="label" dim>{title}</Txt> : null}
       {children}
     </View>

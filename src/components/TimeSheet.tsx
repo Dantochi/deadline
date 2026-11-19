@@ -89,7 +89,7 @@ export function TimeSheet({ open, start, minutes, onDone, onClose, note }: Props
   const key = (k: string, label: string, onPress: () => void, a11y?: string) => (
     <Pressable key={k} accessibilityRole="button" accessibilityLabel={a11y ?? label} onPress={onPress} style={{ flex: 1 }}>
       {({ pressed }) => (
-        <Glass radius={R.lg} style={{ height: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? p.glassOn : p.glass }}>
+        <Glass radius={R.md} style={{ height: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? p.glassOn : p.glass }}>
           <Txt allowFontScaling={false} style={{ fontFamily: /\d/.test(label) ? F.dot : F.uiSemi, fontSize: /\d/.test(label) ? 30 : 17, lineHeight: 36 }}>{label}</Txt>
         </Glass>
       )}

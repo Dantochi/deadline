@@ -23,7 +23,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
   const [picked, setPicked] = useState<string[]>((initial?.creators ?? []).map(c => c.name));
   const [extra, setExtra] = useState('');
 
-  const input = { minHeight: 52, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s4, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
+  const input = { minHeight: 52, borderRadius: R.sm, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: S.s4, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
   const find = async () => {
     const t = title.trim();

@@ -47,7 +47,7 @@ export default function Review() {
         {r.missed ? <Txt variant="meta" dim>{r.missed} {r.missed === 1 ? 'session' : 'sessions'} didn't happen. That's normal; the ones you kept still count.</Txt> : null}
 
         {r.focus ? (
-          <View style={{ height: 168, gap: S.s1, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+          <View style={{ height: 168, gap: S.s1, padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.bg }}>
             <Txt variant="label" dim>Focus next week</Txt>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
               <StatusDot st={info(r.focus).st} shapes={state.shapes} />
@@ -78,7 +78,7 @@ export default function Review() {
         ) : null}
 
         {partner && mine ? (
-          <View style={{ gap: S.s1, padding: S.s4, borderRadius: R.lg, backgroundColor: p.bg }}>
+          <View style={{ gap: S.s1, padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.bg }}>
             <Txt variant="label" dim>What {partner.name || `@${partner.username}`} sees</Txt>
             <Txt variant="meta">{mine.sessions} sessions kept{mine.missed ? ` · ${mine.missed} missed` : ''}{mine.done ? ` · ${mine.done} finished` : ''}. {state.shareTitles === false ? 'Counts only, no task titles.' : 'With your task titles.'} Never your notes.</Txt>
             <Btn kind="ghost" label={`See ${partner.name || 'their'} week`} onPress={() => router.push('/partner')} />

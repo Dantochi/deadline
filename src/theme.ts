@@ -45,7 +45,15 @@ export function statusColor(p: Palette, st: Status, ink = false) {
 // 8-point spacing, radius scale, button sizes (icon = label line height, 8px gap).
 // Spacing: inside a group 8–12, between groups 48 (at least 3× the inside space), page gutter 24.
 export const S = { s1: 4, s2: 8, s3: 12, s4: 16, s5: 24, s6: 32, s7: 48, s8: 64, page: 24 };
-export const R = { sm: 10, md: 14, lg: 20, xl: 28 };
+// Corner radii by role, measured from shipped iOS apps on Mobbin (Wise, Revolut, Airbnb, Linear, Todoist, Discord…):
+// radius grows with the element. Inputs 10–16, cards 9–18, dialogs 16–33, bottom sheets 30–38 (median 32), and 11 of
+// 16 primary buttons were capsules. Inside a rounded container, keep corners smaller than the container's.
+//   xs   6  day cells, tags, swatches        md 16  cards, option rows, settings groups, toasts
+//   sm  12  text inputs, date field, tiles    lg 24  centred dialogs
+//   xl  32  bottom sheets                     pill   buttons, chips, steppers, segmented controls
+export const R = { xs: 6, sm: 12, md: 16, lg: 24, xl: 32, pill: 999 };
+// Containers also set borderCurve: 'continuous' (iOS squircle corners, as system and Mobbin apps draw them;
+// Android ignores it).
 export const BTN = { m: 48, l: 56 };
 
 // Type scale: one ratio (x1.125, a "major second") from the 17pt body size, so every size relates to every other.

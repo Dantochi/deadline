@@ -19,7 +19,7 @@ export function ReviewCard() {
   if (!reviewDue(state)) return null;
   const r = weekReview(state);
   return (
-    <View style={{ marginTop: S.s5, flexDirection: 'row', alignItems: 'center', borderRadius: R.lg, backgroundColor: p.raise }}>
+    <View style={{ marginTop: S.s5, flexDirection: 'row', alignItems: 'center', borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.raise }}>
       <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push('/review'); }} style={{ flex: 1, padding: S.s4, gap: 2 }}>
         <Txt style={{ fontFamily: F.uiSemi }}>Your week is ready</Txt>
         <Txt variant="meta" dim>{r.finished.length} finished · {r.needYou.length} {r.needYou.length === 1 ? 'needs' : 'need'} you · {r.sessions} sessions</Txt>
@@ -43,7 +43,7 @@ export function PartnerCard() {
       : `${pr.sessions} ${pr.sessions === 1 ? 'session' : 'sessions'} kept${pr.missed ? ` · ${pr.missed} missed` : ''}${pr.red + pr.over ? ` · ${pr.red + pr.over} need attention` : ''}`;
   return (
     <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); router.push('/partner'); }}
-      style={({ pressed }) => ({ marginTop: S.s5, padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise, gap: 2, transform: [{ scale: pressed ? 0.99 : 1 }] })}>
+      style={({ pressed }) => ({ marginTop: S.s5, padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.raise, gap: 2, transform: [{ scale: pressed ? 0.99 : 1 }] })}>
       <Txt variant="label" dim>{pending ? 'Partner request' : `${o!.name || `@${o!.username}`}'s week`}</Txt>
       <Txt variant="meta">{line}</Txt>
     </Pressable>

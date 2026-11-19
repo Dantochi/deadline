@@ -147,7 +147,7 @@ export default function NewTask() {
   };
   const [by, setBy] = useState<'phone' | 'gemini'>('phone');
 
-  const input = { minHeight: 56, borderRadius: R.md, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
+  const input = { minHeight: 56, borderRadius: R.sm, borderWidth: 1, borderColor: p.line, backgroundColor: p.bg, paddingHorizontal: 16, color: p.ink, fontFamily: F.uiMedium, fontSize: 17 } as const;
 
   const stepsFrom = () => newSteps.map(title => ({ id: uid(), title, done: false }));
   const save = () => {
@@ -206,7 +206,7 @@ export default function NewTask() {
               placeholder={`e.g. ${HINTS[state.focus ?? ''] ?? 'Write chapter three'}`} placeholderTextColor={p.dim} maxFontSizeMultiplier={1.6}
               accessibilityLabel="Task name"
               style={[{ flex: 1, minWidth: 0, fontFamily: F.uiBold, fontSize: T.x2, lineHeight: 31, letterSpacing: -0.4, color: p.ink,
-                paddingVertical: S.s2, paddingHorizontal: S.s3, marginHorizontal: -S.s3, borderRadius: 12, borderWidth: 2,
+                paddingVertical: S.s2, paddingHorizontal: S.s3, marginHorizontal: -S.s3, borderRadius: R.sm, borderWidth: 2,
                 borderColor: typing ? tint(p.ink, 0.3) : 'transparent', backgroundColor: glow.title ? tint(statusColor(p, 'green')) : 'transparent' }, WEB_NO_OUTLINE]} />
             <Tap accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
               style={({ pressed, hovered, focused }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',

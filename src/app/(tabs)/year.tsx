@@ -74,7 +74,7 @@ export default function Year() {
         accessibilityHint="Opens the day. Press and hold for its timeline."
         onPress={() => openDay(key)} onLongPress={() => openTimeline(key)} delayLongPress={380}
         style={({ pressed }) => ({ position: 'absolute', left: x + 2, top: y + 2, width: cell - 4, height: rh - 4, alignItems: 'center', justifyContent: 'center',
-          borderWidth: today ? 1.5 : 0, borderColor: p.ink, borderRadius: R.sm - 4, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+          borderWidth: today ? 1.5 : 0, borderColor: p.ink, borderRadius: R.xs, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
         <Txt allowFontScaling={false} style={{ fontFamily: F.uiSemi, fontSize: 17, lineHeight: 20, fontVariant: ['tabular-nums'] }} color={past ? p.faint : p.ink}>{d}</Txt>
         <View style={{ width: 6, height: 6, borderRadius: 3, marginTop: 4, backgroundColor: mark ?? 'transparent', borderWidth: !mark && c?.event ? 1.5 : 0, borderColor: c?.event }} />
       </Pressable>,

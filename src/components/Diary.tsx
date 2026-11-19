@@ -71,7 +71,7 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
       accessibilityHint="Opens the note. Press and hold to pin or delete."
       onPress={() => { haptic.tick(); setOpen(n); }} onLongPress={() => { haptic.ok(); setMenuFor(n); }} delayLongPress={380}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Glass radius={R.sm - 2} style={{ padding: S.s3, gap: S.s1 }}>
+      <Glass radius={R.md} style={{ padding: S.s3, gap: S.s1 }}>
         {n.title ? <Txt numberOfLines={2} style={{ fontFamily: F.uiSemi, fontSize: T.base, lineHeight: 24 }}>{n.title}</Txt> : null}
         {n.text ? <Txt variant="meta" numberOfLines={10}>{n.text}</Txt> : null}
         <Txt variant="small" dim style={{ marginTop: S.s1 }}>{stamp(n.at)}</Txt>
@@ -92,7 +92,7 @@ export function Diary({ t, writeSignal }: { t: Task; writeSignal?: number }) {
     <View>
       <Txt variant="label" dim style={{ marginBottom: S.s2 }}>Diary</Txt>
       <Pressable accessibilityRole="button" onPress={() => { haptic.tick(); setOpen('new'); }}>
-        <Glass radius={R.sm - 2} style={{ height: 48, paddingHorizontal: S.s4, justifyContent: 'center' }}>
+        <Glass radius={R.sm} style={{ height: 48, paddingHorizontal: S.s4, justifyContent: 'center' }}>
           <Txt dim>Take a note…</Txt>
         </Glass>
       </Pressable>

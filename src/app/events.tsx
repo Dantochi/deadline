@@ -55,7 +55,7 @@ function Editor({ initial, onDone }: { initial: LifeEvent; onDone: () => void })
   return (
     // One raised panel, set apart from the list: what the date is called (largest), when it is, its colour, then
     // a single main action. Groups are 32 apart; things inside a group sit close together.
-    <View style={{ padding: S.s4, borderRadius: R.lg, backgroundColor: p.raise, borderWidth: 1, borderColor: p.line, gap: S.s6 }}>
+    <View style={{ padding: S.s4, borderRadius: R.md, borderCurve: 'continuous', backgroundColor: p.raise, borderWidth: 1, borderColor: p.line, gap: S.s6 }}>
       <View style={{ gap: S.s2 }}>
         <Txt variant="label" dim>{exists ? 'Edit date' : 'New date'}</Txt>
         <TextInput value={ev.title} onChangeText={title => setEv({ ...ev, title })} placeholder="e.g. Graduated"

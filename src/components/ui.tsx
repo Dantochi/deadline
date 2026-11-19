@@ -167,7 +167,7 @@ export function Section({ label, st, count, children }: { label?: string; st?: S
 }
 
 const styles = StyleSheet.create({
-  btn: { borderRadius: R.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
-  chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: R.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  toast: { position: 'absolute', left: 20, right: 20, bottom: 110, borderRadius: R.md, paddingHorizontal: 18, paddingVertical: 14 },
+  btn: { borderRadius: R.pill, borderCurve: 'continuous', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
+  chip: { minHeight: 44, paddingHorizontal: 18, borderRadius: R.pill, borderCurve: 'continuous', borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  toast: { position: 'absolute', left: 20, right: 20, bottom: 110, borderRadius: R.md, borderCurve: 'continuous', paddingHorizontal: 18, paddingVertical: 14 },
 });

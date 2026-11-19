@@ -6,10 +6,10 @@ import { EASE_OUT, useReduceMotion } from './Motion';
 import { Txt, haptic } from './ui';
 import { F, R, usePalette } from '../theme';
 
-export function Glass({ radius = R.lg, style, children, ...rest }: ViewProps & { radius?: number; style?: StyleProp<ViewStyle>; children?: ReactNode }) {
+export function Glass({ radius = R.md, style, children, ...rest }: ViewProps & { radius?: number; style?: StyleProp<ViewStyle>; children?: ReactNode }) {
   const p = usePalette();
   return (
-    <View style={[{ backgroundColor: p.glass, borderRadius: radius, borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi, overflow: 'hidden' }, style]} {...rest}>
+    <View style={[{ backgroundColor: p.glass, borderRadius: radius, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi, overflow: 'hidden' }, style]} {...rest}>
       {children}
     </View>
   );

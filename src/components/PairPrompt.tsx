@@ -24,7 +24,7 @@ export function PairPrompt() {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => act(false)}>
       <View style={{ flex: 1, backgroundColor: p.scrim, justifyContent: 'center', padding: S.page }}>
-        <View style={{ backgroundColor: p.raise, borderRadius: R.lg, padding: S.s5, gap: S.s3 }}>
+        <View style={{ backgroundColor: p.raise, borderRadius: R.lg, borderCurve: 'continuous', padding: S.s5, gap: S.s3 }}>
           <Txt variant="label" dim>Backup & sync</Txt>
           <Txt variant="h2">Let a new phone in?</Txt>
           <Txt dim>A phone signed in to your account is asking to unlock your backup. Approve only if it shows this code:</Txt>
