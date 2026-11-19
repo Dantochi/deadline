@@ -97,6 +97,10 @@ jobs:
           FIREBASE_IOS_APP_ID: ${{ secrets.FIREBASE_IOS_APP_ID }}
           RELEASE_NOTES: ${{ inputs.notes }}
         run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::The FIREBASE_SERVICE_ACCOUNT secret is not set, so the app can't be sent to testers. The app is still attached to this run (Summary → Artifacts). Add the secret (a Firebase service-account JSON key) or run with 'Send to testers' unticked."
+            exit 1
+          fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
           BUILD_FILE="$(ls dist/deadline-${{ inputs.platform }}.*)" bash scripts/distribute.sh ${{ inputs.platform }}
