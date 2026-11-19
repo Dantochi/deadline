@@ -14,6 +14,7 @@ const dark = {
   glass: 'rgba(255,255,255,0.06)', glassEdge: 'rgba(255,255,255,0.12)', glassHi: 'rgba(255,255,255,0.22)', glassOn: 'rgba(255,255,255,0.16)',
   bar: '#121417',
   faint: '#5E636B', // past days: clearly grey, still 3.2:1 on the page
+  hair: 'rgba(241,241,236,0.12)', // hairline edges and handles: ink at low alpha, so they sit on any surface
 };
 const light: typeof dark = {
   bg: '#F3F4F5', raise: '#FFFFFF', raise2: '#E8EAEC', line: '#DADDE1',
@@ -24,6 +25,7 @@ const light: typeof dark = {
   glass: 'rgba(255,255,255,0.62)', glassEdge: 'rgba(15,17,19,0.08)', glassHi: 'rgba(255,255,255,0.95)', glassOn: 'rgba(15,17,19,0.08)',
   bar: '#F8F9FA',
   faint: '#868B92', // 3.1:1 on the page
+  hair: 'rgba(15,17,19,0.10)',
 };
 export type Palette = typeof dark;
 export const palettes = { dark, light };

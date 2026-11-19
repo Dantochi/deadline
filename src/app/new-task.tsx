@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CalendarIcon, CheckIcon, ChevronIcon, ClockIcon, CloseIcon, RepeatIcon } from '../components/icons';
+import { CheckIcon, CloseIcon } from '../components/icons';
+import { Tap } from '../components/Motion';
 import { Sheet } from '../components/Sheet';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
@@ -12,8 +13,8 @@ import { aiAvailable, aiParse } from '../lib/ai';
 import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
-import { DAY, daysLabel, dueIn, endOfDay, fshort, nextSlot, pad, slotLabel } from '../lib/time';
-import { F, R, S, statusColor, tint, usePalette } from '../theme';
+import { DAY, daysLabel, dueIn, endOfDay, fdate, fshort, nextSlot, pad, slotLabel } from '../lib/time';
+import { F, R, S, T, statusColor, tint, usePalette } from '../theme';
 
 type Unit = 'week' | 'month' | 'year';
 const UNITS: Unit[] = ['week', 'month', 'year'];
@@ -28,6 +29,9 @@ const DAYS: [string, number, string][] = [['M', 1, 'Monday'], ['T', 2, 'Tuesday'
 const PLAN_EXTRAS = false;
 /** The day bar and the "held for you" line under the time button. Off for now; set true to bring them back. */
 const DAY_PREVIEW = false;
+// The browser's own focus outline would sit on top of the soft ring drawn while typing (web builds only; React
+// Native's types don't list 'none', so it's cast).
+const WEB_NO_OUTLINE = (Platform.OS === 'web' ? { outlineStyle: 'none' } : {}) as TextStyle;
 
 const HINTS: Record<string, string> = {
   career: 'Apply for three senior roles', health: 'Run a 10K', money: 'Save three months of rent', learning: 'Finish the data course',
@@ -176,32 +180,46 @@ export default function NewTask() {
     router.back();
   };
 
+  const [typing, setTyping] = useState(false);
+  const hmNow = `${pad(time.getHours())}:${pad(time.getMinutes())}`;
+  const missing = !title.trim() ? 'Name the task first' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
+  const summary = `${mode === 'once' ? `Once, ${fshort(+onceDate)}` : daysLabel(days)} · ${touchedTime ? `${hmNow}–${toHM(fromHM(hmNow) + minutes)}` : 'no time yet'}`;
+  const sentence = { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: S.s2, rowGap: S.s1 } as const;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.raise }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: S.page, paddingTop: S.s3 }}>
-          <Txt variant="h2" style={{ flex: 1 }}>{ed ? 'Edit task' : 'New task'}</Txt>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginRight: -12 }}>
+        {/* Close on the left, a quiet screen name: the task's own title is the largest thing on the screen. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s1, paddingHorizontal: S.page, paddingTop: S.s2 }}>
+          <Tap accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={6}
+            style={({ pressed, focused }) => ({ width: 44, height: 44, marginLeft: -12, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: pressed ? p.raise2 : 'transparent', borderWidth: 2, borderColor: focused ? p.dim : 'transparent' })}>
             <CloseIcon color={p.dim} />
-          </Pressable>
+          </Tap>
+          <Txt variant="meta" dim style={{ flex: 1 }}>{ed ? 'Edit task' : 'New task'}</Txt>
         </View>
-        {/* Each question is its own group, 48 apart; inside a group, 12. */}
-        <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s4, paddingBottom: S.s8, gap: S.s7 }} keyboardShouldPersistTaps="handled">
-          <View style={[{ flexDirection: 'row', alignItems: 'center', gap: S.s2, borderBottomWidth: 1, borderBottomColor: p.line }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.title ? tint(statusColor(p, 'green')) : 'transparent' }]}>
-            <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} placeholder={HINTS[state.focus ?? ''] ?? 'What do you want to get done?'}
-              placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
-              style={{ flex: 1, minWidth: 0, fontFamily: F.uiSemi, fontSize: 21, color: p.ink, paddingVertical: S.s3 }} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: p.raise2 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: S.page, paddingTop: S.s3, paddingBottom: S.s7, gap: S.s6 }} keyboardShouldPersistTaps="handled">
+          {/* The title in open space, no box; a soft ring only while typing. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s2 }}>
+            <TextInput value={title} onChangeText={t => { setTitle(t); setErr(''); }} autoFocus={!voiceOpen && !ed} multiline submitBehavior="blurAndSubmit" returnKeyType="done"
+              onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
+              placeholder={`e.g. ${HINTS[state.focus ?? ''] ?? 'Write chapter three'}`} placeholderTextColor={p.dim} maxFontSizeMultiplier={1.6}
+              accessibilityLabel="Task name"
+              style={[{ flex: 1, minWidth: 0, fontFamily: F.uiBold, fontSize: T.x2, lineHeight: 31, letterSpacing: -0.4, color: p.ink,
+                paddingVertical: S.s2, paddingHorizontal: S.s3, marginHorizontal: -S.s3, borderRadius: 12, borderWidth: 2,
+                borderColor: typing ? tint(p.ink, 0.3) : 'transparent', backgroundColor: glow.title ? tint(statusColor(p, 'green')) : 'transparent' }, WEB_NO_OUTLINE]} />
+            <Tap accessibilityRole="button" accessibilityLabel="Say the task" onPress={() => setVoiceOpen(true)} hitSlop={6}
+              style={({ pressed, hovered, focused }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: pressed || hovered ? p.line : p.raise2, borderWidth: 2, borderColor: focused ? p.dim : 'transparent' })}>
               <MicIcon color={p.ink} />
-            </Pressable>
+            </Tap>
           </View>
           {heard.length ? (
-            <View style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s6 }}>
+            <View style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: S.s2, marginTop: -S.s4 }}>
               <CheckIcon size={16} color={statusColor(p, 'green', true)} />
               <View style={{ flex: 1 }}>
-                <Txt variant="small" numberOfLines={2}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… · ' : by === 'gemini' ? 'Understood by Gemini · ' : 'Understood · '}</Txt>{heard.join(' · ')}</Txt>
-                {by === 'gemini' && !thinking ? <Txt variant="small" dim>AI can misread. Check the date and time.</Txt> : null}
+                <Txt variant="small" numberOfLines={2}><Txt variant="small" dim>{thinking ? 'Checking with Gemini… ' : by === 'gemini' ? 'Gemini heard: ' : 'Heard: '}</Txt>{heard.join(' · ')}</Txt>
+                {by === 'gemini' && !thinking ? <Txt variant="small" dim>Check the date and time.</Txt> : null}
               </View>
               {undo ? (
                 <Pressable accessibilityRole="button" accessibilityLabel="Undo what voice filled in" hitSlop={10} onPress={restore} style={{ height: 40, justifyContent: 'center', paddingHorizontal: S.s2 }}>
@@ -211,7 +229,7 @@ export default function NewTask() {
             </View>
           ) : null}
           {newSteps.length ? (
-            <View style={{ gap: S.s1, marginTop: -S.s6 }}>
+            <View style={{ gap: S.s1, marginTop: -S.s4 }}>
               <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>Subtasks to add</Txt>
               {newSteps.map((st, i) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, gap: S.s2 }}>
@@ -226,15 +244,27 @@ export default function NewTask() {
             </View>
           ) : null}
 
-          {/* Deadline, schedule and time as three rows in one card; each opens its own sheet. A row glows for a few
-              seconds when voice has just filled it in. */}
-          <View style={{ borderRadius: R.md, borderWidth: 1, borderColor: p.line, overflow: 'hidden' }}>
-            <FormRow icon={<CalendarIcon size={22} color={p.dim} />} label="Deadline" value={fshort(+deadline)} hint={dueIn(deadline)} glow={glow.deadline} onPress={() => setSheet('deadline')} />
-            <FormRow icon={<RepeatIcon size={22} color={p.dim} />} label="Schedule" glow={glow.when} onPress={() => setSheet('schedule')}
-              value={mode === 'once' ? `Once, ${fshort(+onceDate)}` : days.length ? daysLabel(days) : 'Pick days'} />
-            <FormRow icon={<ClockIcon size={22} color={p.dim} />} label="Time" glow={glow.when} last onPress={() => setTimeOpen(true)}
-              value={touchedTime ? `${pad(time.getHours())}:${pad(time.getMinutes())} – ${toHM(fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`) + minutes)}` : 'Not set'}
-              hint={touchedTime ? lenText(minutes) : undefined} />
+          {/* The plan as one sentence. Each value is tappable and opens its own sheet; the dim words around them
+              say how they connect. Values voice just filled glow for a few seconds. */}
+          <View style={{ gap: S.s2 }}>
+            <View style={sentence}>
+              <Word>by</Word>
+              <Token label={fshort(+deadline)} glow={glow.deadline} a11y={`Deadline ${fdate(+deadline)}, ${dueIn(deadline)}. Change`} onPress={() => setSheet('deadline')} />
+              <Txt variant="meta" dim style={{ marginLeft: S.s1 }}>{dueIn(deadline)}</Txt>
+            </View>
+            <View style={sentence}>
+              {mode === 'once'
+                ? <Token label={`once, ${fshort(+onceDate)}`} glow={glow.when} a11y={`Once, on ${fdate(+onceDate)}. Change`} onPress={() => setSheet('schedule')} />
+                : <Token label={days.length ? daysLabel(days).toLowerCase() : 'pick days'} muted={!days.length} glow={glow.when}
+                    a11y={`Repeats ${days.length ? daysLabel(days) : 'on no days yet'}. Change`} onPress={() => setSheet('schedule')} />}
+              <Word>at</Word>
+              <Token label={touchedTime ? hmNow : 'add a time'} muted={!touchedTime} glow={glow.when}
+                a11y={touchedTime ? `Starts at ${hmNow}. Change` : 'Add a time'} onPress={() => setTimeOpen(true)} />
+              {touchedTime ? <>
+                <Word>for</Word>
+                <Token label={lenText(minutes)} glow={glow.when} a11y={`For ${lenText(minutes)}. Change`} onPress={() => setTimeOpen(true)} />
+              </> : null}
+            </View>
           </View>
 
           {DAY_PREVIEW ? <View style={{ gap: S.s3 }}>
@@ -292,21 +322,20 @@ export default function NewTask() {
           </> : null}
 
           {err ? <Txt variant="meta" color={p.redInk} style={{ fontFamily: F.uiSemi }}>{err}</Txt> : null}
-          {/* The button says what is missing (no error popup). Before a time is set it opens the time screen; after
-              Done it becomes Save, with the chosen time beside it to change. */}
-          {(() => {
-            const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
-            if (missing) return <Btn kind="primary" label={missing} disabled />;
-            if (!touchedTime) return <Btn kind="primary" label="Set time" onPress={() => setTimeOpen(true)} />;
-            const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hm} – ${toHM(fromHM(hm) + minutes)}`;
-            return (
-              <View style={{ flexDirection: 'row', gap: S.s2 }}>
-                <Btn kind="primary" label={ed ? 'Save changes' : 'Save'} style={{ flex: 1 }} onPress={save} />
-                <Btn label={range} accessibilityLabel={`Session ${range}, ${lenText(minutes)}. Change time`} onPress={() => setTimeOpen(true)} />
-              </View>
-            );
-          })()}
         </ScrollView>
+        {/* A bar that stays above the keyboard: what will be saved on the left (or what is missing), the action on
+            the right. Before a time is set the action opens the time screen; after, it saves. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3, paddingHorizontal: S.page, paddingVertical: S.s3,
+          borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: p.line, backgroundColor: p.raise }}>
+          <View style={{ flex: 1, minWidth: 0 }} accessibilityLiveRegion="polite">
+            {missing
+              ? <Txt variant="small" color={p.redInk} style={{ fontFamily: F.uiSemi }} numberOfLines={2}>{missing}</Txt>
+              : <Txt variant="small" dim numberOfLines={2}>{summary}</Txt>}
+          </View>
+          <Btn kind="primary" style={{ minWidth: 132 }} disabled={!!missing}
+            label={!touchedTime ? 'Set time' : ed ? 'Save changes' : 'Save'}
+            onPress={() => (touchedTime ? save() : setTimeOpen(true))} />
+        </View>
       </KeyboardAvoidingView>
       <TimeSheet open={timeOpen} onClose={() => setTimeOpen(false)}
         start={`${pad(time.getHours())}:${pad(time.getMinutes())}`} minutes={minutes}
@@ -316,7 +345,7 @@ export default function NewTask() {
       <Sheet open={sheet === 'deadline'} title="Deadline" onClose={() => setSheet(null)}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
           {UNITS.map(u => quick?.u === u ? (
-            <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderRadius: R.sm, borderColor: p.ink, backgroundColor: p.raise2 }}>
+            <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 22, backgroundColor: p.raise2 }}>
               <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
                 <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>−</Txt>
               </Pressable>
@@ -368,23 +397,23 @@ function DayBar({ start, minutes, busy, color }: { start: number; minutes: numbe
   );
 }
 
-/** One row of the deadline / schedule / time card: icon, label, the value (and a quiet hint), chevron. */
-function FormRow({ icon, label, value, hint, onPress, glow, last }: {
-  icon: ReactNode; label: string; value: string; hint?: string; onPress: () => void; glow?: boolean; last?: boolean;
-}) {
+/** A connecting word in the plan sentence ("by", "at", "for"). */
+function Word({ children }: { children: string }) {
+  return <Txt dim style={{ fontSize: T.xl, lineHeight: 30 }}>{children}</Txt>;
+}
+
+/** A value in the plan sentence: semibold, underlined, tappable. Sinks a little and fills on press; a ring on
+ *  keyboard focus; a fill on hover (web). `muted` is for a value still to be chosen. */
+function Token({ label, onPress, a11y, glow, muted }: { label: string; onPress: () => void; a11y: string; glow?: boolean; muted?: boolean }) {
   const p = usePalette();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}. Change`} onPress={() => { haptic.tick(); onPress(); }}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 64, paddingHorizontal: S.s4, paddingVertical: S.s2,
-        borderBottomWidth: last ? 0 : 1, borderBottomColor: p.line,
-        backgroundColor: glow ? tint(statusColor(p, 'green')) : pressed ? p.raise2 : 'transparent' })}>
-      {icon}
-      <Txt dim style={{ width: 84 }}>{label}</Txt>
-      <View style={{ flex: 1, alignItems: 'flex-end' }}>
-        <Txt style={{ fontFamily: F.uiSemi, textAlign: 'right' }} numberOfLines={1}>{value}</Txt>
-        {hint ? <Txt variant="small" dim numberOfLines={1}>{hint}</Txt> : null}
+    <Tap accessibilityRole="button" accessibilityLabel={a11y} hitSlop={6} onPress={() => { haptic.tick(); onPress(); }}
+      style={({ pressed, hovered, focused }) => ({ borderRadius: 8, paddingHorizontal: S.s1 + 2, paddingVertical: 2, marginHorizontal: -(S.s1 + 2) / 2,
+        borderWidth: 2, borderColor: focused ? p.dim : 'transparent',
+        backgroundColor: glow ? tint(statusColor(p, 'green')) : pressed || hovered ? p.raise2 : 'transparent' })}>
+      <View style={{ borderBottomWidth: 2, borderBottomColor: muted ? p.line : p.lived }}>
+        <Txt color={muted ? p.dim : p.ink} style={{ fontFamily: F.uiSemi, fontSize: T.xl, lineHeight: 30, fontVariant: ['tabular-nums'] }}>{label}</Txt>
       </View>
-      <ChevronIcon size={18} color={p.dim} />
-    </Pressable>
+    </Tap>
   );
 }
