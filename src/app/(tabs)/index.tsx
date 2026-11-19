@@ -69,7 +69,9 @@ export default function Life() {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+      {/* From the top, with the space left over below the grid: pinned to the bottom, the number floated low on tall
+          phones under an empty third of the screen. */}
+      <View style={{ flex: 1, justifyContent: 'flex-start', paddingTop: S.s5 }}>
         {bday ? <Txt variant="label" dim>Happy birthday. A new row begins.</Txt> : null}
         {/* The number alone; the unit switch under it says what it counts (and the label says it to screen readers). */}
         <RollingNumber value={left} fontSize={120} color={p.ink} accessibilityLabel={`${fmt(left)} ${unit} left until ${state.life}`} />

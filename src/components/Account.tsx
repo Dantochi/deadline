@@ -36,6 +36,8 @@ export function SignIn({ run, note }: { run: Run; note?: string }) {
   const [password, setPassword] = useState('');
   return (
     <Block title={isNew ? 'Create your account' : 'Sign in'}>
+      {/* The reassurance comes first, at reading size: it's what people look for before typing an email. */}
+      <Txt variant="meta" dim>{note ?? 'Your email is only for signing in. Your partner sees your name and username, never your email.'}</Txt>
       <Field label="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" />
       <Field label="Password" value={password} onChangeText={setPassword} placeholder={isNew ? 'At least 6 characters' : ''} secureTextEntry autoCapitalize="none"
         autoComplete={isNew ? 'new-password' : 'current-password'} textContentType={isNew ? 'newPassword' : 'password'} />
@@ -45,7 +47,6 @@ export function SignIn({ run, note }: { run: Run; note?: string }) {
         <Btn kind="ghost" label={isNew ? 'I already have an account' : 'I am new here'} onPress={() => setIsNew(!isNew)} />
         {!isNew ? <Btn kind="ghost" label="Forgot password" onPress={() => run(() => P.resetPassword(email), 'Check your email for a reset link')} /> : null}
       </View>
-      <Txt variant="small" dim>{note ?? 'Your email is only for signing in. Your partner sees your name and username, never your email.'}</Txt>
     </Block>
   );
 }

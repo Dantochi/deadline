@@ -156,7 +156,7 @@ export default function Backup() {
       <>
         <Block title="Backup & sync is on">
           <Txt>{statusLine(sync.status, sync.last, sync.error)}</Txt>
-          <Txt variant="small" dim>Signed in as {P.user.email}. Encrypted on this phone; nobody else can read it.</Txt>
+          <Txt variant="meta" dim>Encrypted on this phone; nobody else can read it, not even us. Signed in as {P.user.email}.</Txt>
           <Btn label="Sync now" onPress={() => { haptic.tick(); sync.syncNow(); }} />
         </Block>
         <Block title="Recovery phrase">
