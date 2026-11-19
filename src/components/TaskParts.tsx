@@ -10,7 +10,7 @@ import { mondayOf, otherSide, usePartner } from '../lib/partner';
 import { reviewDue, weekKey, weekReview } from '../lib/review';
 import { useStore, type Task } from '../lib/store';
 import { info, leftShort, ymd } from '../lib/time';
-import { F, R, S, statusColor, usePalette } from '../theme';
+import { F, R, S, statusColor, tint, usePalette } from '../theme';
 
 // On Sunday and Monday, until opened or dismissed: a door into the weekly review.
 export function ReviewCard() {
@@ -71,6 +71,14 @@ export function TaskRow({ t, date }: { t: Task; date?: string }) {
   const { left, st } = info(t);
   const paused = !!t.pausedAt && !t.done;
   const label = t.done ? (t.letGo ? 'Let go' : 'Done') : paused ? 'Paused' : leftShort(left);
+  const pill = t.done || paused ? null : left < 0 ? 'red' : st === 'red' || st === 'amber' || st === 'green' ? st : null;
+  const ring = paused ? p.dim : statusColor(p, left < 0 ? 'red' : st);
+  const toggleDone = (cur: Task) => {
+    if (cur.done) { updateTask(cur.id, y => ({ ...y, done: false, letGo: false, doneAt: undefined })); haptic.tick(); return; }
+    updateTask(cur.id, y => ({ ...y, done: true, doneAt: Date.now() }));
+    haptic.ok();
+    toast(`Done: ${cur.title}`, 6000, { label: 'Undo', onPress: () => updateTask(cur.id, y => ({ ...y, done: false, doneAt: undefined })) });
+  };
   const x = useRef(new Animated.Value(0)).current;
   const tRef = useRef(t);
   tRef.current = t;
@@ -105,13 +113,22 @@ export function TaskRow({ t, date }: { t: Task; date?: string }) {
         <Animated.View style={{ opacity: showDel }}><Txt style={{ fontFamily: F.uiSemi }} color={p.redInk}>Delete</Txt></Animated.View>
       </Animated.View>
       <Animated.View {...swipe.panHandlers} style={{ transform: [{ translateX: x }], backgroundColor: p.bg }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${label}`} accessibilityHint="Opens the task. Swipe right for done, left to delete."
+        <Pressable accessibilityRole="button" accessibilityLabel={`${t.title}, ${label}`} accessibilityHint="Opens the task. Tap the circle, or swipe right, to mark it done; swipe left to delete."
           onPress={() => { if (menu) return setMenu(false); haptic.tick(); router.push({ pathname: '/task', params: { id: t.id } }); }}
           onLongPress={() => { haptic.ok(); setMenu(true); }} delayLongPress={380}
-          style={({ pressed }) => ({ height: 64, flexDirection: 'row', alignItems: 'center', gap: S.s4, opacity: pressed ? 0.7 : 1 })}>
-          <View style={{ width: 12, alignItems: 'center' }}><StatusDot st={st} shapes={state.shapes} /></View>
+          style={({ pressed }) => ({ height: 60, flexDirection: 'row', alignItems: 'center', gap: S.s3, opacity: pressed ? 0.7 : 1 })}>
+          {/* A circle to finish the task in one tap (with Undo), in the status colour, keeping the shape cue inside. */}
+          <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: !!t.done }} accessibilityLabel={t.done ? `Mark ${t.title} as not done` : `Mark ${t.title} as done`}
+            hitSlop={10} onPress={() => toggleDone(t)}
+            style={({ pressed }) => ({ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2,
+              borderColor: t.done ? statusColor(p, 'green') : ring, backgroundColor: t.done ? statusColor(p, 'green') : 'transparent', transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+            {t.done ? <CheckIcon size={14} color={p.bg} /> : <StatusDot st={st} shapes={state.shapes} size={7} />}
+          </Pressable>
           <Txt numberOfLines={1} style={[{ flex: 1 }, t.done && { color: p.dim, textDecorationLine: 'line-through' }]}>{t.title}</Txt>
-          <Txt variant="meta" dim>{label}</Txt>
+          {/* Time left as a tinted pill, so urgency scans down the list. */}
+          <View style={{ height: 26, paddingHorizontal: S.s2, borderRadius: 13, justifyContent: 'center', backgroundColor: pill ? tint(statusColor(p, pill)) : p.raise2 }}>
+            <Txt variant="small" style={{ fontFamily: F.uiSemi, fontVariant: ['tabular-nums'] }} color={pill ? statusColor(p, pill, true) : p.dim}>{label}</Txt>
+          </View>
         </Pressable>
         {menu ? (
           <View style={{ paddingBottom: S.s3, paddingLeft: 12 + S.s4, flexDirection: 'row' }}>
