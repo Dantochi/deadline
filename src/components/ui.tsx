@@ -38,24 +38,29 @@ export function DateTitle({ date, size = T.xl, month = 'long', style, color }: {
 }
 
 type BtnProps = PressableProps & { label: string; icon?: ReactNode; kind?: 'primary' | 'pill' | 'ghost'; style?: StyleProp<ViewStyle> };
-export function Btn({ label, icon, kind = 'pill', style, onPress, ...rest }: BtnProps) {
+export function Btn({ label, icon, kind = 'pill', style, onPress, disabled, ...rest }: BtnProps) {
   const p = usePalette();
   const primary = kind === 'primary';
+  // Disabled: a grey fill with grey text that still reads (4.7:1 light, 5:1 dark), not a faded button, because
+  // disabled buttons here often say what's missing ("Name the task to start").
+  const off = !!disabled;
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: off }}
+      disabled={off}
       onPress={e => { haptic.tick(); onPress?.(e); }}
       style={({ pressed }) => [
         styles.btn,
         // One button height across the app; secondary buttons are frosted glass.
-        { minHeight: BTN.m, backgroundColor: primary ? p.ink : kind === 'pill' ? p.glass : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] },
-        kind === 'pill' && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi },
+        { minHeight: BTN.m, backgroundColor: off && kind !== 'ghost' ? p.raise2 : primary ? p.ink : kind === 'pill' ? p.glass : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] },
+        kind === 'pill' && !off && { borderWidth: StyleSheet.hairlineWidth, borderColor: p.glassEdge, borderTopColor: p.glassHi },
         style,
       ]}
       {...rest}
     >
       {icon}
-      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={primary ? p.bg : p.ink}>{label}</Txt>
+      <Txt style={{ fontFamily: primary ? F.uiBold : F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={off ? p.dim : primary ? p.bg : p.ink}>{label}</Txt>
     </Pressable>
   );
 }
@@ -73,8 +78,10 @@ export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPr
   const p = usePalette();
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic.tick(); onPress(); }}
-      style={[styles.chip, { borderColor: on ? p.ink : p.glassEdge, borderTopColor: on ? p.ink : p.glassHi, backgroundColor: on ? p.ink : p.glass }]}>
-      <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }} color={on ? p.bg : p.ink}>{label}</Txt>
+      // Picked: a light fill, an ink outline and a tick. A solid black chip was the heaviest mark on whole screens.
+      style={[styles.chip, { flexDirection: 'row', gap: 6, borderColor: on ? p.ink : p.glassEdge, borderTopColor: on ? p.ink : p.glassHi, backgroundColor: on ? p.raise2 : p.glass }]}>
+      {on ? <Txt style={{ fontFamily: F.uiBold, fontSize: T.sm, lineHeight: 20 }}>✓</Txt> : null}
+      <Txt style={{ fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20 }}>{label}</Txt>
     </Pressable>
   );
 }

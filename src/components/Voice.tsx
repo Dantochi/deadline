@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { Chip, Txt, haptic } from './ui';
+import { Btn, Chip, Txt, haptic } from './ui';
 import { useReduceMotion } from './Motion';
-import { F, S, T, usePalette } from '../theme';
+import { F, S, usePalette } from '../theme';
 
 export const MicIcon = ({ color, size = 22 }: { color: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round">
@@ -130,10 +130,8 @@ export function VoiceSheet({ open, onClose, onResult }: { open: boolean; onClose
         <TextInput value={text} onChangeText={v => { setText(v); kept.current = v; }} multiline placeholder="Or type it here" placeholderTextColor={p.dim} maxFontSizeMultiplier={2}
           style={{ height: 120, padding: S.s4, backgroundColor: p.raise, color: p.ink, fontFamily: F.uiMedium, fontSize: 19, lineHeight: 26, textAlignVertical: 'top' }} />
 
-        <Pressable accessibilityRole="button" disabled={!text.trim()} onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }}
-          style={{ marginTop: S.s5, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: p.ink, opacity: text.trim() ? 1 : 0.4 }}>
-          <Txt style={{ fontFamily: F.uiBold, fontSize: T.md, lineHeight: 20 }} color={p.bg}>Fill in the task</Txt>
-        </Pressable>
+        <Btn kind="primary" label={text.trim() ? 'Fill in the task' : 'Say or type the task first'} disabled={!text.trim()} style={{ marginTop: S.s5 }}
+          onPress={() => { stop(); haptic.ok(); onResult(text.trim()); onClose(); }} />
       </SafeAreaView>
     </Modal>
   );

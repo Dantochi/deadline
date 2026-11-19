@@ -63,7 +63,7 @@ export function CareerSetup({ initial, onDone, doneLabel = 'Save' }: {
           <View style={{ flex: 1 }}><Chip label="I'm studying for it" on={student} onPress={() => setStudent(true)} /></View>
         </View>
         <Btn label={stage === 'pick' ? 'Suggest again' : 'Find creators'} disabled={title.trim().length < 2 || stage === 'loading'}
-          style={title.trim().length < 2 ? { opacity: 0.45 } : undefined} onPress={find} />
+          onPress={find} />
       </View>
 
       {stage === 'loading' ? (

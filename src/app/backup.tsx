@@ -37,7 +37,7 @@ function Phrase({ phrase, onDone }: { phrase: string; onDone: () => void }) {
         <Txt style={{ flex: 1 }}>I’ve saved my recovery phrase somewhere safe</Txt>
         <Toggle value={kept} onValueChange={setKept} accessibilityLabel="I've saved my recovery phrase" />
       </View>
-      <Btn kind="primary" label="Done" disabled={!kept} style={!kept ? { opacity: 0.45 } : undefined} onPress={onDone} />
+      <Btn kind="primary" label="Done" disabled={!kept} onPress={onDone} />
     </Block>
   );
 }

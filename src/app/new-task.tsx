@@ -203,13 +203,13 @@ export default function NewTask() {
             <Txt variant="label" dim>Deadline</Txt>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
               {UNITS.map(u => quick?.u === u ? (
-                <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderColor: p.ink, backgroundColor: p.ink }}>
+                <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderRadius: R.sm, borderColor: p.ink, backgroundColor: p.raise2 }}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>−</Txt>
+                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>−</Txt>
                   </Pressable>
-                  <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }} color={p.bg}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
+                  <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
                   <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }} color={p.bg}>+</Txt>
+                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>+</Txt>
                   </Pressable>
                 </View>
               ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
@@ -227,8 +227,8 @@ export default function NewTask() {
                 {DAYS.map(([l, n, name]) => (
                   <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ selected: days.includes(n) }}
                     onPress={() => { haptic.tick(); setDays(d => (d.includes(n) ? d.filter(x => x !== n) : [...d, n])); }}
-                    style={{ flex: 1, height: 44, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: days.includes(n) ? p.ink : p.line, backgroundColor: days.includes(n) ? p.ink : 'transparent' }}>
-                    <Txt style={{ fontFamily: F.uiSemi, fontSize: 15 }} color={days.includes(n) ? p.bg : p.dim}>{l}</Txt>
+                    style={{ flex: 1, height: 44, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderRadius: R.sm, borderColor: days.includes(n) ? p.ink : p.line, backgroundColor: days.includes(n) ? p.raise2 : 'transparent' }}>
+                    <Txt style={{ fontFamily: days.includes(n) ? F.uiBold : F.uiSemi, fontSize: 15 }} color={days.includes(n) ? p.ink : p.dim}>{l}</Txt>
                   </Pressable>
                 ))}
               </View>
@@ -291,7 +291,7 @@ export default function NewTask() {
               Done it becomes Save, with the chosen time beside it to change. */}
           {(() => {
             const missing = !title.trim() ? 'Name the task to start' : mode === 'repeat' && !days.length ? 'Pick at least one day' : null;
-            if (missing) return <Btn kind="primary" label={missing} disabled style={{ opacity: 0.45 }} />;
+            if (missing) return <Btn kind="primary" label={missing} disabled />;
             if (!touchedTime) return <Btn kind="primary" label="Set time" onPress={() => setTimeOpen(true)} />;
             const hm = `${pad(time.getHours())}:${pad(time.getMinutes())}`, range = `${hm} – ${toHM(fromHM(hm) + minutes)}`;
             return (
