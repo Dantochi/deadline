@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronIcon } from '../components/icons';
 import { LifeGrid } from '../components/LifeGrid';
 import { DateTimeField } from '../components/pickers';
 import { CareerSetup } from '../components/CareerSetup';
@@ -20,6 +21,17 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [birth, setBirth] = useState(parseBirth(state.birth));
   const [err, setErr] = useState('');
+
+  // The steps on this person's path ("Just my deadlines" skips the two life-grid steps), for the progress bar
+  // and for going back.
+  const path = state.showGrid ? [0, 1, 2, 3, 4, 5] : [0, 3, 4, 5];
+  const at = Math.max(0, path.indexOf(step));
+  const back = () => { if (at > 0) { haptic.tick(); setErr(''); setStep(path[at - 1]); return true; } return false; };
+  // The phone's back button steps back too, instead of leaving setup.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', back);
+    return () => sub.remove();
+  });
 
   const finish = () => { update(s => ({ ...s, onboarded: true, briefSeen: ymd(new Date()) })); router.replace('/'); };
   const card = (title: string, body: string, onPress: () => void) => (
@@ -40,6 +52,20 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
+      {/* Where you are, and a way back. */}
+      <View style={{ height: 48, flexDirection: 'row', alignItems: 'center', gap: S.s3, paddingHorizontal: '6%' }}>
+        <View style={{ width: 40 }}>
+          {at > 0 ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Back" hitSlop={8} onPress={back} style={{ width: 40, height: 40, justifyContent: 'center' }}>
+              <ChevronIcon left color={p.ink} />
+            </Pressable>
+          ) : null}
+        </View>
+        <View accessible accessibilityLabel={`Step ${at + 1} of ${path.length}`} style={{ flex: 1, flexDirection: 'row', gap: S.s1 }}>
+          {path.map((s2, i) => <View key={s2} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= at ? p.ink : p.line }} />)}
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', padding: '6%', gap: S.s5 }} keyboardShouldPersistTaps="handled">
         {step === 0 ? (
           <>
@@ -57,6 +83,7 @@ export default function Onboarding() {
             <View style={{ gap: S.s2 }}>
               <Txt variant="small" dim style={{ fontFamily: F.uiSemi }}>When were you born?</Txt>
               <DateTimeField label="Date of birth" mode="date" value={birth} maximumDate={new Date()} onChange={d => { setBirth(d); setErr(''); }} />
+              <Txt variant="small" dim>Stays on your phone. Only used to draw your weeks.</Txt>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: S.s3 }}>
               <View style={{ flex: 1 }}><Txt style={{ fontFamily: F.uiSemi }}>Count towards age</Txt><Txt variant="small" dim>A reference point, not a prediction</Txt></View>
