@@ -2,16 +2,19 @@
 // as the life countdown. Under it, the day as 24 boxes (one per hour), lived hours grey, like the life grid.
 // The rotate button turns it into a display piece: the countdown on its side, full screen, centred.
 import { useKeepAwake } from 'expo-keep-awake';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RotateIcon } from '../../components/icons';
+import { ChevronIcon, RotateIcon } from '../../components/icons';
 import { RollingNumber } from '../../components/RollingNumber';
 import { Txt, haptic } from '../../components/ui';
-import { hms, secondsLeftToday } from '../../lib/time';
-import { S, T, palettes, usePalette } from '../../theme';
+import { sessionsOn, toHM, fromHM } from '../../lib/schedule';
+import { useStore } from '../../lib/store';
+import { pad, hms, secondsLeftToday } from '../../lib/time';
+import { urgency } from '../../lib/calendar';
+import { F, R, S, T, palettes, statusColor, tint, usePalette } from '../../theme';
 
 /** The countdown as a display piece: drawn on its side (the app itself stays in portrait), always dark, with the
  *  screen kept awake. Tap anywhere, or press back, to close. */
@@ -66,6 +69,11 @@ export default function Today() {
   const size = Math.floor(inner / 5.2);
   const box = (inner - 23 * S.s1) / 24;
   const hrs = Math.floor(left / 3600), mins = Math.floor((left % 3600) / 60);
+  // The session happening now, or the next one today (refreshed each minute, not each second).
+  const { state } = useStore();
+  const minute = Math.floor(+now / 6e4);
+  const next = useMemo(() => sessionsOn(state, +now).find(b => b.state === 'planned' && !b.t.pausedAt && !b.t.done && b.start + b.minutes * 6e4 > +now) ?? null,
+    [state.tasks, minute]); // eslint-disable-line react-hooks/exhaustive-deps
   const label = `${hrs} ${hrs === 1 ? 'hour' : 'hours'} ${mins} ${mins === 1 ? 'minute' : 'minutes'} left today`;
 
   return (
@@ -91,11 +99,39 @@ export default function Today() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: S.s2 }}>
           {['00', '06', '12', '18', '24'].map(l => <Txt key={l} variant="num" dim allowFontScaling={false} style={{ fontSize: T.xs, lineHeight: 16 }}>{l}</Txt>)}
         </View>
+
+        {/* What's next today, so the screen answers "what now?" as well as "how long?". */}
+        <NextSession next={next} now={+now} />
       </View>
 
       <Modal visible={wide} animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setWide(false)}>
         {wide ? <LandscapeClock left={left} label={label} onClose={() => setWide(false)} /> : null}
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function NextSession({ next, now }: { next: ReturnType<typeof sessionsOn>[number] | null; now: number }) {
+  const p = usePalette();
+  if (!next) return <Txt variant="small" dim style={{ marginTop: S.s6 }}>No more sessions planned today.</Txt>;
+  const c = next.t.color ?? statusColor(p, urgency(next.t));
+  const s = new Date(next.start), hm = `${pad(s.getHours())}:${pad(s.getMinutes())}`;
+  const range = `${hm} – ${toHM(fromHM(hm) + next.minutes)}`;
+  const on = next.start <= now;
+  const mins = Math.max(1, Math.round(((on ? next.start + next.minutes * 6e4 : next.start) - now) / 6e4));
+  const away = mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} h${mins % 60 ? ` ${mins % 60} min` : ''}`;
+  const when = on ? `Now · ends in ${away}` : `Next · in ${away}`;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`${when}. ${next.t.title}, ${range}. Open task`}
+      onPress={() => { haptic.tick(); router.push({ pathname: '/task', params: { id: next.t.id } }); }}
+      style={({ pressed }) => ({ marginTop: S.s6, flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 72, paddingHorizontal: S.s4, paddingVertical: S.s3,
+        borderRadius: R.md, borderLeftWidth: 3, borderLeftColor: c, backgroundColor: pressed ? tint(c, 0.24) : tint(c, 0.16) })}>
+      <View style={{ flex: 1 }}>
+        <Txt variant="small" style={{ fontFamily: F.uiSemi }}>{when}</Txt>
+        <Txt style={{ fontFamily: F.uiSemi }} numberOfLines={1}>{next.t.title}</Txt>
+        <Txt variant="small" style={{ fontVariant: ['tabular-nums'] }}>{range}</Txt>
+      </View>
+      <ChevronIcon size={18} color={p.ink} />
+    </Pressable>
   );
 }

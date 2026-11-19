@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckIcon, CloseIcon } from '../components/icons';
+import { CalendarIcon, CheckIcon, ChevronIcon, ClockIcon, CloseIcon, RotateIcon } from '../components/icons';
+import { Sheet } from '../components/Sheet';
 import { TimeSheet, lenText } from '../components/TimeSheet';
 import { MicIcon, VoiceSheet } from '../components/Voice';
 import { DateTimeField } from '../components/pickers';
@@ -11,7 +12,7 @@ import { aiAvailable, aiParse } from '../lib/ai';
 import { parseTask, type Parsed } from '../lib/parse';
 import { DEFAULT_MINUTES, fromHM, overlaps, suggestTime, toHM } from '../lib/schedule';
 import { uid, useStore, type Task } from '../lib/store';
-import { DAY, endOfDay, nextSlot, pad, slotLabel } from '../lib/time';
+import { DAY, daysLabel, dueIn, endOfDay, fshort, nextSlot, pad, slotLabel } from '../lib/time';
 import { F, R, S, statusColor, tint, usePalette } from '../theme';
 
 type Unit = 'week' | 'month' | 'year';
@@ -71,6 +72,7 @@ export default function NewTask() {
   const [time, setTime] = useState(() => { const d = new Date(); const m = fromHM(params.time ?? suggested); d.setHours(Math.floor(m / 60), m % 60, 0, 0); return d; });
   const [touchedTime, setTouchedTime] = useState(!!params.time || !!ed);
   const [timeOpen, setTimeOpen] = useState(false);
+  const [sheet, setSheet] = useState<'deadline' | 'schedule' | null>(null);
   const [place, setPlace] = useState(ed?.place ?? '');
   const [more, setMore] = useState(!!(ed?.ifthen || ed?.cue));
   const [ifthen, setIfthen] = useState(ed?.ifthen ?? '');
@@ -224,40 +226,18 @@ export default function NewTask() {
             </View>
           ) : null}
 
-          <View style={[{ gap: S.s3, paddingVertical: S.s1 }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.deadline ? tint(statusColor(p, 'green')) : 'transparent' }]}>
-            <Txt variant="label" dim>Deadline</Txt>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
-              {UNITS.map(u => quick?.u === u ? (
-                <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderRadius: R.sm, borderColor: p.ink, backgroundColor: p.raise2 }}>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>−</Txt>
-                  </Pressable>
-                  <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>+</Txt>
-                  </Pressable>
-                </View>
-              ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
-            </View>
-            <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); setOnceSet(null); }} />
+          {/* Deadline, schedule and time as three rows in one card; each opens its own sheet. A row glows for a few
+              seconds when voice has just filled it in. */}
+          <View style={{ borderRadius: R.md, borderWidth: 1, borderColor: p.line, overflow: 'hidden' }}>
+            <FormRow icon={<CalendarIcon size={22} color={p.dim} />} label="Deadline" value={fshort(+deadline)} hint={dueIn(deadline)} glow={glow.deadline} onPress={() => setSheet('deadline')} />
+            <FormRow icon={<RotateIcon size={22} color={p.dim} />} label="Schedule" glow={glow.when} onPress={() => setSheet('schedule')}
+              value={mode === 'once' ? `Once, ${fshort(+onceDate)}` : days.length ? daysLabel(days) : 'Pick days'} />
+            <FormRow icon={<ClockIcon size={22} color={p.dim} />} label="Time" glow={glow.when} last onPress={() => setTimeOpen(true)}
+              value={touchedTime ? `${pad(time.getHours())}:${pad(time.getMinutes())} – ${toHM(fromHM(`${pad(time.getHours())}:${pad(time.getMinutes())}`) + minutes)}` : 'Not set'}
+              hint={touchedTime ? lenText(minutes) : undefined} />
           </View>
 
-          <View style={[{ gap: S.s3, paddingVertical: S.s1 }, { marginHorizontal: -S.s2, paddingHorizontal: S.s2, borderRadius: R.sm, backgroundColor: glow.when ? tint(statusColor(p, 'green')) : 'transparent' }]}>
-            <View style={{ flexDirection: 'row', gap: S.s1 }}>
-              <View style={{ flex: 1 }}><Chip label="Repeat" on={mode === 'repeat'} onPress={() => setMode('repeat')} /></View>
-              <View style={{ flex: 1 }}><Chip label="Once" on={mode === 'once'} onPress={() => setMode('once')} /></View>
-            </View>
-            {mode === 'repeat' ? (
-              <View style={{ flexDirection: 'row', gap: S.s1 }}>
-                {DAYS.map(([l, n, name]) => (
-                  <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ selected: days.includes(n) }}
-                    onPress={() => { haptic.tick(); setDays(d => (d.includes(n) ? d.filter(x => x !== n) : [...d, n])); }}
-                    style={{ flex: 1, height: 44, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderRadius: R.sm, borderColor: days.includes(n) ? p.ink : p.line, backgroundColor: days.includes(n) ? p.raise2 : 'transparent' }}>
-                    <Txt style={{ fontFamily: days.includes(n) ? F.uiBold : F.uiSemi, fontSize: 15 }} color={days.includes(n) ? p.ink : p.dim}>{l}</Txt>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
+          {DAY_PREVIEW ? <View style={{ gap: S.s3 }}>
             {/* The day bar and the "held for you" line: switched off for now (DAY_PREVIEW). The bottom button opens
                 the time screen, which shows the length and any clash. */}
             {DAY_PREVIEW ? <>
@@ -284,7 +264,7 @@ export default function NewTask() {
               );
             })()}
             </> : null}
-          </View>
+          </View> : null}
 
           {/* Where, backup plan and cue: switched off for now (PLAN_EXTRAS). Saved values are kept on edit. */}
           {PLAN_EXTRAS ? <>
@@ -332,6 +312,40 @@ export default function NewTask() {
         start={`${pad(time.getHours())}:${pad(time.getMinutes())}`} minutes={minutes}
         onDone={(st, len) => { setClock(st); setMinutes(len); setTouchedTime(true); }}
         note={(st, len) => { const c = overlaps(state, mode === 'repeat' ? days : [onceDate.getDay()], st, len, ed?.id); return c.length ? `Overlaps “${c[0].title}”` : null; }} />
+
+      <Sheet open={sheet === 'deadline'} title="Deadline" onClose={() => setSheet(null)}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: S.s2 }}>
+          {UNITS.map(u => quick?.u === u ? (
+            <View key={u} style={{ flexDirection: 'row', alignItems: 'center', height: 44, borderWidth: 1, borderRadius: R.sm, borderColor: p.ink, backgroundColor: p.raise2 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} less`} onPress={() => pickQuick(u, quick.n - 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>−</Txt>
+              </Pressable>
+              <Txt style={{ fontFamily: F.uiSemi, minWidth: 72, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{quick.n} {u}{quick.n === 1 ? '' : 's'}</Txt>
+              <Pressable accessibilityRole="button" accessibilityLabel={`One ${u} more`} onPress={() => pickQuick(u, quick.n + 1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Txt style={{ fontFamily: F.uiBold, fontSize: 20 }}>+</Txt>
+              </Pressable>
+            </View>
+          ) : <Chip key={u} label={`1 ${u}`} onPress={() => pickQuick(u, 1)} />)}
+        </View>
+        <DateTimeField label="Deadline" mode="date" value={deadline} minimumDate={new Date(Date.now() + DAY)} onChange={d => { setDeadline(d); setQuick(null); setOnceSet(null); }} />
+      </Sheet>
+      <Sheet open={sheet === 'schedule'} title="Schedule" onClose={() => setSheet(null)}>
+        <View style={{ flexDirection: 'row', gap: S.s1 }}>
+          <View style={{ flex: 1 }}><Chip label="Repeat" on={mode === 'repeat'} onPress={() => setMode('repeat')} /></View>
+          <View style={{ flex: 1 }}><Chip label="Once" on={mode === 'once'} onPress={() => setMode('once')} /></View>
+        </View>
+        {mode === 'repeat' ? (
+          <View style={{ flexDirection: 'row', gap: S.s1 }}>
+            {DAYS.map(([l, n, name]) => (
+              <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} accessibilityState={{ selected: days.includes(n) }}
+                onPress={() => { haptic.tick(); setDays(d => (d.includes(n) ? d.filter(x => x !== n) : [...d, n])); }}
+                style={{ flex: 1, height: 44, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderRadius: R.sm, borderColor: days.includes(n) ? p.ink : p.line, backgroundColor: days.includes(n) ? p.raise2 : 'transparent' }}>
+                <Txt style={{ fontFamily: days.includes(n) ? F.uiBold : F.uiSemi, fontSize: 15 }} color={days.includes(n) ? p.ink : p.dim}>{l}</Txt>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+      </Sheet>
       <VoiceSheet open={voiceOpen} onClose={() => setVoiceOpen(false)} onResult={apply} />
     </SafeAreaView>
   );
@@ -351,5 +365,26 @@ function DayBar({ start, minutes, busy, color }: { start: number; minutes: numbe
         {['06', '10', '14', '18', '22'].map(h => <Txt key={h} variant="small" dim allowFontScaling={false}>{h}</Txt>)}
       </View>
     </View>
+  );
+}
+
+/** One row of the deadline / schedule / time card: icon, label, the value (and a quiet hint), chevron. */
+function FormRow({ icon, label, value, hint, onPress, glow, last }: {
+  icon: ReactNode; label: string; value: string; hint?: string; onPress: () => void; glow?: boolean; last?: boolean;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}. Change`} onPress={() => { haptic.tick(); onPress(); }}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: S.s3, minHeight: 64, paddingHorizontal: S.s4, paddingVertical: S.s2,
+        borderBottomWidth: last ? 0 : 1, borderBottomColor: p.line,
+        backgroundColor: glow ? tint(statusColor(p, 'green')) : pressed ? p.raise2 : 'transparent' })}>
+      {icon}
+      <Txt dim style={{ width: 84 }}>{label}</Txt>
+      <View style={{ flex: 1, alignItems: 'flex-end' }}>
+        <Txt style={{ fontFamily: F.uiSemi, textAlign: 'right' }} numberOfLines={1}>{value}</Txt>
+        {hint ? <Txt variant="small" dim numberOfLines={1}>{hint}</Txt> : null}
+      </View>
+      <ChevronIcon size={18} color={p.dim} />
+    </Pressable>
   );
 }

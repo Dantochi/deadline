@@ -112,3 +112,16 @@ export const secondsLeftToday = (now: Date) => {
 };
 /** Seconds as HH:MM:SS. */
 export const hms = (s: number) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+
+/** "in 3 days", "in 5 weeks", "in 4 months": how far off a deadline is, for the hint under its date. */
+export function dueIn(d: Date, now = new Date()) {
+  const a = new Date(now); a.setHours(0, 0, 0, 0);
+  const b = new Date(d); b.setHours(0, 0, 0, 0);
+  const n = Math.round((+b - +a) / DAY);
+  if (n <= 0) return 'today';
+  if (n === 1) return 'tomorrow';
+  if (n < 14) return `in ${n} days`;
+  if (n < 63) return `in ${Math.round(n / 7)} weeks`;
+  const m = Math.round(n / 30.44);
+  return m < 24 ? `in ${m} months` : `in ${Math.round(n / 365.25)} years`;
+}
