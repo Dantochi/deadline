@@ -13,6 +13,7 @@ const dark = {
   // Frosted glass, drawn without blur: a translucent fill, a hairline edge and a brighter top edge.
   glass: 'rgba(255,255,255,0.06)', glassEdge: 'rgba(255,255,255,0.12)', glassHi: 'rgba(255,255,255,0.22)', glassOn: 'rgba(255,255,255,0.16)',
   bar: '#121417',
+  faint: '#5E636B', // past days: clearly grey, still 3.2:1 on the page
 };
 const light: typeof dark = {
   bg: '#F3F4F5', raise: '#FFFFFF', raise2: '#E8EAEC', line: '#DADDE1',
@@ -22,6 +23,7 @@ const light: typeof dark = {
   scrim: 'rgba(15,17,19,0.38)',
   glass: 'rgba(255,255,255,0.62)', glassEdge: 'rgba(15,17,19,0.08)', glassHi: 'rgba(255,255,255,0.95)', glassOn: 'rgba(15,17,19,0.08)',
   bar: '#F8F9FA',
+  faint: '#868B92', // 3.1:1 on the page
 };
 export type Palette = typeof dark;
 export const palettes = { dark, light };
@@ -29,6 +31,9 @@ export const palettes = { dark, light };
 export function usePalette(): Palette {
   return useColorScheme() === 'light' ? light : dark;
 }
+
+/** A colour as a soft wash: the hex colour at `alpha` (default 14%), for tinted fills behind ink text. */
+export const tint = (hex: string, alpha = 0.14) => `${hex.slice(0, 7)}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 
 export function statusColor(p: Palette, st: Status, ink = false) {
   if (st === 'paused' || st === 'done') return p.dim;

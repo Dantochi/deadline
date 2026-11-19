@@ -52,12 +52,22 @@ export function yearCells(state: State, year: number) {
   const from = +new Date(year, 0, 1), to = +new Date(year + 1, 0, 1);
   const get = (k: string) => cells.get(k) ?? (cells.set(k, {}), cells.get(k)!);
 
+  // A status dot only where something happens: the deadline day, and days with a reserved session. (Marking
+  // every day of a task's span put red under whole weeks, and red stopped meaning "act now".)
+  const mark = (ms: number, st: Status) => {
+    if (ms < from || ms >= to) return;
+    const cell = get(ymd(new Date(ms)));
+    if (!cell.urgent || (RANK[cell.urgent] ?? 0) < (RANK[st] ?? 0)) cell.urgent = st;
+  };
   for (const t of state.tasks) {
     if (t.letGo || t.done || t.pausedAt || t.deadline < from || t.start >= to) continue;
-    const st = urgency(t), r = RANK[st] ?? 0;
-    for (let d = dayStart(Math.max(t.start, from)); d < Math.min(t.deadline + 1, to); d += DAY) {
-      const cell = get(ymd(new Date(d)));
-      if (!cell.urgent || (RANK[cell.urgent] ?? 0) < r) cell.urgent = st;
+    const st = urgency(t);
+    mark(dayStart(t.deadline), st);
+    if (t.oneOff) mark(dayStart(t.oneOff), st);
+    if (t.slot?.days.length) {
+      for (let d = dayStart(Math.max(t.start, from)); d < Math.min(t.deadline + 1, to); d += DAY) {
+        if (t.slot.days.includes(new Date(d).getDay())) mark(d, st);
+      }
     }
   }
   for (const ev of state.events ?? []) for (const d of eventDays(ev, year)) { const cell = get(d); cell.event ??= ev.color; }

@@ -21,9 +21,10 @@ export function Txt({ variant = 'body', dim, color, style, ...rest }: TxtProps) 
     meta: { fontFamily: F.ui, fontSize: T.md, lineHeight: 20, fontVariant: ['tabular-nums'] },
     // Small text gets a touch of extra tracking, as optical sizing does for small sizes.
     small: { fontFamily: F.ui, fontSize: T.sm, lineHeight: 18, letterSpacing: 0.1, fontVariant: ['tabular-nums'] },
-    // Dot-matrix digits, only for a number standing on its own (a time, a day number, a count). When a number
-    // sits in a phrase with words ("3 weeks left", "9 November"), it stays in the text font.
-    num: { fontFamily: F.dot, fontSize: T.md, lineHeight: 20 },
+    // A small number standing on its own (a time, a count): Inter with even-width digits. The dot-matrix face is
+    // kept for large numbers (20 pt and up: countdowns, the life number, codes), where it reads well; below that
+    // its dots blur together.
+    num: { fontFamily: F.uiSemi, fontSize: T.md, lineHeight: 20, fontVariant: ['tabular-nums'] },
   };
   return <Text maxFontSizeMultiplier={2} style={[v[variant], { color: color ?? (dim ? p.dim : p.ink) }, style]} {...rest} />;
 }

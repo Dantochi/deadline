@@ -10,11 +10,11 @@ import { ColorSwatches } from '../../components/ColorSwatches';
 import { ChevronIcon } from '../../components/icons';
 import { Enter } from '../../components/Motion';
 import { DateTitle, Txt, haptic } from '../../components/ui';
-import { dayDetail, taskColor } from '../../lib/calendar';
+import { dayDetail, urgency } from '../../lib/calendar';
 import { columns, sessionsOn, toHM } from '../../lib/schedule';
 import { useStore, type Task } from '../../lib/store';
 import { DAY, addYears, pad, parseBirth, ymd } from '../../lib/time';
-import { F, S, usePalette } from '../../theme';
+import { F, R, S, statusColor, tint, usePalette } from '../../theme';
 
 const HOUR = 64, GUTTER = 52;
 const at = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
@@ -76,13 +76,13 @@ export default function Hours() {
         contentContainerStyle={{ paddingHorizontal: S.page, gap: S.s2, alignItems: 'center' }}>
         {due.map(t => (
           <Pressable key={t.id} onPress={() => router.push({ pathname: '/task', params: { id: t.id } })} onLongPress={() => setColorFor(t)}
-            style={{ height: 32, paddingHorizontal: S.s3, flexDirection: 'row', alignItems: 'center', gap: S.s2, backgroundColor: taskColor(p, t) }}>
-            <Txt variant="small" style={{ fontFamily: F.uiBold }} color={p.bg} numberOfLines={1}>Due · {t.title}</Txt>
+            style={{ height: 32, paddingHorizontal: S.s3, flexDirection: 'row', alignItems: 'center', gap: S.s2, borderRadius: R.sm, backgroundColor: tint(statusColor(p, urgency(t))) }}>
+            <Txt variant="small" style={{ fontFamily: F.uiBold }} color={statusColor(p, urgency(t), true)} numberOfLines={1}>Due · {t.title}</Txt>
           </Pressable>
         ))}
         {detail.events.map(ev => (
-          <View key={ev.id} style={{ height: 32, paddingHorizontal: S.s3, justifyContent: 'center', backgroundColor: ev.color }}>
-            <Txt variant="small" style={{ fontFamily: F.uiBold }} color={p.bg} numberOfLines={1}>{ev.title}</Txt>
+          <View key={ev.id} style={{ height: 32, paddingHorizontal: S.s3, justifyContent: 'center', borderRadius: R.sm, borderLeftWidth: 3, borderLeftColor: ev.color, backgroundColor: tint(ev.color) }}>
+            <Txt variant="small" style={{ fontFamily: F.uiSemi }} numberOfLines={1}>{ev.title}</Txt>
           </View>
         ))}
         {!due.length && !detail.events.length ? <Txt variant="small" dim>No deadlines or dates on this day</Txt> : null}
@@ -104,7 +104,9 @@ export default function Hours() {
             {/* Sessions: square blocks, height = duration. */}
             {blocks.map(({ b, col, cols }) => {
               const d = new Date(b.start), top = (d.getHours() * 60 + d.getMinutes()) * (HOUR / 60);
-              const h = Math.max(28, b.minutes * (HOUR / 60)), w = laneW / cols, c = taskColor(p, b.t);
+              // A soft wash with a coloured edge (the person's colour, or the status), so a session reads as time
+              // set aside rather than an alarm; the solid blocks outweighed everything else on the day.
+              const h = Math.max(28, b.minutes * (HOUR / 60)), w = laneW / cols, c = b.t.color ?? statusColor(p, urgency(b.t));
               const muted = b.state === 'missed' || b.state === 'unanswered';
               return (
                 <Pressable key={`${b.t.id}${b.start}`} accessibilityRole="button"
@@ -112,11 +114,11 @@ export default function Hours() {
                   onPress={() => { haptic.tick(); router.push({ pathname: '/task', params: { id: b.t.id } }); }}
                   onLongPress={() => { haptic.tick(); setColorFor(b.t); }} delayLongPress={350}
                   style={({ pressed }) => ({ position: 'absolute', top, left: GUTTER + col * w + 1, width: w - 2, height: h - 2, padding: 6,
-                    backgroundColor: muted ? `${c}55` : c, borderLeftWidth: 3, borderLeftColor: b.state === 'done' ? p.ink : 'transparent', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Txt numberOfLines={h > 44 ? 2 : 1} style={{ fontFamily: F.uiBold, fontSize: 13, lineHeight: 16 }} color={muted ? p.ink : p.bg}>
+                    backgroundColor: tint(c, muted || b.state === 'done' ? 0.08 : 0.16), borderLeftWidth: 3, borderLeftColor: c, borderRadius: 4, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+                  <Txt numberOfLines={h > 44 ? 2 : 1} style={{ fontFamily: F.uiSemi, fontSize: 13, lineHeight: 16 }} color={muted ? p.dim : p.ink}>
                     {b.state === 'done' ? '✓ ' : ''}{b.t.title}
                   </Txt>
-                  {h > 44 ? <Txt allowFontScaling={false} style={{ fontSize: 12, lineHeight: 16, fontFamily: F.dot }} color={muted ? p.dim : p.bg}>{toHM(d.getHours() * 60 + d.getMinutes())}–{toHM(d.getHours() * 60 + d.getMinutes() + b.minutes)}</Txt> : null}
+                  {h > 44 ? <Txt allowFontScaling={false} style={{ fontSize: 12, lineHeight: 16, fontFamily: F.ui, fontVariant: ['tabular-nums'] }} color={p.dim}>{toHM(d.getHours() * 60 + d.getMinutes())}–{toHM(d.getHours() * 60 + d.getMinutes() + b.minutes)}</Txt> : null}
                 </Pressable>
               );
             })}
